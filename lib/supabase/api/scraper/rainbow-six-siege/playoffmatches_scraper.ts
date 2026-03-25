@@ -5,16 +5,6 @@ import { Element } from 'domhandler';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 
-type Tournament = {
-    name: string;
-    game_id: number;
-    location: string;
-    start_date: string;
-    end_date: string;
-    status: 'scheduled' | 'live' | 'finished';
-    url: string;
-};
-
 type Match = {
     match_id: string;
     tournament_id: number;
@@ -26,7 +16,7 @@ type Match = {
     team2_name: string;
     team1_score: number | null;
     team2_score: number | null;
-    status: 'scheduled' | 'live' | 'finished';
+    status: 'planned' | 'live' | 'finished';
     date: string;
 };
 
@@ -71,43 +61,13 @@ function getRound(el: Element, $: cheerio.CheerioAPI) {
     return $(el).closest('.brkts-bracket').find('.brkts-header').first().text().trim();
 }
 
-function getMatchStatus(el: Element, $: cheerio.CheerioAPI): 'scheduled' | 'live' | 'finished' {
+function getMatchStatus(el: Element, $: cheerio.CheerioAPI): 'planned' | 'live' | 'finished' {
     const hasScore = $(el).find('.match-info-header-scoreholder-score').length > 0;
     const isFinished = $(el).find(".timer-object[data-finished='finished']").length > 0;
 
-    if (!hasScore) return 'scheduled';
+    if (!hasScore) return 'planned';
     if (isFinished) return 'finished';
     return 'live';
-}
-
-function parseDateRange(input: string, year: number) {
-    // input has format: "Feb 2 - 15"
-    const [month_part, start_day, , end_day] = input.split(' ');
-
-    const month_short = month_part.trim().replace('.', '');
-    const month_map: Record<string, number> = {
-        Jan: 0,
-        Feb: 1,
-        Mar: 2,
-        Apr: 3,
-        May: 4,
-        Jun: 5,
-        Jul: 6,
-        Aug: 7,
-        Sep: 8,
-        Oct: 9,
-        Nov: 10,
-        Dec: 11,
-    };
-
-    const month_index = month_map[month_short];
-    if (month_index === undefined) throw new Error('Invalid month');
-
-    // TODO: start und end datum an die Spiele anpassen
-    const start_date = new Date(Date.UTC(year, month_index, parseInt(start_day), 0, 0, 0));
-    const end_date = new Date(Date.UTC(year, month_index, parseInt(end_day), 23, 59, 59));
-
-    return { start_date, end_date };
 }
 
 function normalizeTeams(team1: string, team2: string) {
@@ -133,7 +93,7 @@ function generateMatchId(match: Match) {
     return crypto.createHash('md5').update(raw).digest('hex');
 }
 
-async function scrapePlayoffMatches(tournament_id: number, url: string) {
+export async function scrapePlayoffMatches(tournament_id: number, url: string) {
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -294,53 +254,6 @@ async function scrapePlayoffMatches(tournament_id: number, url: string) {
     */
 }
 
-async function scrapeTournaments(url: string) {
-    const { data } = await axios.get(url);
-    const $ = cheerio.load(data);
-
-    const tournaments: Tournament[] = [];
-
-    $('.card.card--link.w-100').each((i, tournamentEl) => {
-        const name = $(tournamentEl).find('.ml-1 > h2').text().trim();
-
-        const href = $(tournamentEl).attr('href');
-
-        const location = $(tournamentEl).find('.meta__item.text-muted').first().text().trim();
-
-        const tournament_duration = $(tournamentEl)
-            .find('.meta__item.text-muted')
-            .last()
-            .text()
-            .trim();
-
-        const yearStr = name.split(' ').at(-1);
-        if (!yearStr) return;
-        const year = yearStr.trim();
-
-        const { start_date, end_date } = parseDateRange(tournament_duration, parseInt(year));
-
-        let status = 'live';
-        if (new Date() < start_date) {
-            status = 'scheduled';
-        } else if (new Date() > end_date) {
-            status = 'finished';
-        }
-
-        const url_parts = url.split('/');
-        url_parts.pop();
-        const tournament_url = url_parts.join('/') + href;
-
-        /* tournaments.push({
-            name,
-        }); */
-
-        console.log(name, href, location, start_date, end_date, year, status, tournament_url);
-    });
-}
-
-/*
-game_id: number;
-status: 'scheduled' | 'live' | 'finished';
-url: string;
-*/
-scrapeTournaments('https://siege.gg/competitions?page=1&tier=1&type=Major').catch(console.error);
+scrapePlayoffMatches(1, 'https://liquipedia.net/rainbowsix/Six_Invitational/2026').catch(
+    console.error,
+);
