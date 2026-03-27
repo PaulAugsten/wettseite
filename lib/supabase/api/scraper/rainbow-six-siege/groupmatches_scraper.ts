@@ -93,7 +93,7 @@ function generateMatchId(match: Match) {
     return crypto.createHash('md5').update(raw).digest('hex');
 }
 
-async function scrapeMatches(tournament_id: number, url: string) {
+export async function scrapeGroupMatches(tournament_id: number, url: string) {
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -254,6 +254,8 @@ async function scrapeMatches(tournament_id: number, url: string) {
     */
 }
 
-scrapeMatches(1, 'https://liquipedia.net/rainbowsix/Six_Invitational/2026').catch(console.error);
+scrapeGroupMatches(1, 'https://liquipedia.net/rainbowsix/Six_Invitational/2026').catch(
+    console.error,
+);
 
 //table2__row--body for

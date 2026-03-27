@@ -2,13 +2,14 @@ import 'dotenv/config';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { createClient } from '@supabase/supabase-js';
-import { scrapePlayoffMatches } from './playoffmatches_scraper';
+import { scrapeAllMatches } from './matches_scraper';
 
 const siegegg_tournaments_url = 'https://siege.gg/competitions?page=1&tier=1&type=Major';
 const liquipedia_tournaments_url = 'https://liquipedia.net/rainbowsix/S-Tier_Tournaments';
 const game_slug = 'rainbow-six-siege';
 
-type Tournament = {
+export type Tournament = {
+    id?: number;
     name: string;
     game_id: number;
     location: string;
@@ -276,6 +277,8 @@ async function scrapeTournaments(liquipedia_url: string, siegegg_url: string) {
         console.log('Error inserting tournaments into the DB:', error);
         return 0;
     }
+
+    scrapeAllMatches(game_slug);
 }
 
 // scrapeSiegeggTournaments(siegegg_tournaments_url).catch(console.error);
