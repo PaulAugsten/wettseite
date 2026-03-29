@@ -3,8 +3,8 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { createClient } from '@supabase/supabase-js';
 import { scrapeAllMatches } from './matches_scraper';
+import { text } from 'stream/consumers';
 
-const siegegg_tournaments_url = 'https://siege.gg/competitions?page=1&tier=1&type=Major';
 const liquipedia_tournaments_url = 'https://liquipedia.net/rainbowsix/S-Tier_Tournaments';
 const game_slug = 'rainbow-six-siege';
 
@@ -13,11 +13,11 @@ export type Tournament = {
     name: string;
     game_id: number;
     location: string;
+    prize_pool: string;
     start_date: string;
     end_date: string;
     status: 'scheduled' | 'live' | 'finished';
-    lp_url: string;
-    sg_url: string;
+    url: string;
 };
 
 async function getGameId() {
@@ -101,161 +101,142 @@ function parseDateRange(input: string, year: number) {
     return { start_date, end_date };
 }
 
-async function scrapeSiegeggTournamentPage(url: string) {
+async function getTournamentMetaData(url: string) {
     const { data } = await axios.get(url);
     const $ = cheerio.load(data);
 
+    const name = $('.infobox-header.wiki-backgroundcolor-light')
+        .not('.infobox-header-2')
+        .contents()
+        .filter(function () {
+            return this.type === 'text';
+        })
+        .first()
+        .text()
+        .trim()
+        .replace('R6 ', '')
+        .split(' -')[0];
+
     const game_id = await getGameId();
 
-    const siegegg_tournaments: Tournament[] = [];
+    const location =
+        $('.infobox-cell-2.infobox-description')
+            .filter(function () {
+                return $(this).text().trim() === 'Location:';
+            })
+            .next()
+            .html()
+            ?.trim()
+            .split('&nbsp;')[1]
+            .split('<br>')[0] +
+        ', ' +
+        $('.infobox-cell-2.infobox-description')
+            .filter(function () {
+                return $(this).text().trim() === 'Location:';
+            })
+            .next()
+            .find('a')
+            .attr('title');
 
-    const next_button = $('.btn.btn-outline-secondary').filter(function () {
-        return $(this).text().trim() === 'Next';
-    });
+    const prize_pool = $('.infobox-cell-2.infobox-description')
+        .filter(function () {
+            return $(this).text().trim() === 'Prize Pool:';
+        })
+        .next()
+        .text()
+        .trim();
 
-    let has_next_page = true;
-    if (next_button.attr('disabled')) has_next_page = false;
+    //console.log(prize_pool.replace('$', '').replace('USD', '').replaceAll(',', ''));
 
-    $('.card.card--link.w-100').each((i, tournamentEl) => {
-        const name = $(tournamentEl).find('.ml-1 > h2').text().trim();
-
-        const location = $(tournamentEl).find('.meta__item.text-muted').first().text().trim();
-
-        const tournament_duration = $(tournamentEl)
-            .find('.meta__item.text-muted')
-            .last()
+    // TODO: implement dynamic changing of start and end based on the first and last game (timewise)
+    const start_date = new Date(
+        $('.infobox-cell-2.infobox-description')
+            .filter(function () {
+                return $(this).text().trim() === 'Start Date:';
+            })
+            .next()
             .text()
-            .trim();
+            .trim(),
+    );
+    const end_date = new Date(
+        $('.infobox-cell-2.infobox-description')
+            .filter(function () {
+                return $(this).text().trim() === 'End Date:';
+            })
+            .next()
+            .text()
+            .trim(),
+    );
+    end_date.setHours(23, 59, 59);
 
-        const yearStr = name.split(' ').at(-1);
-        if (!yearStr) return;
-        const year = yearStr.trim();
+    let status = 'live' as 'live' | 'scheduled' | 'finished';
+    if (new Date() < start_date) {
+        status = 'scheduled';
+    } else if (new Date() > end_date) {
+        status = 'finished';
+    }
 
-        const { start_date, end_date } = parseDateRange(tournament_duration, parseInt(year));
+    const start_date_string = start_date.toISOString();
+    const end_date_string = end_date.toISOString();
 
-        let status = 'live' as 'live' | 'scheduled' | 'finished';
-        if (new Date() < start_date) {
-            status = 'scheduled';
-        } else if (new Date() > end_date) {
-            status = 'finished';
+    const tournament: Tournament = {
+        name,
+        game_id,
+        location,
+        prize_pool,
+        start_date: start_date_string,
+        end_date: end_date_string,
+        status,
+        url,
+    };
+
+    return tournament;
+}
+
+async function scrapeTournaments(url: string, insert_into_db: boolean) {
+    const { data } = await axios.get(url);
+    const $ = cheerio.load(data);
+
+    const tournaments: Tournament[] = [];
+
+    const tournamentElements = $('.table2__row--body').toArray().toReversed();
+
+    for (const tournamentEl of tournamentElements) {
+        const tournamentCancelled =
+            $(tournamentEl).find('[style*="text-decoration:line-through"]').length > 0;
+
+        if (tournamentCancelled) {
+            continue;
         }
 
-        const start_date_string = start_date.toISOString();
-        const end_date_string = end_date.toISOString();
-
-        const href = $(tournamentEl).attr('href');
-        const url_parts = url.split('/');
-        url_parts.pop();
-        const tournament_url = url_parts.join('/') + href;
-
-        siegegg_tournaments.push({
-            name,
-            game_id,
-            location,
-            start_date: start_date_string,
-            end_date: end_date_string,
-            status,
-            lp_url: '',
-            sg_url: tournament_url,
-        });
-    });
-
-    return { siegegg_tournaments, has_next_page };
-}
-
-async function scrapeSiegeggTournaments(url: string) {
-    const siegegg_tournaments: Tournament[] = [];
-
-    let current_url = url;
-    let has_next_page = true;
-    let page_index = 1;
-
-    do {
-        const { siegegg_tournaments: tournaments_on_page, has_next_page: hasNext } =
-            await scrapeSiegeggTournamentPage(current_url);
-        siegegg_tournaments.push(...tournaments_on_page);
-        has_next_page = hasNext;
-        current_url = current_url.replace(`page=${page_index}`, `page=${page_index + 1}`);
-        page_index++;
-    } while (has_next_page);
-
-    return siegegg_tournaments;
-}
-
-async function scrapeLiquipediaTournaments(url: string) {
-    const { data } = await axios.get(url);
-    const $ = cheerio.load(data);
-
-    const game_id = await getGameId();
-
-    const liquipedia_tournaments: Tournament[] = [];
-
-    $('.table2__row--body').each((i, tournamentEl) => {
         const name = $(tournamentEl).find('td > a').text().trim();
 
+        if (
+            !(
+                name.includes('Major') ||
+                name.includes('Invitational') ||
+                name.includes('World Cup') ||
+                name.includes('Gamers8') ||
+                name.includes('RE:L0:AD')
+            ) ||
+            name.includes('One')
+        ) {
+            continue;
+        }
         const href = $(tournamentEl).find('td > a').attr('href');
         const url_parts = url.split('/');
         url_parts.pop();
         url_parts.pop();
         const tournament_url = url_parts.join('/') + href;
 
-        liquipedia_tournaments.push({
-            name,
-            game_id,
-            location: '',
-            start_date: '',
-            end_date: '',
-            status: 'scheduled',
-            lp_url: tournament_url,
-            sg_url: '',
-        });
-    });
+        const metadata = await getTournamentMetaData(tournament_url);
 
-    return liquipedia_tournaments;
-}
-
-async function scrapeTournaments(liquipedia_url: string, siegegg_url: string) {
-    const liquipedia_tournaments = scrapeLiquipediaTournaments(liquipedia_url);
-    const siegegg_tournaments = scrapeSiegeggTournaments(siegegg_url);
-
-    const liquipedia_map = new Map(
-        (await liquipedia_tournaments).map((t) => [
-            t.name.replace('R6 ', '').split(' -')[0].split(' ').sort().join(' '),
-            t,
-        ]),
-    );
-
-    const tournaments = (await siegegg_tournaments).map((sg_tournament) => {
-        const sorted_name = sg_tournament.name.split(' ').sort().join(' ');
-        const lp_tournament = liquipedia_map.get(sorted_name);
-
-        if (
-            lp_tournament &&
-            lp_tournament.lp_url &&
-            sg_tournament.name &&
-            sg_tournament.game_id &&
-            sg_tournament.location &&
-            sg_tournament.start_date &&
-            sg_tournament.end_date &&
-            sg_tournament.status &&
-            sg_tournament.sg_url
-        ) {
-            return {
-                name: sg_tournament.name,
-                game_id: sg_tournament.game_id,
-                location: sg_tournament.location,
-                start_date: sg_tournament.start_date,
-                end_date: sg_tournament.end_date,
-                status: sg_tournament.status,
-                liquipedia_url: lp_tournament.lp_url,
-                siegegg_url: sg_tournament.sg_url,
-            };
+        if (metadata) {
+            {
+                tournaments.push(metadata);
+            }
         }
-
-        return null;
-    });
-
-    console.log(`Found ${tournaments.length} Tournaments.`);
+    }
 
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -268,18 +249,21 @@ async function scrapeTournaments(liquipedia_url: string, siegegg_url: string) {
         },
     );
 
-    const { data, error } = await supabase
-        .from('tournaments')
-        .upsert(tournaments, { onConflict: 'name' })
-        .select();
+    if (insert_into_db) {
+        const { error } = await supabase
+            .from('tournaments')
+            .upsert(tournaments, { onConflict: 'name' })
+            .select();
 
-    if (error || !data) {
-        console.log('Error inserting tournaments into the DB:', error);
-        return 0;
+        if (error) {
+            console.log('Error inserting tournaments into the DB:', error);
+            return 0;
+        }
+    } else {
+        console.log(tournaments);
     }
 
-    scrapeAllMatches(game_slug);
+    // scrapeAllMatches(game_slug);
 }
 
-// scrapeSiegeggTournaments(siegegg_tournaments_url).catch(console.error);
-scrapeTournaments(liquipedia_tournaments_url, siegegg_tournaments_url).catch(console.error);
+scrapeTournaments(liquipedia_tournaments_url, false).catch(console.error);

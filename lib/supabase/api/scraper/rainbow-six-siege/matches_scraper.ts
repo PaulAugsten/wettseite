@@ -46,7 +46,7 @@ async function getAllTournamentsFromDB(game_slug: string): Promise<Tournament[]>
 
     //{data?.tournaments.map((match: { id: number; name: string; status: string; slug: string }) => (
 
-    return data;
+    return data.tournaments;
 }
 
 export async function scrapeAllMatches(game_slug: string) {
@@ -65,14 +65,27 @@ export async function scrapeAllMatches(game_slug: string) {
 
     const tournaments = await getAllTournamentsFromDB(game_slug);
 
-    tournaments.forEach((tournament) => {
+    // console.log(tournaments);
+
+    tournaments.map(async (tournament) => {
+        const { data } = await axios.get(tournament.url);
+        const $ = cheerio.load(data);
+
+        $('.mw-heading.mw-heading2 > h2')
+            .filter(function () {
+                return $(this).text().trim() === 'Results';
+            })
+            .each((i, matchEl) => {
+                console.log($(matchEl).text());
+            });
+
         if (tournament.id) {
-            const group_matches = scrapeGroupMatches(tournament.id, tournament.lp_url);
-            const playoff_matches = scrapePlayoffMatches(tournament.id, tournament.sg_url);
+            // const group_matches = scrapeGroupMatches(tournament.id, tournament.lp_url);
+            // const playoff_matches = scrapePlayoffMatches(tournament.id, tournament.sg_url);
 
             matches.push();
         } else {
-            throw new Error(`Tournament has no id: ${JSON.stringify(tournament, null, 2)}`);
+            console.log(`Tournament has no id: ${JSON.stringify(tournament, null, 2)}`);
         }
     });
 
