@@ -3,8 +3,6 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { createClient } from '@supabase/supabase-js';
 import { type Tournament } from './tournaments_scraper';
-import { scrapeGroupMatches } from './groupmatches_scraper';
-import { scrapePlayoffMatches } from './playoffmatches_scraper';
 
 type Match = {
     match_id: string;
@@ -68,7 +66,7 @@ export async function scrapeAllMatches(game_slug: string) {
     // console.log(tournaments);
 
     tournaments.map(async (tournament) => {
-        const { data } = await axios.get(tournament.url);
+        const { data } = await axios.get(tournament.liquipedia_url);
         const $ = cheerio.load(data);
 
         $('.mw-heading.mw-heading2 > h2')
@@ -89,7 +87,7 @@ export async function scrapeAllMatches(game_slug: string) {
         }
     });
 
-    /* const { data, error } = await supabase
+    const { data, error } = await supabase
         .from('tournaments')
         .upsert(tournaments, { onConflict: 'name' })
         .select();
@@ -97,7 +95,7 @@ export async function scrapeAllMatches(game_slug: string) {
     if (error || !data) {
         console.log('Error inserting tournaments into the DB:', error);
         return 0;
-    }*/
+    }
 }
 
 scrapeAllMatches('rainbow-six-siege');
