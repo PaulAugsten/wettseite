@@ -3,7 +3,6 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { createClient } from '@supabase/supabase-js';
 import { scrapeAllMatches } from './matches_scraper';
-import { text } from 'stream/consumers';
 
 const liquipedia_tournaments_url = 'https://liquipedia.net/rainbowsix/S-Tier_Tournaments';
 const game_slug = 'rainbow-six-siege';
@@ -43,62 +42,6 @@ async function getGameId() {
         return 0;
     }
     return data.id;
-}
-
-function parseDateRange(input: string, year: number) {
-    // input has format: "Feb 2 - 15" or "Jul 31 – Aug 4"
-    const month_map: Record<string, number> = {
-        Jan: 0,
-        Feb: 1,
-        Mar: 2,
-        Apr: 3,
-        May: 4,
-        Jun: 5,
-        Jul: 6,
-        Aug: 7,
-        Sep: 8,
-        Oct: 9,
-        Nov: 10,
-        Dec: 11,
-    };
-
-    const normalized = input.replace(/[–—]/g, '-');
-    const parts = normalized.split(' - ').map((p) => p.trim());
-
-    if (parts.length !== 2) {
-        throw new Error(`Invalid date range format: ${input}`);
-    }
-
-    const start_parts = parts[0].split(' ');
-    const start_month = start_parts[0].replace('.', '');
-    const start_day = parseInt(start_parts[1]);
-
-    const end_parts = parts[1].split(' ');
-    let end_month: string;
-    let end_day: number;
-
-    if (end_parts.length === 1) {
-        end_month = start_month;
-        end_day = parseInt(end_parts[0]);
-    } else {
-        end_month = end_parts[0].replace('.', '');
-        end_day = parseInt(end_parts[1]);
-    }
-
-    const start_month_index = month_map[start_month];
-    const end_month_index = month_map[end_month];
-
-    if (start_month_index === undefined) {
-        throw new Error(`Invalid start month: ${start_month} from input: ${input}`);
-    }
-    if (end_month_index === undefined) {
-        throw new Error(`Invalid end month: ${end_month} from input: ${input}`);
-    }
-
-    const start_date = new Date(Date.UTC(year, start_month_index, start_day, 0, 0, 0));
-    const end_date = new Date(Date.UTC(year, end_month_index, end_day, 23, 59, 59));
-
-    return { start_date, end_date };
 }
 
 async function getTournamentMetaData(url: string) {
@@ -263,7 +206,7 @@ async function scrapeTournaments(url: string, insert_into_db: boolean) {
         console.log(tournaments);
     }
 
-    // scrapeAllMatches(game_slug);
+    scrapeAllMatches(game_slug);
 }
 
 scrapeTournaments(liquipedia_tournaments_url, false).catch(console.error);
