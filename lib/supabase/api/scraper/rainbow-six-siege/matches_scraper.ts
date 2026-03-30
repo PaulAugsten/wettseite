@@ -44,9 +44,19 @@ async function getAllTournamentsFromDB(game_slug: string): Promise<Tournament[]>
         return [];
     }
 
-    //{data?.tournaments.map((match: { id: number; name: string; status: string; slug: string }) => (
-
     return data.tournaments;
+}
+
+export async function scrapeStage(stage: string, url: string) {
+    const { data } = await axios.get(url);
+    const $ = cheerio.load(data);
+
+    const stage_matches: Match[] = [];
+
+    const code_div = $('.CodeMirror-code [role*="presentation"]');
+
+    //console.log(code_div.text());
+    return stage_matches;
 }
 
 export async function scrapeAllMatches(game_slug: string) {
@@ -71,21 +81,29 @@ export async function scrapeAllMatches(game_slug: string) {
         const { data } = await axios.get(tournament.url);
         const $ = cheerio.load(data);
 
-        $('.mw-heading.mw-heading2 > h2')
-            .filter(function () {
-                return $(this).text().trim() === 'Results';
-            })
-            .each((i, matchEl) => {
-                console.log($(matchEl).text());
-            });
-
-        if (tournament.id) {
-            // const group_matches = scrapeGroupMatches(tournament.id, tournament.lp_url);
-            // const playoff_matches = scrapePlayoffMatches(tournament.id, tournament.sg_url);
-
-            matches.push();
-        } else {
+        if (!tournament.id) {
             console.log(`Tournament has no id: ${JSON.stringify(tournament, null, 2)}`);
+            return;
+        }
+
+        const results_div = $('.mw-heading.mw-heading2').filter(function () {
+            return $(this).find('h2').text().trim() === 'Results';
+        });
+
+        let current = results_div.next();
+
+        while (current.find('h2').length < 1) {
+            if (current.find('h3').length > 0) {
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+                const stage = current.find('h3').text().trim();
+                const edit_url = 'https://liquipedia.net' + current.find('a').attr('href');
+
+                Array.prototype.unshift.apply(matches, await scrapeStage(stage, edit_url));
+
+                console.log(stage);
+                console.log(edit_url);
+            }
+            current = current.next();
         }
     });
 
