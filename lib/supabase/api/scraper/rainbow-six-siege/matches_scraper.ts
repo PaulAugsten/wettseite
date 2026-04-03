@@ -48,7 +48,11 @@ async function getAllTournamentsFromDB(game_slug: string): Promise<Tournament[]>
 }
 
 export async function scrapeStage(stage: string, url: string) {
-    const { data } = await axios.get(url);
+    const { data } = await axios.get(url, {
+        headers: {
+            'User-Agent': 'MatchesBot/0.3 (paulaugsten9@gmail.com)',
+        },
+    });
     const $ = cheerio.load(data);
 
     const stage_matches: Match[] = [];
@@ -77,6 +81,27 @@ export async function scrapeAllMatches(game_slug: string) {
 
     // console.log(tournaments);
 
+    let counter = 0;
+    let pages_string = '';
+    do {
+        const page = tournaments.at(counter)?.url.replace('https://liquipedia.net/rainbowsix/', '');
+
+        if (counter % 50 == 0) {
+            pages_string = page || '';
+        } else {
+            pages_string = pages_string + '|' + page;
+        }
+
+        counter++;
+
+        if (counter % 50 === 0 || counter === tournaments.length - 1) {
+            const api_url = `https://liquipedia.net/rainbowsix/api.php?action=query&prop=revisions&titles=${pages_string}&rvprop=content&format=json`;
+            console.log('Send batch');
+            console.log(api_url);
+        }
+    } while (counter < tournaments.length);
+
+    /*
     tournaments.map(async (tournament) => {
         const { data } = await axios.get(tournament.url);
         const $ = cheerio.load(data);
@@ -92,16 +117,19 @@ export async function scrapeAllMatches(game_slug: string) {
 
         let current = results_div.next();
 
+        const api_url = `https://liquipedia.net/rainbowsix/api.php?action=query&prop=revisions&titles=${tournament.url.replace('https://liquipedia.net/rainbowsix/', '')}&rvprop=content&format=json`;
+
+        const wikitext = await axios.get(api_url);
+
         while (current.find('h2').length < 1) {
             if (current.find('h3').length > 0) {
                 await new Promise((resolve) => setTimeout(resolve, 2000));
                 const stage = current.find('h3').text().trim();
-                const edit_url = 'https://liquipedia.net' + current.find('a').attr('href');
 
-                Array.prototype.unshift.apply(matches, await scrapeStage(stage, edit_url));
+                // Array.prototype.unshift.apply(matches, await scrapeStage(stage, api_url));
 
                 console.log(stage);
-                console.log(edit_url);
+                console.log(api_url);
             }
             current = current.next();
         }
