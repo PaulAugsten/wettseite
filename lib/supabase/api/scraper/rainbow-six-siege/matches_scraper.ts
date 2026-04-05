@@ -47,23 +47,31 @@ async function getAllTournamentsFromDB(game_slug: string): Promise<Tournament[]>
     return data.tournaments;
 }
 
-export async function scrapeStage(stage: string, url: string) {
-    const { data } = await axios.get(url, {
-        headers: {
-            'User-Agent': 'MatchesBot/0.3 (paulaugsten9@gmail.com)',
-        },
-    });
+export async function getTournamentStages(data: string) {
+    //console.log(data);
+    console.log(data.search(`Stage`));
+    /*
     const $ = cheerio.load(data);
 
-    const stage_matches: Match[] = [];
+    const results_div = $('.mw-heading.mw-heading2').filter(function () {
+        return $(this).find('h2').text().trim() === 'Results';
+    });
 
-    const code_div = $('.CodeMirror-code [role*="presentation"]');
+    let current = results_div.next();
 
-    //console.log(code_div.text());
-    return stage_matches;
+    
+    while (current.find('h2').length < 1) {
+        if (current.find('h3').length > 0) {
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            const stage = current.find('h3').text().trim();
+
+            console.log(stage);
+        }
+        current = current.next();
+    } */
 }
 
-export async function scrapeAllMatches(game_slug: string) {
+export async function getAllTournamentPages(game_slug: string) {
     const matches: Match[] = [];
 
     const supabase = createClient(
@@ -79,12 +87,13 @@ export async function scrapeAllMatches(game_slug: string) {
 
     const tournaments = await getAllTournamentsFromDB(game_slug);
 
-    // console.log(tournaments);
-
     let counter = 0;
     let pages_string = '';
     do {
-        const page = tournaments.at(counter)?.url.replace('https://liquipedia.net/rainbowsix/', '');
+        const page = tournaments
+            .at(counter)
+            ?.url.replace('https://liquipedia.net/rainbowsix/', '')
+            .replaceAll('/', '%2F');
 
         if (counter % 50 == 0) {
             pages_string = page || '';
@@ -94,46 +103,30 @@ export async function scrapeAllMatches(game_slug: string) {
 
         counter++;
 
-        if (counter % 50 === 0 || counter === tournaments.length - 1) {
-            const api_url = `https://liquipedia.net/rainbowsix/api.php?action=query&prop=revisions&titles=${pages_string}&rvprop=content&format=json`;
+        if (counter % 50 === 0 || counter === tournaments.length) {
+            const wikitext_api_url = `https://liquipedia.net/rainbowsix/api.php?action=query&prop=revisions&titles=${pages_string}&rvprop=content&format=json`;
+
             console.log('Send batch');
-            console.log(api_url);
+            console.log(wikitext_api_url);
+
+            const { data } = await axios.get(wikitext_api_url, {
+                headers: {
+                    'User-Agent': 'MatchesBot/0.3 (paulaugsten9@gmail.com)',
+                },
+            });
+
+            const pages = data.query.pages;
+
+            for (const pageId in data.query.pages) {
+                const page = pages[pageId];
+                const wikitext = page.revisions[0]['*'];
+                getTournamentStages(wikitext);
+                console.log(`Page: ${page.title}`);
+                //console.log(`Wikitext: ${wikitext}`);
+            }
+            await new Promise((resolve) => setTimeout(resolve, 2000));
         }
     } while (counter < tournaments.length);
-
-    /*
-    tournaments.map(async (tournament) => {
-        const { data } = await axios.get(tournament.url);
-        const $ = cheerio.load(data);
-
-        if (!tournament.id) {
-            console.log(`Tournament has no id: ${JSON.stringify(tournament, null, 2)}`);
-            return;
-        }
-
-        const results_div = $('.mw-heading.mw-heading2').filter(function () {
-            return $(this).find('h2').text().trim() === 'Results';
-        });
-
-        let current = results_div.next();
-
-        const api_url = `https://liquipedia.net/rainbowsix/api.php?action=query&prop=revisions&titles=${tournament.url.replace('https://liquipedia.net/rainbowsix/', '')}&rvprop=content&format=json`;
-
-        const wikitext = await axios.get(api_url);
-
-        while (current.find('h2').length < 1) {
-            if (current.find('h3').length > 0) {
-                await new Promise((resolve) => setTimeout(resolve, 2000));
-                const stage = current.find('h3').text().trim();
-
-                // Array.prototype.unshift.apply(matches, await scrapeStage(stage, api_url));
-
-                console.log(stage);
-                console.log(api_url);
-            }
-            current = current.next();
-        }
-    });
 
     /* const { data, error } = await supabase
         .from('tournaments')
@@ -146,4 +139,4 @@ export async function scrapeAllMatches(game_slug: string) {
     }*/
 }
 
-scrapeAllMatches('rainbow-six-siege');
+getAllTournamentPages('rainbow-six-siege');
