@@ -47,9 +47,168 @@ async function getAllTournamentsFromDB(game_slug: string): Promise<Tournament[]>
     return data.tournaments;
 }
 
-export async function getTournamentStages(data: string) {
+function cleanWikitext(text: string) {
+    return text
+        .replace(/<ref[^>]*>[\s\S]*?<\/ref>/g, '')
+        .replace(/<!--[\s\S]*?-->/g, (match) => `__COMMENT__${match}__END__`);
+}
+
+function wikitextSplitStages(text: string) {
+    const results: string[] = [];
+    const lines = text.split('\n');
+
+    let currentStage: string[] = [];
+    let insideStage = false;
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        if (line.trim().includes(`{{Stage`)) {
+            if (insideStage && currentStage.length > 0) {
+                results.push(currentStage.join('\n'));
+            }
+
+            currentStage = [line];
+            insideStage = true;
+            continue;
+        }
+
+        if (insideStage) {
+            if (/^==([^=].*?)==$/.test(line.trim())) {
+                results.push(currentStage.join('\n'));
+                currentStage = [];
+                insideStage = false;
+                continue;
+            }
+
+            currentStage.push(line);
+        }
+    }
+
+    if (results.length === 0) {
+        console.log('No stages found');
+        let insideResults = false;
+        currentStage = [];
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+
+            if (line.trim().includes(`==Results==`)) {
+                insideResults = true;
+                currentStage = [line];
+
+                continue;
+            }
+
+            if (insideResults) {
+                if (/^==([^=].*?)==$/.test(line.trim())) {
+                    if (currentStage.length > 0) {
+                        results.push(currentStage.join('\n'));
+                    }
+                    break;
+                }
+
+                currentStage.push(line);
+            }
+        }
+
+        if (insideStage && currentStage.length > 0) {
+            results.push(currentStage.join('\n'));
+        }
+    }
+
+    return results;
+}
+
+function getWikitextMatchesFromStage(text: string) {
+    const matches: string[] = [];
+    const lines = text.split('\n');
+
+    let currentMatch: string[] = [];
+    let insideMatch = false;
+    let depth = 0;
+    let openBraces = 0;
+    let closedBraces = 0;
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        if (/{{Match\b/.test(line.trim())) {
+            if (insideMatch && currentMatch.length > 0) {
+                matches.push(currentMatch.join('\n'));
+            }
+
+            currentMatch = [line];
+            insideMatch = true;
+
+            openBraces = (line.match(/\{/g) || []).length;
+            closedBraces = (line.match(/\}/g) || []).length;
+            depth = openBraces - closedBraces;
+
+            if (depth === 0) {
+                matches.push(currentMatch.join('\n'));
+                currentMatch = [];
+                insideMatch = false;
+            }
+            continue;
+        }
+
+        if (insideMatch) {
+            currentMatch.push(line);
+
+            openBraces = (line.match(/\{/g) || []).length;
+            closedBraces = (line.match(/\}/g) || []).length;
+            depth += openBraces - closedBraces;
+
+            if (depth === 0) {
+                matches.push(currentMatch.join('\n'));
+                currentMatch = [];
+                insideMatch = false;
+            }
+        }
+    }
+
+    if (insideMatch && currentMatch.length > 0) {
+        matches.push(currentMatch.join('\n'));
+    }
+
+    return matches;
+}
+
+function extractTemplates(text: string, name: string) {
+    const results = [];
+    let i = 0;
+
+    while (i < text.length) {
+        if (text.startsWith(`{{${name}`, i)) {
+            let depth = 0;
+            const start = i;
+
+            while (i < text.length) {
+                if (text.startsWith('{{', i)) {
+                    depth++;
+                    i += 2;
+                } else if (text.startsWith('}}', i)) {
+                    depth--;
+                    i += 2;
+                    if (depth === 0) break;
+                } else {
+                    i++;
+                }
+            }
+
+            results.push(text.slice(start, i));
+        } else {
+            i++;
+        }
+    }
+
+    return results;
+}
+
+export async function getTournamentStages(wikitext: string) {
     //console.log(data);
-    console.log(data.search(`Stage`));
+    console.log(wikitext.search(`Stage`));
     /*
     const $ = cheerio.load(data);
 
@@ -120,9 +279,16 @@ export async function getAllTournamentPages(game_slug: string) {
             for (const pageId in data.query.pages) {
                 const page = pages[pageId];
                 const wikitext = page.revisions[0]['*'];
-                getTournamentStages(wikitext);
                 console.log(`Page: ${page.title}`);
-                //console.log(`Wikitext: ${wikitext}`);
+
+                const stages = wikitextSplitStages(wikitext);
+
+                console.log('stages:', stages.length);
+
+                for (const stage in stages) {
+                    const matches = getWikitextMatchesFromStage(stages[stage]);
+                    console.log(matches.length);
+                }
             }
             await new Promise((resolve) => setTimeout(resolve, 2000));
         }
