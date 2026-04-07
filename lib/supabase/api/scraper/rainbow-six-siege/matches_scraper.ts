@@ -11,8 +11,8 @@ type Match = {
     tournament_id: number;
     stage: string | null;
     group: string | null;
-    bracket: string;
-    round: string;
+    bracket: string | null;
+    round: string | null;
     team1_name: string;
     team2_name: string;
     team1_score: number | null;
@@ -51,6 +51,48 @@ function cleanWikitext(text: string) {
     return text
         .replace(/<ref[^>]*>[\s\S]*?<\/ref>/g, '')
         .replace(/<!--[\s\S]*?-->/g, (match) => `__COMMENT__${match}__END__`);
+}
+
+function parseMatch(text: string): Match | null {
+    const match_id = getParam(text, 'r6esports');
+    const team1_name = getParam(text, 'opponent1');
+    const team2_name = getParam(text, 'opponent2');
+    const status = getParam(text, 'finished');
+    const date = getParam(text, 'date');
+
+    console.log('id:' + match_id);
+    console.log(team1_name);
+    console.log(team2_name);
+    console.log(status);
+    console.log(date);
+
+    if (!(match_id && team1_name && team2_name && status && date)) return null;
+
+    return {
+        match_id,
+        tournament_id: 0,
+        stage: null,
+        group: null,
+        bracket: null,
+        round: null,
+        team1_name,
+        team2_name,
+        team1_score: null,
+        team2_score: null,
+        status: 'finished',
+        date,
+    };
+}
+
+function getParam(text: string, key: string) {
+    let regex = new RegExp(`\\|${key}=([^\\n|}]*)`);
+
+    if (key === 'opponent1' || key === 'opponent2') {
+        regex = new RegExp(`\\|${key}={{TeamOpponent\\|([^}]+)}}`);
+    }
+
+    const match = text.match(regex);
+    return match ? match[1].trim() : null;
 }
 
 function wikitextSplitStages(text: string) {
@@ -287,6 +329,10 @@ export async function getAllTournamentPages(game_slug: string) {
 
                 for (const stage in stages) {
                     const matches = getWikitextMatchesFromStage(stages[stage]);
+
+                    for (const match in matches) {
+                        console.log(parseMatch(matches[match]));
+                    }
                     console.log(matches.length);
                 }
             }
