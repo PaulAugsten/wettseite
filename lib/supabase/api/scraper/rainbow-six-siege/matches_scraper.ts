@@ -21,6 +21,41 @@ type Match = {
     date: string;
 };
 
+const TIMEZONE_OFFSETS: Record<string, string> = {
+    // America
+    PST: '-08:00', // Pacific Standard Time
+    PDT: '-07:00', // Pacific Daylight Time
+    MST: '-07:00', // Mountain Standard Time
+    MDT: '-06:00', // Mountain Daylight Time
+    CST: '-06:00', // Central Standard Time
+    CDT: '-05:00', // Central Daylight Time
+    EST: '-05:00', // Eastern Standard Time
+    EDT: '-04:00', // Eastern Daylight Time
+    BRT: '-03:00', // Brasilia Time
+    ART: '-03:00', // Argentina Time
+
+    // Europe
+    GMT: '+00:00', // Greenwich Mean Time
+    UTC: '+00:00', // Coordinated Universal Time
+    WET: '+00:00', // Western European Time
+    CET: '+01:00', // Central European Time
+    CEST: '+02:00', // Central European Summer Time
+    EET: '+02:00', // Eastern European Time
+    EEST: '+03:00', // Eastern European Summer Time
+
+    // Asia
+    JST: '+09:00', // Japan Standard Time
+    KST: '+09:00', // Korea Standard Time
+    SGT: '+08:00', // Singapore Time
+    HKT: '+08:00', // Hong Kong Time
+    CST_CHINA: '+08:00', // China Standard Time
+
+    // Australia
+    AEST: '+10:00', // Australian Eastern Standard Time
+    AEDT: '+11:00', // Australian Eastern Daylight Time
+    AWST: '+08:00', // Australian Western Standard Time
+};
+
 async function getAllTournamentsFromDB(game_slug: string): Promise<Tournament[]> {
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -57,16 +92,22 @@ function parseMatch(text: string): Match | null {
     const match_id = getParam(text, 'r6esports');
     const team1_name = getParam(text, 'opponent1');
     const team2_name = getParam(text, 'opponent2');
-    const status = getParam(text, 'finished');
-    const date = getParam(text, 'date');
+    const finished = getParam(text, 'finished');
+    const dateText = getParam(text, 'date')?.replace(' - ', 'T');
 
-    console.log('id:' + match_id);
-    console.log(team1_name);
-    console.log(team2_name);
-    console.log(status);
-    console.log(date);
+    const timezoneCode = dateText ? dateText.split('{{Abbr/')[1] : 'UTC';
+    const offset = TIMEZONE_OFFSETS[timezoneCode] || '+00:00';
+    const date = `${dateText?.replace(` {{Abbr/${timezoneCode}`, ':00')}${offset}`;
+
+    let status = 'planned';
+    if (finished === 'true') status = 'finished';
+    else if (date && new Date() > new Date(date)) status = 'planned';
 
     if (!(match_id && team1_name && team2_name && status && date)) return null;
+
+    console.log(dateText);
+    console.log(date);
+    console.log(new Date(date));
 
     return {
         match_id,
@@ -89,6 +130,12 @@ function getParam(text: string, key: string) {
 
     if (key === 'opponent1' || key === 'opponent2') {
         regex = new RegExp(`\\|${key}={{TeamOpponent\\|([^}]+)}}`);
+    } else if (key === 'status') {
+        regex = new RegExp(`\\|${key}={{TeamOpponent\\|([^}]+)}}`);
+        /*
+        if (text.match(regex)[1].trim() === 'true') {
+            return 'finished';
+        } */
     }
 
     const match = text.match(regex);
