@@ -88,26 +88,76 @@ function cleanWikitext(text: string) {
         .replace(/<!--[\s\S]*?-->/g, (match) => `__COMMENT__${match}__END__`);
 }
 
+function getParam(text: string, key: string) {
+    let regex = new RegExp(`\\|${key}=([^\\n|}]*)`);
+
+    if (key === 'opponent1' || key === 'opponent2') {
+        regex = new RegExp(`\\|${key}={{TeamOpponent\\|([^}]+)}}`);
+    } else if (key === 'date') {
+        regex = new RegExp(`\\|${key}=([^\\n|]*)`);
+    }
+
+    const match = text.match(regex);
+    return match ? match[1].trim() : null;
+}
+
+function parseWikitextDate(dateText: string): string | null {
+    const timezoneMatch = dateText.match(/{{Abbr\/([A-Z]+)}}/);
+    const timezoneCode = timezoneMatch ? timezoneMatch[1] : 'UTC';
+
+    const cleanedDateText = dateText
+        .replace(/\s*{{Abbr\/[A-Z]+}}/, '')
+        .trim()
+        .replace(' - ', ' ');
+
+    const parsedDate = new Date(cleanedDateText);
+
+    if (isNaN(parsedDate.getTime())) {
+        console.error('Could not parse date:', cleanedDateText);
+        return null;
+    }
+
+    const offset = TIMEZONE_OFFSETS[timezoneCode] || '+00:00';
+
+    const year = parsedDate.getFullYear();
+    const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(parsedDate.getDate()).padStart(2, '0');
+    const hours = String(parsedDate.getHours()).padStart(2, '0');
+    const minutes = String(parsedDate.getMinutes()).padStart(2, '0');
+
+    const isoWithOffset = `${year}-${month}-${day}T${hours}:${minutes}:00${offset}`;
+
+    return new Date(isoWithOffset).toISOString();
+}
+
 function parseMatch(text: string): Match | null {
-    const match_id = getParam(text, 'r6esports');
+    const match_id = getParam(text, 'siegegg');
     const team1_name = getParam(text, 'opponent1');
     const team2_name = getParam(text, 'opponent2');
     const finished = getParam(text, 'finished');
-    const dateText = getParam(text, 'date')?.replace(' - ', 'T');
+    const dateText = getParam(text, 'date');
 
-    const timezoneCode = dateText ? dateText.split('{{Abbr/')[1] : 'UTC';
-    const offset = TIMEZONE_OFFSETS[timezoneCode] || '+00:00';
-    const date = `${dateText?.replace(` {{Abbr/${timezoneCode}`, ':00')}${offset}`;
+    if (!dateText) {
+        console.error(`missing date text${dateText}`);
+        return null;
+    }
 
-    let status = 'planned';
+    const date = parseWikitextDate(dateText);
+    if (!date) {
+        console.error(`missing date${date}`);
+        return null;
+    }
+
+    let status: 'planned' | 'live' | 'finished' = 'planned';
     if (finished === 'true') status = 'finished';
-    else if (date && new Date() > new Date(date)) status = 'planned';
+    else if (new Date() > new Date(date)) status = 'live';
 
-    if (!(match_id && team1_name && team2_name && status && date)) return null;
-
-    console.log(dateText);
-    console.log(date);
-    console.log(new Date(date));
+    if (!(match_id && team1_name && team2_name)) {
+        console.error(
+            `missing Matchid${match_id}, team1 name${team1_name} or team2 name ${team2_name}`,
+        );
+        return null;
+    }
 
     return {
         match_id,
@@ -120,26 +170,9 @@ function parseMatch(text: string): Match | null {
         team2_name,
         team1_score: null,
         team2_score: null,
-        status: 'finished',
+        status,
         date,
     };
-}
-
-function getParam(text: string, key: string) {
-    let regex = new RegExp(`\\|${key}=([^\\n|}]*)`);
-
-    if (key === 'opponent1' || key === 'opponent2') {
-        regex = new RegExp(`\\|${key}={{TeamOpponent\\|([^}]+)}}`);
-    } else if (key === 'status') {
-        regex = new RegExp(`\\|${key}={{TeamOpponent\\|([^}]+)}}`);
-        /*
-        if (text.match(regex)[1].trim() === 'true') {
-            return 'finished';
-        } */
-    }
-
-    const match = text.match(regex);
-    return match ? match[1].trim() : null;
 }
 
 function wikitextSplitStages(text: string) {
@@ -378,7 +411,8 @@ export async function getAllTournamentPages(game_slug: string) {
                     const matches = getWikitextMatchesFromStage(stages[stage]);
 
                     for (const match in matches) {
-                        console.log(parseMatch(matches[match]));
+                        const parsedMatch = parseMatch(matches[match]);
+                        //console.log(parsedMatch);
                     }
                     console.log(matches.length);
                 }
