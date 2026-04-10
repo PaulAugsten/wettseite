@@ -1,10 +1,8 @@
 import 'dotenv/config';
 import axios from 'axios';
-import * as cheerio from 'cheerio';
 import { createClient } from '@supabase/supabase-js';
 import { type Tournament } from './tournaments_scraper';
-import { scrapeGroupMatches } from './groupmatches_scraper';
-import { scrapePlayoffMatches } from './playoffmatches_scraper';
+import fs from 'fs';
 
 type Match = {
     match_id: string;
@@ -19,6 +17,18 @@ type Match = {
     team2_score: number | null;
     status: 'planned' | 'live' | 'finished';
     date: string;
+};
+
+type TournamentOverview = {
+    pageId: string;
+    title: string;
+    totalStages: number;
+    totalMatches: number;
+    stages: {
+        stageIndex: number;
+        matchCount: number;
+        matches: Match[];
+    }[];
 };
 
 const TIMEZONE_OFFSETS: Record<string, string> = {
@@ -108,7 +118,11 @@ function parseWikitextDate(dateText: string): string | null {
     const cleanedDateText = dateText
         .replace(/\s*{{Abbr\/[A-Z]+}}/, '')
         .trim()
-        .replace(' - ', ' ');
+        .replace(' - ', ' ')
+        .replace('st', '')
+        .replace('nd', '')
+        .replace('rd', '')
+        .replace('th', '');
 
     const parsedDate = new Date(cleanedDateText);
 
@@ -297,37 +311,6 @@ function getWikitextMatchesFromStage(text: string) {
     return matches;
 }
 
-function extractTemplates(text: string, name: string) {
-    const results = [];
-    let i = 0;
-
-    while (i < text.length) {
-        if (text.startsWith(`{{${name}`, i)) {
-            let depth = 0;
-            const start = i;
-
-            while (i < text.length) {
-                if (text.startsWith('{{', i)) {
-                    depth++;
-                    i += 2;
-                } else if (text.startsWith('}}', i)) {
-                    depth--;
-                    i += 2;
-                    if (depth === 0) break;
-                } else {
-                    i++;
-                }
-            }
-
-            results.push(text.slice(start, i));
-        } else {
-            i++;
-        }
-    }
-
-    return results;
-}
-
 export async function getTournamentStages(wikitext: string) {
     //console.log(data);
     console.log(wikitext.search(`Stage`));
@@ -352,7 +335,109 @@ export async function getTournamentStages(wikitext: string) {
     } */
 }
 
+function generateBatchRequestStrings(tournamentPages: string[]) {
+    const pagesStrings: string[] = [];
+    let pagesString = '';
+
+    for (let pageIndex = 0; pageIndex < tournamentPages.length; pageIndex++) {
+        const page = tournamentPages.at(pageIndex)?.replaceAll('/', '%2F');
+
+        if (pagesString === '') {
+            pagesString = page || '';
+        } else {
+            pagesString = pagesString + '|' + page;
+        }
+
+        if (pageIndex % 50 === 49 || pageIndex === tournamentPages.length - 1) {
+            pagesStrings.push(pagesString);
+            pagesString = '';
+        }
+    }
+
+    return pagesStrings;
+}
+
+async function fetchTournamentWikitext(batchRequests: string[], overview: TournamentOverview[]) {
+    const subPagesArray: string[] = [];
+
+    for (const batch of batchRequests) {
+        const wikitext_api_url = `https://liquipedia.net/rainbowsix/api.php?action=query&prop=revisions&titles=${batch}&rvprop=content&format=json`;
+
+        console.log('Send batch');
+        console.log(wikitext_api_url);
+
+        const { data } = await axios.get(wikitext_api_url, {
+            headers: {
+                'User-Agent': 'MatchesBot/0.3 (paulaugsten9@gmail.com)',
+            },
+        });
+
+        const pages = data.query.pages;
+
+        for (const pageId in data.query.pages) {
+            const page = pages[pageId];
+            const wikitext = page.revisions[0]['*'];
+            console.log(`Page: ${page.title}`);
+
+            const stages = wikitextSplitStages(wikitext);
+
+            const tournamentData: TournamentOverview = {
+                pageId,
+                title: page.title,
+                totalStages: stages.length,
+                totalMatches: 0,
+                stages: [],
+            };
+
+            console.log('stages:', stages.length);
+
+            for (let stageIdx = 0; stageIdx < stages.length; stageIdx++) {
+                const wikitext = stages[stageIdx];
+                const matches = getWikitextMatchesFromStage(wikitext);
+
+                if (matches.length === 0) {
+                    const sectionPattern = /{{#(?:lst|section):([^|]+)\|[^}]*}}/g;
+
+                    const subPages = [...wikitext.matchAll(sectionPattern)];
+
+                    for (const subPage of subPages) {
+                        const subPageString = subPage[1].trim().replaceAll(' ', '_');
+                        if (subPageString && !subPagesArray.includes(subPageString)) {
+                            subPagesArray.push(subPageString);
+                        }
+                    }
+                }
+
+                const parsedMatches: Match[] = [];
+
+                for (const match in matches) {
+                    const parsedMatch = parseMatch(matches[match]);
+                    if (parsedMatch) {
+                        parsedMatches.push(parsedMatch);
+                    }
+                }
+
+                tournamentData.stages.push({
+                    stageIndex: stageIdx,
+                    matchCount: parsedMatches.length,
+                    matches: parsedMatches,
+                });
+
+                tournamentData.totalMatches += parsedMatches.length;
+            }
+
+            overview.push(tournamentData);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+
+    console.log(subPagesArray);
+    console.log(generateBatchRequestStrings(subPagesArray));
+}
+
 export async function getAllTournamentPages(game_slug: string) {
+    const overview: TournamentOverview[] = [];
+
     const matches: Match[] = [];
 
     const supabase = createClient(
@@ -367,59 +452,17 @@ export async function getAllTournamentPages(game_slug: string) {
     );
 
     const tournaments = await getAllTournamentsFromDB(game_slug);
+    const tournamentPages = tournaments.map((tournament) => {
+        return tournament.url.replace('https://liquipedia.net/rainbowsix/', '');
+    });
 
-    let counter = 0;
-    let pages_string = '';
-    do {
-        const page = tournaments
-            .at(counter)
-            ?.url.replace('https://liquipedia.net/rainbowsix/', '')
-            .replaceAll('/', '%2F');
+    const batchRequests = generateBatchRequestStrings(tournamentPages);
 
-        if (counter % 50 == 0) {
-            pages_string = page || '';
-        } else {
-            pages_string = pages_string + '|' + page;
-        }
+    await fetchTournamentWikitext(batchRequests, overview);
 
-        counter++;
+    overview.sort((a, b) => parseInt(a.pageId) - parseInt(b.pageId));
 
-        if (counter % 50 === 0 || counter === tournaments.length) {
-            const wikitext_api_url = `https://liquipedia.net/rainbowsix/api.php?action=query&prop=revisions&titles=${pages_string}&rvprop=content&format=json`;
-
-            console.log('Send batch');
-            console.log(wikitext_api_url);
-
-            const { data } = await axios.get(wikitext_api_url, {
-                headers: {
-                    'User-Agent': 'MatchesBot/0.3 (paulaugsten9@gmail.com)',
-                },
-            });
-
-            const pages = data.query.pages;
-
-            for (const pageId in data.query.pages) {
-                const page = pages[pageId];
-                const wikitext = page.revisions[0]['*'];
-                console.log(`Page: ${page.title}`);
-
-                const stages = wikitextSplitStages(wikitext);
-
-                console.log('stages:', stages.length);
-
-                for (const stage in stages) {
-                    const matches = getWikitextMatchesFromStage(stages[stage]);
-
-                    for (const match in matches) {
-                        const parsedMatch = parseMatch(matches[match]);
-                        //console.log(parsedMatch);
-                    }
-                    console.log(matches.length);
-                }
-            }
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-        }
-    } while (counter < tournaments.length);
+    fs.writeFileSync('tournament_overview.json', JSON.stringify(overview, null, 2), 'utf-8');
 
     /* const { data, error } = await supabase
         .from('tournaments')
