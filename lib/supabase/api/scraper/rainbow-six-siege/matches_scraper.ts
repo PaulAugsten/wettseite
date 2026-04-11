@@ -5,8 +5,8 @@ import { type Tournament } from './tournaments_scraper';
 import fs from 'fs';
 
 type Match = {
-    match_id: string;
-    tournament_id: number;
+    match_id: number;
+    tournament_id: number | undefined;
     stage: string | null;
     group: string | null;
     bracket: string | null;
@@ -105,6 +105,8 @@ function getParam(text: string, key: string) {
         regex = new RegExp(`\\|${key}={{TeamOpponent\\|([^}]+)}}`);
     } else if (key === 'date') {
         regex = new RegExp(`\\|${key}=([^\\n|]*)`);
+    } else if (key === 'Stage') {
+        regex = /===\{\{Stage\|(.+?)\}\}===/;
     }
 
     const match = text.match(regex);
@@ -174,7 +176,7 @@ function parseMatch(text: string): Match | null {
     }
 
     return {
-        match_id,
+        match_id: parseInt(match_id),
         tournament_id: 0,
         stage: null,
         group: null,
@@ -256,18 +258,30 @@ function wikitextSplitStages(text: string) {
     return results;
 }
 
-function getWikitextMatchesFromStage(text: string) {
+function extractCommentContent(line: string): string | null {
+    const regex = /<!--\s*(.+?)\s*-->/;
+    const match = line.match(regex);
+    return match ? match[1].trim() : null;
+}
+
+function parseMatchesFromStage(text: string) {
     const matches: string[] = [];
     const lines = text.split('\n');
 
     let currentMatch: string[] = [];
     let insideMatch = false;
+    let currentRound = null;
     let depth = 0;
-    let openBraces = 0;
-    let closedBraces = 0;
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
+
+        if (!insideMatch && line.startsWith('<!--') && line.includes('-->')) {
+            const comment = extractCommentContent(line);
+            if (comment) {
+                currentRound = comment;
+            }
+        }
 
         if (/{{Match\b/.test(line.trim())) {
             if (insideMatch && currentMatch.length > 0) {
@@ -277,8 +291,8 @@ function getWikitextMatchesFromStage(text: string) {
             currentMatch = [line];
             insideMatch = true;
 
-            openBraces = (line.match(/\{/g) || []).length;
-            closedBraces = (line.match(/\}/g) || []).length;
+            const openBraces = (line.match(/\{/g) || []).length;
+            const closedBraces = (line.match(/\}/g) || []).length;
             depth = openBraces - closedBraces;
 
             if (depth === 0) {
@@ -292,8 +306,8 @@ function getWikitextMatchesFromStage(text: string) {
         if (insideMatch) {
             currentMatch.push(line);
 
-            openBraces = (line.match(/\{/g) || []).length;
-            closedBraces = (line.match(/\}/g) || []).length;
+            const openBraces = (line.match(/\{/g) || []).length;
+            const closedBraces = (line.match(/\}/g) || []).length;
             depth += openBraces - closedBraces;
 
             if (depth === 0) {
@@ -357,14 +371,15 @@ function generateBatchRequestStrings(tournamentPages: string[]) {
     return pagesStrings;
 }
 
-async function fetchTournamentWikitext(batchRequests: string[], overview: TournamentOverview[]) {
+async function fetchTournamentWikitext(
+    tournaments: Tournament[],
+    batchRequests: string[],
+    overview: TournamentOverview[],
+) {
     const subPagesArray: string[] = [];
 
     for (const batch of batchRequests) {
         const wikitext_api_url = `https://liquipedia.net/rainbowsix/api.php?action=query&prop=revisions&titles=${batch}&rvprop=content&format=json`;
-
-        console.log('Send batch');
-        console.log(wikitext_api_url);
 
         const { data } = await axios.get(wikitext_api_url, {
             headers: {
@@ -376,14 +391,15 @@ async function fetchTournamentWikitext(batchRequests: string[], overview: Tourna
 
         for (const pageId in data.query.pages) {
             const page = pages[pageId];
+            const pageTitle = page.title.trim().replaceAll(' ', '_');
             const wikitext = page.revisions[0]['*'];
-            console.log(`Page: ${page.title}`);
+            console.log(`Page: ${pageTitle}`);
 
             const stages = wikitextSplitStages(wikitext);
 
             const tournamentData: TournamentOverview = {
                 pageId,
-                title: page.title,
+                title: pageTitle,
                 totalStages: stages.length,
                 totalMatches: 0,
                 stages: [],
@@ -393,7 +409,9 @@ async function fetchTournamentWikitext(batchRequests: string[], overview: Tourna
 
             for (let stageIdx = 0; stageIdx < stages.length; stageIdx++) {
                 const wikitext = stages[stageIdx];
-                const matches = getWikitextMatchesFromStage(wikitext);
+                const stage = getParam(wikitext, 'Stage');
+
+                const matches = parseMatchesFromStage(wikitext);
 
                 if (matches.length === 0) {
                     const sectionPattern = /{{#(?:lst|section):([^|]+)\|[^}]*}}/g;
@@ -413,7 +431,32 @@ async function fetchTournamentWikitext(batchRequests: string[], overview: Tourna
                 for (const match in matches) {
                     const parsedMatch = parseMatch(matches[match]);
                     if (parsedMatch) {
-                        parsedMatches.push(parsedMatch);
+                        parsedMatch.tournament_id = tournaments.find((tournament) =>
+                            tournament.url.includes(pageTitle),
+                        )?.id;
+
+                        if (stage) {
+                            parsedMatch.stage = stage;
+                        } else {
+                            console.log(
+                                'No stagename found in at least one stage of tournament: ',
+                                pageTitle,
+                            );
+                            parsedMatch.stage = 'Playoffs';
+                        }
+
+                        if (stage?.includes('Playoffs') || stage?.includes('Finals')) {
+                            parsedMatch.bracket = '';
+                        }
+
+                        if (parsedMatch.tournament_id) {
+                            parsedMatches.push(parsedMatch);
+                        } else {
+                            console.log(
+                                "Couldn't find tournamentId for game: ",
+                                parsedMatch.match_id,
+                            );
+                        }
                     }
                 }
 
@@ -458,7 +501,7 @@ export async function getAllTournamentPages(game_slug: string) {
 
     const batchRequests = generateBatchRequestStrings(tournamentPages);
 
-    await fetchTournamentWikitext(batchRequests, overview);
+    await fetchTournamentWikitext(tournaments, batchRequests, overview);
 
     overview.sort((a, b) => parseInt(a.pageId) - parseInt(b.pageId));
 
