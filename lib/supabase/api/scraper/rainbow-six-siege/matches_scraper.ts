@@ -92,17 +92,11 @@ async function getAllTournamentsFromDB(game_slug: string): Promise<Tournament[]>
     return data.tournaments;
 }
 
-function cleanWikitext(text: string) {
-    return text
-        .replace(/<ref[^>]*>[\s\S]*?<\/ref>/g, '')
-        .replace(/<!--[\s\S]*?-->/g, (match) => `__COMMENT__${match}__END__`);
-}
-
 function getParam(text: string, key: string) {
     let regex = new RegExp(`\\|${key}=([^\\n|}]*)`);
 
     if (key === 'opponent1' || key === 'opponent2') {
-        regex = new RegExp(`\\|${key}={{TeamOpponent\\|([^}]+)}}`);
+        regex = new RegExp(`\\|${key}={{TeamOpponent\\|([^|}]+)`);
     } else if (key === 'date') {
         regex = new RegExp(`\\|${key}=([^\\n|]*)`);
     } else if (key === 'Stage') {
@@ -146,6 +140,66 @@ function parseWikitextDate(dateText: string): string | null {
     return new Date(isoWithOffset).toISOString();
 }
 
+function calculateMatchScore(text: string): { team1Score: number; team2Score: number } {
+    let team1Score = 0;
+    let team2Score = 0;
+    let mapIndex = 1;
+
+    while (true) {
+        const mapPattern = new RegExp(`\\|map${mapIndex}={{Map\\|map=([^|]+)\\|([^}]+)}}`, 's');
+
+        const mapMatch = text.match(mapPattern);
+
+        if (!mapMatch) {
+            break;
+        }
+
+        const mapContent = mapMatch[2];
+
+        const finishedMatch = mapContent.match(/finished=([^|}\n]+)/);
+        const finished = finishedMatch ? finishedMatch[1].trim() : 'false';
+
+        if (finished === 'skip') {
+            mapIndex++;
+            continue;
+        }
+
+        let t1Total = 0;
+        let t2Total = 0;
+
+        const score1Match = mapContent.match(/score1=(\d+)/);
+        const score2Match = mapContent.match(/score2=(\d+)/);
+
+        // old format
+        if (score1Match && score2Match) {
+            t1Total = parseInt(score1Match[1]);
+            t2Total = parseInt(score2Match[1]);
+        } else {
+            const t1atk = parseInt(mapContent.match(/t1atk=(\d+)/)?.[1] || '0');
+            const t1def = parseInt(mapContent.match(/t1def=(\d+)/)?.[1] || '0');
+            const t2atk = parseInt(mapContent.match(/t2atk=(\d+)/)?.[1] || '0');
+            const t2def = parseInt(mapContent.match(/t2def=(\d+)/)?.[1] || '0');
+            const t1otatk = parseInt(mapContent.match(/t1otatk=(\d+)/)?.[1] || '0');
+            const t1otdef = parseInt(mapContent.match(/t1otdef=(\d+)/)?.[1] || '0');
+            const t2otatk = parseInt(mapContent.match(/t2otatk=(\d+)/)?.[1] || '0');
+            const t2otdef = parseInt(mapContent.match(/t2otdef=(\d+)/)?.[1] || '0');
+
+            t1Total = t1atk + t1def + t1otatk + t1otdef;
+            t2Total = t2atk + t2def + t2otatk + t2otdef;
+        }
+
+        if (t1Total > t2Total) {
+            team1Score++;
+        } else if (t2Total > t1Total) {
+            team2Score++;
+        }
+
+        mapIndex++;
+    }
+
+    return { team1Score, team2Score };
+}
+
 function parseMatch(text: string): Match | null {
     const match_id = getParam(text, 'siegegg');
     const team1_name = getParam(text, 'opponent1');
@@ -163,6 +217,10 @@ function parseMatch(text: string): Match | null {
         console.error(`missing date${date}`);
         return null;
     }
+
+    const scores = calculateMatchScore(text);
+    const team1_score = scores?.team1Score;
+    const team2_score = scores?.team2Score;
 
     let status: 'planned' | 'live' | 'finished' = 'planned';
     if (finished === 'true') status = 'finished';
@@ -184,8 +242,8 @@ function parseMatch(text: string): Match | null {
         round: null,
         team1_name,
         team2_name,
-        team1_score: null,
-        team2_score: null,
+        team1_score,
+        team2_score,
         status,
         date,
     };
@@ -264,62 +322,101 @@ function extractCommentContent(line: string): string | null {
     return match ? match[1].trim() : null;
 }
 
-function parseMatchesFromStage(text: string) {
-    const matches: string[] = [];
+function parseMatchesFromStage(text: string, tournament: Tournament, stage: string | null) {
+    const matches: Match[] = [];
     const lines = text.split('\n');
 
-    let currentMatch: string[] = [];
+    let currentMatchText: string[] = [];
     let insideMatch = false;
-    let currentRound = null;
+    let currentRound: string | null = null;
     let depth = 0;
 
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-
-        if (!insideMatch && line.startsWith('<!--') && line.includes('-->')) {
-            const comment = extractCommentContent(line);
-            if (comment) {
-                currentRound = comment;
-            }
+    for (const line of lines) {
+        if (!insideMatch && line.trim().startsWith('<!--') && line.includes('-->')) {
+            currentRound = extractCommentContent(line);
         }
 
         if (/{{Match\b/.test(line.trim())) {
-            if (insideMatch && currentMatch.length > 0) {
-                matches.push(currentMatch.join('\n'));
+            if (insideMatch && currentMatchText.length > 0) {
+                const parsedMatch = parseMatch(currentMatchText.join('\n'));
+                if (parsedMatch) {
+                    parsedMatch.tournament_id = tournament.id;
+                    parsedMatch.stage = stage;
+                    parsedMatch.round = currentRound;
+
+                    if (stage?.includes('Group')) {
+                        parsedMatch.group = 'A';
+                    } else if (stage === 'Playoffs') {
+                        if (currentRound?.includes('upper')) {
+                            parsedMatch.bracket = 'upper';
+                        } else if (currentRound?.includes('lower')) {
+                            parsedMatch.bracket = 'lower';
+                        } else {
+                            parsedMatch.bracket = 'single';
+                        }
+                    }
+                    matches.push(parsedMatch);
+                }
             }
 
-            currentMatch = [line];
+            currentMatchText = [line];
             insideMatch = true;
-
-            const openBraces = (line.match(/\{/g) || []).length;
-            const closedBraces = (line.match(/\}/g) || []).length;
-            depth = openBraces - closedBraces;
+            depth = (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
 
             if (depth === 0) {
-                matches.push(currentMatch.join('\n'));
-                currentMatch = [];
+                const parsedMatch = parseMatch(currentMatchText.join('\n'));
+                if (parsedMatch) {
+                    parsedMatch.tournament_id = tournament.id;
+                    parsedMatch.stage = stage;
+                    parsedMatch.round = currentRound;
+
+                    if (stage?.includes('Group')) {
+                        parsedMatch.group = 'A';
+                    } else if (stage === 'Playoffs') {
+                        if (currentRound?.includes('upper')) {
+                            parsedMatch.bracket = 'upper';
+                        } else if (currentRound?.includes('lower')) {
+                            parsedMatch.bracket = 'lower';
+                        } else {
+                            parsedMatch.bracket = 'single';
+                        }
+                    }
+                    matches.push(parsedMatch);
+                }
+                currentMatchText = [];
                 insideMatch = false;
             }
             continue;
         }
 
         if (insideMatch) {
-            currentMatch.push(line);
-
-            const openBraces = (line.match(/\{/g) || []).length;
-            const closedBraces = (line.match(/\}/g) || []).length;
-            depth += openBraces - closedBraces;
+            currentMatchText.push(line);
+            depth += (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
 
             if (depth === 0) {
-                matches.push(currentMatch.join('\n'));
-                currentMatch = [];
+                const parsedMatch = parseMatch(currentMatchText.join('\n'));
+                if (parsedMatch) {
+                    parsedMatch.tournament_id = tournament.id;
+                    parsedMatch.stage = stage;
+                    parsedMatch.round = currentRound;
+
+                    if (stage?.includes('Group')) {
+                        parsedMatch.group = 'A';
+                    } else if (stage === 'Playoffs') {
+                        if (currentRound?.includes('Upper')) {
+                            parsedMatch.bracket = 'upper';
+                        } else if (currentRound?.includes('Lower')) {
+                            parsedMatch.bracket = 'lower';
+                        } else {
+                            parsedMatch.bracket = 'single';
+                        }
+                    }
+                    matches.push(parsedMatch);
+                }
+                currentMatchText = [];
                 insideMatch = false;
             }
         }
-    }
-
-    if (insideMatch && currentMatch.length > 0) {
-        matches.push(currentMatch.join('\n'));
     }
 
     return matches;
@@ -395,7 +492,10 @@ async function fetchTournamentWikitext(
             const wikitext = page.revisions[0]['*'];
             console.log(`Page: ${pageTitle}`);
 
+            const tournament = tournaments.find((tournament) => tournament.url.includes(pageTitle));
             const stages = wikitextSplitStages(wikitext);
+
+            if (!tournament) continue;
 
             const tournamentData: TournamentOverview = {
                 pageId,
@@ -409,9 +509,11 @@ async function fetchTournamentWikitext(
 
             for (let stageIdx = 0; stageIdx < stages.length; stageIdx++) {
                 const wikitext = stages[stageIdx];
-                const stage = getParam(wikitext, 'Stage');
+                const stage = getParam(wikitext, 'Stage')
+                    ? getParam(wikitext, 'Stage')
+                    : 'Playoffs';
 
-                const matches = parseMatchesFromStage(wikitext);
+                const matches = parseMatchesFromStage(wikitext, tournament, stage);
 
                 if (matches.length === 0) {
                     const sectionPattern = /{{#(?:lst|section):([^|]+)\|[^}]*}}/g;
@@ -426,47 +528,13 @@ async function fetchTournamentWikitext(
                     }
                 }
 
-                const parsedMatches: Match[] = [];
-
-                for (const match in matches) {
-                    const parsedMatch = parseMatch(matches[match]);
-                    if (parsedMatch) {
-                        parsedMatch.tournament_id = tournaments.find((tournament) =>
-                            tournament.url.includes(pageTitle),
-                        )?.id;
-
-                        if (stage) {
-                            parsedMatch.stage = stage;
-                        } else {
-                            console.log(
-                                'No stagename found in at least one stage of tournament: ',
-                                pageTitle,
-                            );
-                            parsedMatch.stage = 'Playoffs';
-                        }
-
-                        if (stage?.includes('Playoffs') || stage?.includes('Finals')) {
-                            parsedMatch.bracket = '';
-                        }
-
-                        if (parsedMatch.tournament_id) {
-                            parsedMatches.push(parsedMatch);
-                        } else {
-                            console.log(
-                                "Couldn't find tournamentId for game: ",
-                                parsedMatch.match_id,
-                            );
-                        }
-                    }
-                }
-
                 tournamentData.stages.push({
                     stageIndex: stageIdx,
-                    matchCount: parsedMatches.length,
-                    matches: parsedMatches,
+                    matchCount: matches.length,
+                    matches: matches,
                 });
 
-                tournamentData.totalMatches += parsedMatches.length;
+                tournamentData.totalMatches += matches.length;
             }
 
             overview.push(tournamentData);
