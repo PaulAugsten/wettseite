@@ -347,12 +347,12 @@ function parseMatchesFromStage(text: string, tournament: Tournament, stage: stri
                     if (stage?.includes('Group')) {
                         parsedMatch.group = 'A';
                     } else if (stage === 'Playoffs') {
-                        if (currentRound?.includes('upper')) {
-                            parsedMatch.bracket = 'upper';
-                        } else if (currentRound?.includes('lower')) {
-                            parsedMatch.bracket = 'lower';
+                        if (currentRound?.includes('Upper')) {
+                            parsedMatch.bracket = 'Upper';
+                        } else if (currentRound?.includes('Lower')) {
+                            parsedMatch.bracket = 'Lower';
                         } else {
-                            parsedMatch.bracket = 'single';
+                            parsedMatch.bracket = 'Single';
                         }
                     }
                     matches.push(parsedMatch);
@@ -373,12 +373,12 @@ function parseMatchesFromStage(text: string, tournament: Tournament, stage: stri
                     if (stage?.includes('Group')) {
                         parsedMatch.group = 'A';
                     } else if (stage === 'Playoffs') {
-                        if (currentRound?.includes('upper')) {
-                            parsedMatch.bracket = 'upper';
-                        } else if (currentRound?.includes('lower')) {
-                            parsedMatch.bracket = 'lower';
+                        if (currentRound?.includes('Upper')) {
+                            parsedMatch.bracket = 'Upper';
+                        } else if (currentRound?.includes('Lower')) {
+                            parsedMatch.bracket = 'Lower';
                         } else {
-                            parsedMatch.bracket = 'single';
+                            parsedMatch.bracket = 'Single';
                         }
                     }
                     matches.push(parsedMatch);
@@ -404,11 +404,11 @@ function parseMatchesFromStage(text: string, tournament: Tournament, stage: stri
                         parsedMatch.group = 'A';
                     } else if (stage === 'Playoffs') {
                         if (currentRound?.includes('Upper')) {
-                            parsedMatch.bracket = 'upper';
+                            parsedMatch.bracket = 'Upper';
                         } else if (currentRound?.includes('Lower')) {
-                            parsedMatch.bracket = 'lower';
+                            parsedMatch.bracket = 'Lower';
                         } else {
-                            parsedMatch.bracket = 'single';
+                            parsedMatch.bracket = 'Single';
                         }
                     }
                     matches.push(parsedMatch);
