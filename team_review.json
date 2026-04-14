@@ -1,0 +1,509 @@
+{
+    "summary": {
+        "totalClusters": 111,
+        "autoApproved": 111,
+        "needsReview": 0
+    },
+    "autoApproved": [
+        {
+            "canonical": "G2 Esports",
+            "aliases": ["G2 Esports", "g2 esports", "g2", "G2"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "TSM",
+            "aliases": ["tsm", "TSM"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Oxygen Esports",
+            "aliases": ["Oxygen Esports", "oxygen esports"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Rogue",
+            "aliases": ["rogue", "Rogue"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "FaZe Clan",
+            "aliases": ["FaZe Clan", "Faze Clan", "faze clan", "FAZE Clan", "faze"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Soniqs",
+            "aliases": ["soniqs", "Soniqs"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Spacestation Gaming",
+            "aliases": ["Spacestation Gaming", "spacestation gaming", "Spacestation", "ssg", "SSG"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Evil Geniuses",
+            "aliases": ["Evil Geniuses", "eg"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Team oNe eSports",
+            "aliases": ["Team oNe eSports", "team one", "Team One", "Team oNe"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Astralis",
+            "aliases": ["Astralis", "astralis"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Sandbox Gaming",
+            "aliases": ["sandbox gaming", "Sandbox Gaming", "SANDBOX Gaming"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Fnatic",
+            "aliases": ["Fnatic", "fnatic"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Team BDS",
+            "aliases": ["Team BDS", "team bds", "bds", "bds esport"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Team Secret",
+            "aliases": ["Team Secret", "team secret", "secret"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "MNM Gaming",
+            "aliases": ["MNM Gaming", "mnm gaming"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Elevate",
+            "aliases": ["Elevate"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Team Liquid",
+            "aliases": ["Team Liquid", "team liquid", "liquid", "Liquid", "tl"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Team Falcons",
+            "aliases": ["Team Falcons"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Black Dragons",
+            "aliases": ["Black Dragons", "black dragons"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "MIBR",
+            "aliases": ["MIBR", "mibr"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Team Vitality",
+            "aliases": ["Team Vitality", "vitality", "Vitality"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Ninjas in Pyjamas",
+            "aliases": [
+                "Ninjas in Pyjamas",
+                "ninjas in pyjamas",
+                "Ninjas In Pyjamas",
+                "nip",
+                "NIP"
+            ],
+            "confidence": "high"
+        },
+        {
+            "canonical": "FURY",
+            "aliases": ["FURY", "fury"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "FearX",
+            "aliases": ["FearX"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "PENTA",
+            "aliases": ["PENTA", "penta"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Team Reciprocity",
+            "aliases": ["Team Reciprocity", "reciprocity"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "DAMWON Gaming",
+            "aliases": ["DAMWON Gaming", "damwon", "Damwon Gaming", "DWG", "dwg"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "XSET",
+            "aliases": ["XSET", "xset"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Pro E-sports Team Nora-Rengo",
+            "aliases": [
+                "Pro E-sports Team Nora-Rengo",
+                "nora-rengo",
+                "pet nora-rengo",
+                "pet Nora-rengo"
+            ],
+            "confidence": "high"
+        },
+        {
+            "canonical": "DarkZero",
+            "aliases": [
+                "DarkZero",
+                "darkzero",
+                "DarkZero Esports",
+                "Darkzero Esports",
+                "darkzero esports",
+                "Darkzero",
+                "dz"
+            ],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Heroic",
+            "aliases": ["Heroic", "heroic"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Weibo Gaming",
+            "aliases": ["Weibo Gaming"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Invictus Gaming International",
+            "aliases": ["Invictus Gaming International", "Invictus Gaming", "ig"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Chiefs Esports Club",
+            "aliases": ["Chiefs Esports Club", "chiefs", "Chiefs"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Dire Wolves",
+            "aliases": ["Dire Wolves", "dire wolves"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Mirage",
+            "aliases": ["Mirage", "mirage"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Gaimin Gladiators",
+            "aliases": ["Gaimin Gladiators"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "M80",
+            "aliases": ["M80"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Virtus.pro",
+            "aliases": ["Virtus.pro", "Virtus.Pro"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Fluxo W7M",
+            "aliases": ["Fluxo W7M"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Shopify Rebellion",
+            "aliases": ["Shopify Rebellion"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "eRa Eternity",
+            "aliases": ["eRa Eternity", "era eternity"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Mock-it Esports",
+            "aliases": ["Mock-it Esports", "mock-it"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Immortals",
+            "aliases": ["Immortals", "immortals"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Bleed Esports",
+            "aliases": ["Bleed Esports", "bleed esports"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Team Bliss",
+            "aliases": ["Team Bliss", "team bliss"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Mindfreak",
+            "aliases": ["Mindfreak", "mindfreak"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Supremacy",
+            "aliases": ["Supremacy", "supremacy"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "ENCE",
+            "aliases": ["ENCE", "ence"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Giants Gaming",
+            "aliases": ["Giants Gaming", "giants", "giants gaming"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "ForZe",
+            "aliases": ["ForZe", "forze"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "LOS",
+            "aliases": ["LOS", "los", "LOS + oNe"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Wildcard",
+            "aliases": ["Wildcard", "wildcard gaming"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "1UPeSport",
+            "aliases": ["1UPeSport", "1upesport"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "YeaH Gaming",
+            "aliases": ["YeaH Gaming", "yeah!"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "EiNs",
+            "aliases": ["EiNs", "eins"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Obey Alliance",
+            "aliases": ["Obey Alliance", "obey alliance", "obey"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Element Mystic",
+            "aliases": ["Element Mystic", "element mystic"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Millenium",
+            "aliases": ["Millenium", "millenium"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Team Empire",
+            "aliases": ["Team Empire", "team empire", "empire"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "KOI",
+            "aliases": ["KOI"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Six Karma",
+            "aliases": ["Six Karma"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "NORTHEPTION",
+            "aliases": ["NORTHEPTION"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "REVEN ECLUB",
+            "aliases": ["REVEN ECLUB", "REVEN Eclub"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Varrel",
+            "aliases": ["Varrel", "VARREL"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Geekay Esports",
+            "aliases": ["Geekay Esports", "geekay esports"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Crest Gaming Lst",
+            "aliases": ["Crest Gaming Lst", "crest gaming lst"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "CAG Osaka",
+            "aliases": ["CAG Osaka", "cyclops athlete gaming", "cyclops", "cag"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Dplus",
+            "aliases": ["Dplus"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Santos Dexterity",
+            "aliases": ["Santos Dexterity", "santos dexterity"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Continuum",
+            "aliases": ["Continuum", "continuum"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "ROOM FACTORY",
+            "aliases": ["ROOM FACTORY", "room factory"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Counter Logic Gaming",
+            "aliases": ["Counter Logic Gaming", "clg"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "OrgLess (German team)",
+            "aliases": ["OrgLess (German team)", "orgless (german team)"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Mantis FPS",
+            "aliases": ["Mantis FPS", "mantis fps"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "LeStream Esport",
+            "aliases": ["LeStream Esport", "lestream"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Natus Vincere",
+            "aliases": ["Natus Vincere", "navi"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "LAVEGA Esports",
+            "aliases": ["LAVEGA Esports"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Talon Esports",
+            "aliases": ["Talon Esports", "talon esports"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Knights",
+            "aliases": ["Knights", "knights"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Alpha Atheris",
+            "aliases": ["Alpha Atheris", "alpha atheris"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Team Cruelty",
+            "aliases": ["Team Cruelty"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "CL4L",
+            "aliases": ["CL4L"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Team Heretics",
+            "aliases": ["Team Heretics"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Gen.G Esports",
+            "aliases": ["Gen.G Esports"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "ENTERPRISE Esports",
+            "aliases": ["ENTERPRISE Esports", "Enterprise Esports"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "EURONICS Gaming",
+            "aliases": ["EURONICS Gaming", "euronics"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Team Envy",
+            "aliases": ["Team Envy", "envy"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "GiFu eSports",
+            "aliases": ["GiFu eSports", "gifu esports"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "SCARZ",
+            "aliases": ["SCARZ"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Beastcoast",
+            "aliases": ["Beastcoast", "beastcoast"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "ALPHA Team",
+            "aliases": ["ALPHA Team", "Alpha TEAM"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Daystar",
+            "aliases": ["Daystar"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "w7m esports",
+            "aliases": ["w7m esports", "w7m Esports", "W7m esports", "W7M Esports", "w7m", "W7M"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "Wolves Esports",
+            "aliases": ["Wolves Esports", "wolves", "Wolves", "wolves esports"],
+            "confidence": "high"
+        },
+        {
+            "canonical": "FURIA",
+            "aliases": ["FURIA", "Furia", "furia", "FURIA Esports"],
+            "confidence": "high"
+        }
+    ],
+    "needsReview": []
+}
