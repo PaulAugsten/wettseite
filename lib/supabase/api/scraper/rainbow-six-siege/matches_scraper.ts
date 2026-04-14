@@ -3,8 +3,9 @@ import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
 import { type Tournament } from './tournaments_scraper';
 import fs from 'fs';
+import { resolveTeams } from './teamnames_resolver';
 
-type Match = {
+export type Match = {
     match_id: number;
     tournament_id: number | undefined;
     stage: string | null;
@@ -96,7 +97,32 @@ function getParam(text: string, key: string) {
     let regex = new RegExp(`\\|${key}=([^\\n|}]*)`);
 
     if (key === 'opponent1' || key === 'opponent2') {
-        regex = new RegExp(`\\|${key}={{TeamOpponent\\|([^|}]+)`);
+        const templateRegex = new RegExp(`\\|${key}={{TeamOpponent\\|([^}]+)}}`);
+        const templateMatch = text.match(templateRegex);
+
+        if (!templateMatch) return null;
+
+        const templateContent = templateMatch[1];
+
+        const templateParam = templateContent.match(/template=([^|}]+)/);
+        if (templateParam) {
+            return templateParam[1].trim();
+        }
+
+        const parts = templateContent.split('|');
+        for (const part of parts) {
+            const trimmed = part.trim();
+            if (!trimmed.includes('=') && trimmed.length > 0) {
+                return trimmed;
+            }
+        }
+
+        const nameParam = templateContent.match(/name=([^|}\s]+)/);
+        if (nameParam) {
+            return nameParam[1].trim();
+        }
+
+        return null;
     } else if (key === 'date') {
         regex = new RegExp(`\\|${key}=([^\\n|]*)`);
     } else if (key === 'Stage') {
@@ -542,8 +568,7 @@ async function fetchTournamentWikitext(
         await new Promise((resolve) => setTimeout(resolve, 2000));
     }
 
-    console.log(subPagesArray);
-    console.log(generateBatchRequestStrings(subPagesArray));
+    return overview;
 }
 
 export async function getAllTournamentPages(game_slug: string) {
@@ -569,7 +594,21 @@ export async function getAllTournamentPages(game_slug: string) {
 
     const batchRequests = generateBatchRequestStrings(tournamentPages);
 
-    await fetchTournamentWikitext(tournaments, batchRequests, overview);
+    const allTournaments = await fetchTournamentWikitext(tournaments, batchRequests, overview);
+
+    const teams: string[] = [];
+
+    for (const tournament of allTournaments) {
+        const stages = tournament.stages;
+        for (const stage of stages) {
+            const stageMatches = stage.matches;
+            for (const match of stageMatches) {
+                matches.push(match);
+            }
+        }
+    }
+
+    resolveTeams(matches);
 
     overview.sort((a, b) => parseInt(a.pageId) - parseInt(b.pageId));
 
