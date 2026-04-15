@@ -67,7 +67,29 @@ const TIMEZONE_OFFSETS: Record<string, string> = {
     AWST: '+08:00', // Australian Western Standard Time
 };
 
-async function getAllTournamentsFromDB(game_slug: string): Promise<Tournament[]> {
+async function getGameId(gameSlug: string): Promise<number> {
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false,
+            },
+        },
+    );
+
+    const { data, error } = await supabase.from('games').select(`id`).eq('slug', gameSlug).single();
+
+    if (error || !data) {
+        console.log('Error getting game_id from DB:', error);
+        return -1;
+    }
+
+    return data.id;
+}
+
+async function getAllTournamentsFromDB(gameId: number): Promise<Tournament[]> {
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -82,7 +104,7 @@ async function getAllTournamentsFromDB(game_slug: string): Promise<Tournament[]>
     const { data, error } = await supabase
         .from('games')
         .select(`*, tournaments(*)`)
-        .eq('slug', game_slug)
+        .eq('id', gameId)
         .single();
 
     if (error || !data) {
@@ -571,23 +593,14 @@ async function fetchTournamentWikitext(
     return overview;
 }
 
-export async function getAllTournamentPages(game_slug: string) {
+export async function getAllTournamentPages(gameSlug: string) {
     const overview: TournamentOverview[] = [];
 
     const matches: Match[] = [];
 
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        {
-            auth: {
-                autoRefreshToken: false,
-                persistSession: false,
-            },
-        },
-    );
+    const gameId = await getGameId(gameSlug);
 
-    const tournaments = await getAllTournamentsFromDB(game_slug);
+    const tournaments = await getAllTournamentsFromDB(gameId);
     const tournamentPages = tournaments.map((tournament) => {
         return tournament.url.replace('https://liquipedia.net/rainbowsix/', '');
     });
@@ -608,7 +621,7 @@ export async function getAllTournamentPages(game_slug: string) {
         }
     }
 
-    resolveTeams(matches);
+    resolveTeams(matches, gameId);
 
     overview.sort((a, b) => parseInt(a.pageId) - parseInt(b.pageId));
 
