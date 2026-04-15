@@ -2,7 +2,6 @@ import Fuse from 'fuse.js';
 import { createClient } from '@supabase/supabase-js';
 import { type Match } from './matches_scraper';
 import fs from 'fs';
-import { resolve } from 'path';
 
 type TeamCandidate = {
     rawName: string;
@@ -204,7 +203,7 @@ function applyKnownRules(clusters: TeamCluster[]): TeamCluster[] {
     return clusters;
 }
 
-async function importTeamsToDatabase(reviewedClusters: TeamCluster[]) {
+async function importTeamsToDatabase(reviewedClusters: TeamCluster[], gameId: number) {
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -227,7 +226,7 @@ async function importTeamsToDatabase(reviewedClusters: TeamCluster[]) {
                 .from('teams')
                 .insert({
                     name: cluster.canonical,
-                    game_slug: '',
+                    game_id: gameId,
                 })
                 .select('id')
                 .single();
@@ -248,6 +247,7 @@ async function importTeamsToDatabase(reviewedClusters: TeamCluster[]) {
                 {
                     team_id: teamId,
                     alias: alias,
+                    alias_normalized: normalizeTeamName(alias),
                 },
                 {
                     onConflict: 'alias',
@@ -263,7 +263,7 @@ async function importTeamsToDatabase(reviewedClusters: TeamCluster[]) {
     }
 }
 
-export async function resolveTeams(matches: Match[]) {
+export async function resolveTeams(matches: Match[], gameId: number) {
     const teamCandidates = extractTeamNames(matches);
     const candidates = Array.from(teamCandidates.values());
 
@@ -300,7 +300,7 @@ export async function resolveTeams(matches: Match[]) {
                     ...reviewed.needsReview.filter((r: any) => r.action === 'KEEP'),
                 ];
 
-                await importTeamsToDatabase(finalClusters);
+                await importTeamsToDatabase(finalClusters, gameId);
 
                 console.log('\nDone!');
             } else {
