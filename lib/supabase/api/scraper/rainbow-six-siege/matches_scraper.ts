@@ -3,7 +3,8 @@ import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
 import { type Tournament } from './tournaments_scraper';
 import fs from 'fs';
-import { resolveTeams } from './teamnames_resolver';
+import { resolveTeams, resolveTeamId } from './teamnames_resolver';
+import { get } from 'http';
 
 export type Match = {
     match_id: number;
@@ -113,6 +114,12 @@ async function getAllTournamentsFromDB(gameId: number): Promise<Tournament[]> {
     }
 
     return data.tournaments;
+}
+
+function getGroup(text: string) {
+    const regex = new RegExp(`\\=Group([^\\n|}]*)`);
+    const match = text.match(regex);
+    return match ? match[1].trim().at(0) : null;
 }
 
 function getParam(text: string, key: string) {
@@ -254,6 +261,9 @@ function parseMatch(text: string): Match | null {
     const team2_name = getParam(text, 'opponent2');
     const finished = getParam(text, 'finished');
     const dateText = getParam(text, 'date');
+    const scores = calculateMatchScore(text);
+    const team1_score = scores?.team1Score;
+    const team2_score = scores?.team2Score;
 
     if (!dateText) {
         console.error(`missing date text${dateText}`);
@@ -265,10 +275,6 @@ function parseMatch(text: string): Match | null {
         console.error(`missing date${date}`);
         return null;
     }
-
-    const scores = calculateMatchScore(text);
-    const team1_score = scores?.team1Score;
-    const team2_score = scores?.team2Score;
 
     let status: 'planned' | 'live' | 'finished' = 'planned';
     if (finished === 'true') status = 'finished';
@@ -377,13 +383,18 @@ function parseMatchesFromStage(text: string, tournament: Tournament, stage: stri
     let currentMatchText: string[] = [];
     let insideMatch = false;
     let currentRound: string | null = null;
+    let currentGroup: string | null = null;
     let depth = 0;
 
     for (const line of lines) {
         if (!insideMatch && line.trim().startsWith('<!--') && line.includes('-->')) {
             currentRound = extractCommentContent(line);
+        } else if (!insideMatch && line.includes('Group')) {
+            const group = getGroup(line);
+            if (group) {
+                currentGroup = group;
+            }
         }
-
         if (/{{Match\b/.test(line.trim())) {
             if (insideMatch && currentMatchText.length > 0) {
                 const parsedMatch = parseMatch(currentMatchText.join('\n'));
@@ -393,7 +404,7 @@ function parseMatchesFromStage(text: string, tournament: Tournament, stage: stri
                     parsedMatch.round = currentRound;
 
                     if (stage?.includes('Group')) {
-                        parsedMatch.group = 'A';
+                        parsedMatch.group = currentGroup;
                     } else if (stage === 'Playoffs') {
                         if (currentRound?.includes('Upper')) {
                             parsedMatch.bracket = 'Upper';
@@ -419,7 +430,7 @@ function parseMatchesFromStage(text: string, tournament: Tournament, stage: stri
                     parsedMatch.round = currentRound;
 
                     if (stage?.includes('Group')) {
-                        parsedMatch.group = 'A';
+                        parsedMatch.group = currentGroup;
                     } else if (stage === 'Playoffs') {
                         if (currentRound?.includes('Upper')) {
                             parsedMatch.bracket = 'Upper';
@@ -449,7 +460,7 @@ function parseMatchesFromStage(text: string, tournament: Tournament, stage: stri
                     parsedMatch.round = currentRound;
 
                     if (stage?.includes('Group')) {
-                        parsedMatch.group = 'A';
+                        parsedMatch.group = currentGroup;
                     } else if (stage === 'Playoffs') {
                         if (currentRound?.includes('Upper')) {
                             parsedMatch.bracket = 'Upper';
@@ -468,30 +479,6 @@ function parseMatchesFromStage(text: string, tournament: Tournament, stage: stri
     }
 
     return matches;
-}
-
-export async function getTournamentStages(wikitext: string) {
-    //console.log(data);
-    console.log(wikitext.search(`Stage`));
-    /*
-    const $ = cheerio.load(data);
-
-    const results_div = $('.mw-heading.mw-heading2').filter(function () {
-        return $(this).find('h2').text().trim() === 'Results';
-    });
-
-    let current = results_div.next();
-
-    
-    while (current.find('h2').length < 1) {
-        if (current.find('h3').length > 0) {
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-            const stage = current.find('h3').text().trim();
-
-            console.log(stage);
-        }
-        current = current.next();
-    } */
 }
 
 function generateBatchRequestStrings(tournamentPages: string[]) {
@@ -594,11 +581,12 @@ async function fetchTournamentWikitext(
 }
 
 export async function getAllTournamentPages(gameSlug: string) {
+    const gameId = await getGameId(gameSlug);
+
     const overview: TournamentOverview[] = [];
 
     const matches: Match[] = [];
-
-    const gameId = await getGameId(gameSlug);
+    const teamLookup = await buildTeamLookupMap(gameId);
 
     const tournaments = await getAllTournamentsFromDB(gameId);
     const tournamentPages = tournaments.map((tournament) => {
@@ -608,8 +596,6 @@ export async function getAllTournamentPages(gameSlug: string) {
     const batchRequests = generateBatchRequestStrings(tournamentPages);
 
     const allTournaments = await fetchTournamentWikitext(tournaments, batchRequests, overview);
-
-    const teams: string[] = [];
 
     for (const tournament of allTournaments) {
         const stages = tournament.stages;
@@ -621,7 +607,7 @@ export async function getAllTournamentPages(gameSlug: string) {
         }
     }
 
-    resolveTeams(matches, gameId);
+    //resolveTeams(matches, gameId);
 
     overview.sort((a, b) => parseInt(a.pageId) - parseInt(b.pageId));
 

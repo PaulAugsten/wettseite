@@ -3,6 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 import { type Match } from './matches_scraper';
 import fs from 'fs';
 
+type TeamLookup = {
+    id: number;
+    name: string;
+    aliases: string[];
+};
+
 type TeamCandidate = {
     rawName: string;
     occurences: number;
@@ -15,6 +21,43 @@ type TeamCluster = {
     confidence: 'high' | 'medium' | 'low';
     needsReview: boolean;
 };
+
+async function buildTeamLookupMap(gameId: number): Promise<Map<string, number>> {
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false,
+            },
+        },
+    );
+
+    const { data: teams, error } = await supabase
+        .from('teams')
+        .select(`id, name, team_aliases (alias)`)
+        .eq('game_id', gameId);
+
+    if (error) {
+        console.error('Error fetching teams: ', error);
+        return new Map();
+    }
+
+    const lookupMap = new Map<string, number>();
+
+    for (const team of teams) {
+        lookupMap.set(team.name.toLowerCase(), team.id);
+
+        if (team.team_aliases) {
+            for (const aliasObj of team.team_aliases) {
+                lookupMap.set(aliasObj.alias.toLowerCase(), team.id);
+            }
+        }
+    }
+
+    return lookupMap;
+}
 
 function levenshteinDistance(str1: string, str2: string): number {
     const matrix: number[][] = [];
@@ -310,4 +353,9 @@ export async function resolveTeams(matches: Match[], gameId: number) {
             resolve();
         });
     });
+}
+
+export function resolveTeamId(teamName: string, lookupMap: Map<string, number>): number | null {
+    const normalized = teamName.toLowerCase().trim();
+    return lookupMap.get(normalized) || null;
 }
