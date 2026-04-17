@@ -22,7 +22,7 @@ type TeamCluster = {
     needsReview: boolean;
 };
 
-async function buildTeamLookupMap(gameId: number): Promise<Map<string, number>> {
+export async function buildTeamLookupMap(gameId: number): Promise<Map<string, number>> {
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!,

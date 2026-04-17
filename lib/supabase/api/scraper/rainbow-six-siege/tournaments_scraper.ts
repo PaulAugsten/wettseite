@@ -159,7 +159,6 @@ async function scrapeTournaments(url: string, insert_into_db: boolean) {
                 name.includes('Major') ||
                 name.includes('Invitational') ||
                 name.includes('World Cup') ||
-                name.includes('Gamers8') ||
                 name.includes('RE:L0:AD')
             ) ||
             name.includes('One')
