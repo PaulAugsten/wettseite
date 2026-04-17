@@ -3,7 +3,7 @@ import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
 import { type Tournament } from './tournaments_scraper';
 import fs from 'fs';
-import { resolveTeams, resolveTeamId } from './teamnames_resolver';
+import { resolveTeams, buildTeamLookupMap, resolveTeamId } from './teamnames_resolver';
 import { get } from 'http';
 
 export type Match = {
@@ -13,8 +13,8 @@ export type Match = {
     group: string | null;
     bracket: string | null;
     round: string | null;
-    team1_name: string;
-    team2_name: string;
+    team1_id: number;
+    team2_id: number;
     team1_score: number | null;
     team2_score: number | null;
     status: 'planned' | 'live' | 'finished';
@@ -114,6 +114,12 @@ async function getAllTournamentsFromDB(gameId: number): Promise<Tournament[]> {
     }
 
     return data.tournaments;
+}
+
+function getRound(text: string, key: string) {
+    const regex = new RegExp(`\\${key}=([^\\n|}]*)`);
+    const match = text.match(regex);
+    return match ? match[1].trim() : null;
 }
 
 function getGroup(text: string) {
@@ -255,7 +261,7 @@ function calculateMatchScore(text: string): { team1Score: number; team2Score: nu
     return { team1Score, team2Score };
 }
 
-function parseMatch(text: string): Match | null {
+function parseMatch(text: string, teamLookup: Map<string, number>): Match | null {
     const match_id = getParam(text, 'siegegg');
     const team1_name = getParam(text, 'opponent1');
     const team2_name = getParam(text, 'opponent2');
@@ -264,6 +270,25 @@ function parseMatch(text: string): Match | null {
     const scores = calculateMatchScore(text);
     const team1_score = scores?.team1Score;
     const team2_score = scores?.team2Score;
+
+    if (!(match_id && team1_name && team2_name)) {
+        console.error(
+            `missing Matchid${match_id}, team1 name${team1_name} or team2 name ${team2_name}`,
+        );
+        return null;
+    }
+
+    const team1_id = resolveTeamId(team1_name, teamLookup);
+    const team2_id = resolveTeamId(team2_name, teamLookup);
+
+    if (!team1_id) {
+        console.warn(`Unknown team: ${team1_name}`);
+        return null;
+    }
+    if (!team2_id) {
+        console.warn(`Unknown team: ${team2_name}`);
+        return null;
+    }
 
     if (!dateText) {
         console.error(`missing date text${dateText}`);
@@ -280,13 +305,6 @@ function parseMatch(text: string): Match | null {
     if (finished === 'true') status = 'finished';
     else if (new Date() > new Date(date)) status = 'live';
 
-    if (!(match_id && team1_name && team2_name)) {
-        console.error(
-            `missing Matchid${match_id}, team1 name${team1_name} or team2 name ${team2_name}`,
-        );
-        return null;
-    }
-
     return {
         match_id: parseInt(match_id),
         tournament_id: 0,
@@ -294,8 +312,8 @@ function parseMatch(text: string): Match | null {
         group: null,
         bracket: null,
         round: null,
-        team1_name,
-        team2_name,
+        team1_id,
+        team2_id,
         team1_score,
         team2_score,
         status,
@@ -376,7 +394,12 @@ function extractCommentContent(line: string): string | null {
     return match ? match[1].trim() : null;
 }
 
-function parseMatchesFromStage(text: string, tournament: Tournament, stage: string | null) {
+function parseMatchesFromStage(
+    text: string,
+    tournament: Tournament,
+    stage: string | null,
+    teamLookup: Map<string, number>,
+) {
     const matches: Match[] = [];
     const lines = text.split('\n');
 
@@ -389,7 +412,15 @@ function parseMatchesFromStage(text: string, tournament: Tournament, stage: stri
     for (const line of lines) {
         if (!insideMatch && line.trim().startsWith('<!--') && line.includes('-->')) {
             currentRound = extractCommentContent(line);
-        } else if (!insideMatch && line.includes('Group')) {
+        } else if (
+            !insideMatch &&
+            line.includes('header=') &&
+            line.includes('Match') &&
+            !line.includes('dateheader')
+        ) {
+            currentRound = getRound(line, 'header');
+        }
+        if (!insideMatch && line.includes('Group')) {
             const group = getGroup(line);
             if (group) {
                 currentGroup = group;
@@ -397,7 +428,7 @@ function parseMatchesFromStage(text: string, tournament: Tournament, stage: stri
         }
         if (/{{Match\b/.test(line.trim())) {
             if (insideMatch && currentMatchText.length > 0) {
-                const parsedMatch = parseMatch(currentMatchText.join('\n'));
+                const parsedMatch = parseMatch(currentMatchText.join('\n'), teamLookup);
                 if (parsedMatch) {
                     parsedMatch.tournament_id = tournament.id;
                     parsedMatch.stage = stage;
@@ -423,7 +454,7 @@ function parseMatchesFromStage(text: string, tournament: Tournament, stage: stri
             depth = (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
 
             if (depth === 0) {
-                const parsedMatch = parseMatch(currentMatchText.join('\n'));
+                const parsedMatch = parseMatch(currentMatchText.join('\n'), teamLookup);
                 if (parsedMatch) {
                     parsedMatch.tournament_id = tournament.id;
                     parsedMatch.stage = stage;
@@ -453,7 +484,7 @@ function parseMatchesFromStage(text: string, tournament: Tournament, stage: stri
             depth += (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
 
             if (depth === 0) {
-                const parsedMatch = parseMatch(currentMatchText.join('\n'));
+                const parsedMatch = parseMatch(currentMatchText.join('\n'), teamLookup);
                 if (parsedMatch) {
                     parsedMatch.tournament_id = tournament.id;
                     parsedMatch.stage = stage;
@@ -481,32 +512,25 @@ function parseMatchesFromStage(text: string, tournament: Tournament, stage: stri
     return matches;
 }
 
-function generateBatchRequestStrings(tournamentPages: string[]) {
-    const pagesStrings: string[] = [];
-    let pagesString = '';
-
+function generateBatchRequests(tournamentPages: string[]) {
+    const batchRequests: string[] = [];
     for (let pageIndex = 0; pageIndex < tournamentPages.length; pageIndex++) {
-        const page = tournamentPages.at(pageIndex)?.replaceAll('/', '%2F');
-
-        if (pagesString === '') {
-            pagesString = page || '';
+        const batchIndex = Math.floor(pageIndex / 50);
+        if (pageIndex % 50 === 0) {
+            batchRequests[batchIndex] = tournamentPages[pageIndex];
         } else {
-            pagesString = pagesString + '|' + page;
-        }
-
-        if (pageIndex % 50 === 49 || pageIndex === tournamentPages.length - 1) {
-            pagesStrings.push(pagesString);
-            pagesString = '';
+            batchRequests[batchIndex] += '|' + tournamentPages[pageIndex];
         }
     }
 
-    return pagesStrings;
+    return batchRequests;
 }
 
 async function fetchTournamentWikitext(
     tournaments: Tournament[],
     batchRequests: string[],
     overview: TournamentOverview[],
+    teamLookup: Map<string, number>,
 ) {
     const subPagesArray: string[] = [];
 
@@ -524,6 +548,10 @@ async function fetchTournamentWikitext(
         for (const pageId in data.query.pages) {
             const page = pages[pageId];
             const pageTitle = page.title.trim().replaceAll(' ', '_');
+            if (!page.revisions) {
+                console.error("Page doesn't exist (yet): ", pageTitle);
+                continue;
+            }
             const wikitext = page.revisions[0]['*'];
             console.log(`Page: ${pageTitle}`);
 
@@ -548,7 +576,7 @@ async function fetchTournamentWikitext(
                     ? getParam(wikitext, 'Stage')
                     : 'Playoffs';
 
-                const matches = parseMatchesFromStage(wikitext, tournament, stage);
+                const matches = parseMatchesFromStage(wikitext, tournament, stage, teamLookup);
 
                 if (matches.length === 0) {
                     const sectionPattern = /{{#(?:lst|section):([^|]+)\|[^}]*}}/g;
@@ -574,35 +602,61 @@ async function fetchTournamentWikitext(
 
             overview.push(tournamentData);
         }
+
         await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+
+    if (subPagesArray.length > 0) {
+        const subPagesBatch = generateBatchRequests(subPagesArray);
+        overview = overview.concat(
+            await fetchTournamentWikitext(tournaments, subPagesBatch, overview, teamLookup),
+        );
     }
 
     return overview;
 }
 
 export async function getAllTournamentPages(gameSlug: string) {
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false,
+            },
+        },
+    );
+
     const gameId = await getGameId(gameSlug);
-
-    const overview: TournamentOverview[] = [];
-
-    const matches: Match[] = [];
+    const tournaments = await getAllTournamentsFromDB(gameId);
     const teamLookup = await buildTeamLookupMap(gameId);
 
-    const tournaments = await getAllTournamentsFromDB(gameId);
     const tournamentPages = tournaments.map((tournament) => {
-        return tournament.url.replace('https://liquipedia.net/rainbowsix/', '');
+        return tournament.url
+            .replace('https://liquipedia.net/rainbowsix/', '')
+            .replaceAll('/', '%2F');
     });
 
-    const batchRequests = generateBatchRequestStrings(tournamentPages);
+    const batchRequests = generateBatchRequests(tournamentPages);
 
-    const allTournaments = await fetchTournamentWikitext(tournaments, batchRequests, overview);
+    const overview: TournamentOverview[] = [];
+    let allMatches: Match[] = [];
+    let processedPages = 0;
+
+    const allTournaments = await fetchTournamentWikitext(
+        tournaments,
+        batchRequests,
+        overview,
+        teamLookup,
+    );
 
     for (const tournament of allTournaments) {
         const stages = tournament.stages;
         for (const stage of stages) {
             const stageMatches = stage.matches;
             for (const match of stageMatches) {
-                matches.push(match);
+                allMatches.push(match);
             }
         }
     }
