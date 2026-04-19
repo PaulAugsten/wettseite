@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# generated .json files
+team_review.json
+team_review(right).json
+tournament_overview.json
