@@ -357,5 +357,7 @@ export async function resolveTeams(matches: Match[], gameId: number) {
 
 export function resolveTeamId(teamName: string, lookupMap: Map<string, number>): number | null {
     const normalized = teamName.toLowerCase().trim();
-    return lookupMap.get(normalized) || null;
+    const teamId = lookupMap.get(normalized) || null;
+
+    return teamId;
 }

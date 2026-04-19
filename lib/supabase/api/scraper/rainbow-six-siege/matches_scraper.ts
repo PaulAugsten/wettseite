@@ -128,6 +128,12 @@ function getGroup(text: string) {
     return match ? match[1].trim().at(0) : null;
 }
 
+function getSubpageStage(text: string) {
+    const regex = /^===([^=]+)===$/m;
+    const match = text.match(regex);
+    return match ? match[1].trim() : null;
+}
+
 function getParam(text: string, key: string) {
     let regex = new RegExp(`\\|${key}=([^\\n|}]*)`);
 
@@ -528,90 +534,145 @@ function generateBatchRequests(tournamentPages: string[]) {
 
 async function fetchTournamentWikitext(
     tournaments: Tournament[],
-    batchRequests: string[],
+    batch: string,
     overview: TournamentOverview[],
     teamLookup: Map<string, number>,
 ) {
-    const subPagesArray: string[] = [];
+    const subPagesArray: { tournament: Tournament; subPage: string }[] = [];
 
-    for (const batch of batchRequests) {
-        const wikitext_api_url = `https://liquipedia.net/rainbowsix/api.php?action=query&prop=revisions&titles=${batch}&rvprop=content&format=json`;
+    const wikitext_api_url = `https://liquipedia.net/rainbowsix/api.php?action=query&prop=revisions&titles=${batch}&rvprop=content&format=json`;
 
-        const { data } = await axios.get(wikitext_api_url, {
-            headers: {
-                'User-Agent': 'MatchesBot/0.3 (paulaugsten9@gmail.com)',
-            },
-        });
+    const { data } = await axios.get(wikitext_api_url, {
+        headers: {
+            'User-Agent': 'MatchesBot/0.3 (paulaugsten9@gmail.com)',
+        },
+    });
 
-        const pages = data.query.pages;
+    const pages = data.query.pages;
 
-        for (const pageId in data.query.pages) {
-            const page = pages[pageId];
-            const pageTitle = page.title.trim().replaceAll(' ', '_');
-            if (!page.revisions) {
-                console.error("Page doesn't exist (yet): ", pageTitle);
-                continue;
-            }
-            const wikitext = page.revisions[0]['*'];
-            console.log(`Page: ${pageTitle}`);
+    for (const pageId in data.query.pages) {
+        const page = pages[pageId];
+        const pageTitle = page.title.trim().replaceAll(' ', '_');
+        if (!page.revisions) {
+            console.error("Page doesn't exist (yet): ", pageTitle);
+            continue;
+        }
+        const wikitext = page.revisions[0]['*'];
+        console.log(`Page: ${pageTitle}`);
 
-            const tournament = tournaments.find((tournament) => tournament.url.includes(pageTitle));
-            const stages = wikitextSplitStages(wikitext);
+        const tournament = tournaments.find((tournament) => tournament.url.includes(pageTitle));
+        const stages = wikitextSplitStages(wikitext);
 
-            if (!tournament) continue;
+        if (!tournament) continue;
 
-            const tournamentData: TournamentOverview = {
-                pageId,
-                title: pageTitle,
-                totalStages: stages.length,
-                totalMatches: 0,
-                stages: [],
-            };
+        const tournamentData: TournamentOverview = {
+            pageId,
+            title: pageTitle,
+            totalStages: stages.length,
+            totalMatches: 0,
+            stages: [],
+        };
 
-            console.log('stages:', stages.length);
+        console.log('stages:', stages.length);
 
-            for (let stageIdx = 0; stageIdx < stages.length; stageIdx++) {
-                const wikitext = stages[stageIdx];
-                const stage = getParam(wikitext, 'Stage')
-                    ? getParam(wikitext, 'Stage')
-                    : 'Playoffs';
+        for (let stageIdx = 0; stageIdx < stages.length; stageIdx++) {
+            const wikitext = stages[stageIdx];
+            const stage = getParam(wikitext, 'Stage') ? getParam(wikitext, 'Stage') : 'Playoffs';
 
-                const matches = parseMatchesFromStage(wikitext, tournament, stage, teamLookup);
+            const matches = parseMatchesFromStage(wikitext, tournament, stage, teamLookup);
 
-                if (matches.length === 0) {
-                    const sectionPattern = /{{#(?:lst|section):([^|]+)\|[^}]*}}/g;
+            if (matches.length === 0) {
+                const sectionPattern = /{{#(?:lst|section):([^|]+)\|[^}]*}}/g;
 
-                    const subPages = [...wikitext.matchAll(sectionPattern)];
+                const subPages = [...wikitext.matchAll(sectionPattern)];
 
-                    for (const subPage of subPages) {
-                        const subPageString = subPage[1].trim().replaceAll(' ', '_');
-                        if (subPageString && !subPagesArray.includes(subPageString)) {
-                            subPagesArray.push(subPageString);
-                        }
+                for (const subPage of subPages) {
+                    const subPageString = subPage[1].trim().replaceAll(' ', '_');
+                    if (
+                        subPageString &&
+                        !subPagesArray.includes({ tournament, subPage: subPageString })
+                    ) {
+                        subPagesArray.push({ tournament, subPage: subPageString });
                     }
                 }
-
-                tournamentData.stages.push({
-                    stageIndex: stageIdx,
-                    matchCount: matches.length,
-                    matches: matches,
-                });
-
-                tournamentData.totalMatches += matches.length;
             }
 
-            overview.push(tournamentData);
+            tournamentData.stages.push({
+                stageIndex: stageIdx,
+                matchCount: matches.length,
+                matches: matches,
+            });
+
+            tournamentData.totalMatches += matches.length;
         }
 
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        overview.push(tournamentData);
     }
 
-    if (subPagesArray.length > 0) {
-        const subPagesBatch = generateBatchRequests(subPagesArray);
-        overview = overview.concat(
-            await fetchTournamentWikitext(tournaments, subPagesBatch, overview, teamLookup),
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    return { overview, subPagesArray };
+}
+
+async function fetchSubpages(
+    tournaments: Tournament[],
+    batch: string,
+    overview: TournamentOverview[],
+    teamLookup: Map<string, number>,
+) {
+    const wikitext_api_url = `https://liquipedia.net/rainbowsix/api.php?action=query&prop=revisions&titles=${batch}&rvprop=content&format=json`;
+
+    const { data } = await axios.get(wikitext_api_url, {
+        headers: {
+            'User-Agent': 'MatchesBot/0.3 (paulaugsten9@gmail.com)',
+        },
+    });
+
+    const pages = data.query.pages;
+
+    for (const pageId in data.query.pages) {
+        const page = pages[pageId];
+        const pageTitle: string = page.title.trim().replaceAll(' ', '_');
+        const tournamentTitle = pageTitle.substring(0, pageTitle.lastIndexOf('/'));
+        if (!page.revisions) {
+            console.error("Page doesn't exist (yet): ", pageTitle);
+            continue;
+        }
+        const wikitext = page.revisions[0]['*'];
+        console.log(`Page: ${pageTitle}`);
+
+        const tournament = tournaments.find((tournament) =>
+            tournament.url.includes(tournamentTitle),
         );
+
+        if (!tournament) continue;
+
+        const tournamentData: TournamentOverview = {
+            pageId,
+            title: pageTitle,
+            totalStages: 7,
+            totalMatches: 0,
+            stages: [],
+        };
+
+        const stage = getSubpageStage(wikitext) ? getSubpageStage(wikitext) : 'Swiss Stage?';
+
+        console.log('stage:', stage);
+
+        const matches = parseMatchesFromStage(wikitext, tournament, stage, teamLookup);
+
+        tournamentData.stages.push({
+            stageIndex: 5,
+            matchCount: matches.length,
+            matches: matches,
+        });
+
+        tournamentData.totalMatches += matches.length;
+
+        overview.push(tournamentData);
     }
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     return overview;
 }
@@ -642,23 +703,29 @@ export async function getAllTournamentPages(gameSlug: string) {
 
     const overview: TournamentOverview[] = [];
     let allMatches: Match[] = [];
-    let processedPages = 0;
+    const subpagesToFetch: { tournament: Tournament; subPage: string }[] = [];
 
-    const allTournaments = await fetchTournamentWikitext(
-        tournaments,
-        batchRequests,
-        overview,
-        teamLookup,
+    for (const batch of batchRequests) {
+        const { overview: allTournaments, subPagesArray } = await fetchTournamentWikitext(
+            tournaments,
+            batch,
+            overview,
+            teamLookup,
+        );
+
+        if (subPagesArray && subPagesArray.length > 0) {
+            subpagesToFetch.push(...subPagesArray);
+        }
+    }
+
+    const subPagesBatchRequest = generateBatchRequests(
+        subpagesToFetch.map((subPage) => subPage.subPage),
     );
 
-    for (const tournament of allTournaments) {
-        const stages = tournament.stages;
-        for (const stage of stages) {
-            const stageMatches = stage.matches;
-            for (const match of stageMatches) {
-                allMatches.push(match);
-            }
-        }
+    console.log(subPagesBatchRequest);
+
+    for (const batch of subPagesBatchRequest) {
+        await fetchSubpages(tournaments, batch, overview, teamLookup);
     }
 
     //resolveTeams(matches, gameId);
