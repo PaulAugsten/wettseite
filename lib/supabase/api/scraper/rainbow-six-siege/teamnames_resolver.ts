@@ -1,363 +1,276 @@
-import Fuse from 'fuse.js';
 import { createClient } from '@supabase/supabase-js';
-import { type Match } from './matches_scraper';
 import fs from 'fs';
 
-type TeamLookup = {
-    id: number;
+type UnknownTeam = {
     name: string;
-    aliases: string[];
-};
-
-type TeamCandidate = {
-    rawName: string;
-    occurences: number;
+    occurrences: number;
     matchIds: number[];
+    similarTo?: { teamId: number; teamName: string; similarity: number }[];
 };
 
-type TeamCluster = {
-    canonical: string;
-    aliases: string[];
-    confidence: 'high' | 'medium' | 'low';
-    needsReview: boolean;
-};
+class TeamResolver {
+    private gameId: number;
+    private teamLookup: Map<string, number>;
+    private unknownTeams: Map<string, UnknownTeam>;
+    private allTeams: { id: number; name: string; aliases: string[] }[];
 
-export async function buildTeamLookupMap(gameId: number): Promise<Map<string, number>> {
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        {
-            auth: {
-                autoRefreshToken: false,
-                persistSession: false,
+    constructor() {
+        this.gameId = 0;
+        this.teamLookup = new Map();
+        this.unknownTeams = new Map();
+        this.allTeams = [];
+    }
+
+    async initialize(gameId: number) {
+        this.gameId = gameId;
+
+        const supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            {
+                auth: {
+                    autoRefreshToken: false,
+                    persistSession: false,
+                },
             },
-        },
-    );
+        );
 
-    const { data: teams, error } = await supabase
-        .from('teams')
-        .select(`id, name, team_aliases (alias)`)
-        .eq('game_id', gameId);
+        const { data: teams, error } = await supabase
+            .from('teams')
+            .select(`id, name, team_aliases (alias)`)
+            .eq('game_id', gameId);
 
-    if (error) {
-        console.error('Error fetching teams: ', error);
-        return new Map();
-    }
+        if (error) {
+            console.error('Error fetching teams: ', error);
+            return new Map();
+        }
 
-    const lookupMap = new Map<string, number>();
+        for (const team of teams || []) {
+            this.allTeams.push({
+                id: team.id,
+                name: team.name,
+                aliases: team.team_aliases.map((a: any) => a.alias),
+            });
 
-    for (const team of teams) {
-        lookupMap.set(team.name.toLowerCase(), team.id);
+            const normalizedName = this.normalize(team.name);
+            this.teamLookup.set(normalizedName, team.id);
 
-        if (team.team_aliases) {
-            for (const aliasObj of team.team_aliases) {
-                lookupMap.set(aliasObj.alias.toLowerCase(), team.id);
+            for (const aliasObj of team.team_aliases || []) {
+                const normalizedAlias = this.normalize(aliasObj.alias);
+                this.teamLookup.set(normalizedAlias, team.id);
             }
         }
     }
 
-    return lookupMap;
-}
+    resolveTeamId(teamName: string, matchId: number): number | null {
+        const normalized = this.normalize(teamName);
+        const teamId = this.teamLookup.get(normalized);
 
-function levenshteinDistance(str1: string, str2: string): number {
-    const matrix: number[][] = [];
+        if (teamId) {
+            return teamId;
+        }
 
-    for (let i = 0; i <= str2.length; i++) {
-        matrix[i] = [i];
+        const existing = this.unknownTeams.get(teamName);
+        if (existing) {
+            existing.occurrences++;
+            existing.matchIds.push(matchId);
+        } else {
+            const similarTeams = this.findSimilarTeams(teamName);
+
+            this.unknownTeams.set(teamName, {
+                name: teamName,
+                occurrences: 1,
+                matchIds: [matchId],
+                similarTo: similarTeams,
+            });
+        }
+
+        return null;
     }
 
-    for (let j = 0; j <= str1.length; j++) {
-        matrix[0][j] = j;
+    normalize(name: string): string {
+        return name
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, ' ')
+            .replace(/[^\w\s]/g, '');
     }
 
-    for (let i = 1; i <= str2.length; i++) {
-        for (let j = 1; j <= str1.length; j++) {
-            if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
-                matrix[i][j] = matrix[i - 1][j - 1];
-            } else {
-                matrix[i][j] = Math.min(
-                    matrix[i - 1][j - 1] + 1,
-                    matrix[i][j - 1] + 1,
-                    matrix[i - 1][j] + 1,
-                );
+    private findSimilarTeams(teamName: string, threshold = 0.7): UnknownTeam['similarTo'] {
+        const normalized = this.normalize(teamName);
+        const similar: UnknownTeam['similarTo'] = [];
+
+        for (const team of this.allTeams) {
+            const candidates = [team.name, ...team.aliases];
+
+            for (const candidate of candidates) {
+                const similarity = this.calculateSimilarity(normalized, this.normalize(candidate));
+
+                if (similarity >= threshold) {
+                    similar.push({
+                        teamId: team.id,
+                        teamName: team.name,
+                        similarity,
+                    });
+                    break;
+                }
             }
         }
+
+        return similar.sort((a, b) => b.similarity - a.similarity).slice(0, 3);
     }
 
-    return matrix[str2.length][str1.length];
-}
+    private calculateSimilarity(str1: string, str2: string): number {
+        const longer = str1.length > str2.length ? str1 : str2;
+        const shorter = str1.length > str2.length ? str2 : str1;
 
-function calculateSimilarity(str1: string, str2: string): number {
-    const longer = str1.length > str2.length ? str1 : str2;
-    const shorter = str1.length > str2.length ? str2 : str1;
+        if (longer.length === 0) return 1.0;
 
-    if (longer.length === 0) return 1.0;
+        const distance = this.levenshteinDistance(longer, shorter);
+        return (longer.length - distance) / longer.length;
+    }
 
-    const distance = levenshteinDistance(longer, shorter);
-    return (longer.length - distance) / longer.length;
-}
+    private levenshteinDistance(str1: string, str2: string): number {
+        const matrix: number[][] = [];
 
-function normalizeTeamName(name: string): string {
-    return name
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, ' ')
-        .replace(/[^\w\s]/g, '')
-        .replace(/\besports?\b/gi, '')
-        .replace(/\bgaming\b/gi, '');
-}
+        for (let i = 0; i <= str2.length; i++) {
+            matrix[i] = [i];
+        }
 
-function extractTeamNames(matches: Match[]): Map<string, TeamCandidate> {
-    const teamMap = new Map<string, TeamCandidate>();
+        for (let j = 0; j <= str1.length; j++) {
+            matrix[0][j] = j;
+        }
 
-    for (const match of matches) {
-        for (const teamName of [match.team1_name, match.team2_name]) {
-            if (!teamName) continue;
-
-            const existing = teamMap.get(teamName);
-            if (existing) {
-                existing.occurences++;
-                existing.matchIds.push(match.match_id);
-            } else {
-                teamMap.set(teamName, {
-                    rawName: teamName,
-                    occurences: 1,
-                    matchIds: [match.match_id],
-                });
+        for (let i = 1; i <= str2.length; i++) {
+            for (let j = 1; j <= str1.length; j++) {
+                if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                    matrix[i][j] = matrix[i - 1][j - 1];
+                } else {
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j - 1] + 1,
+                        matrix[i][j - 1] + 1,
+                        matrix[i - 1][j] + 1,
+                    );
+                }
             }
         }
+
+        return matrix[str2.length][str1.length];
     }
 
-    return teamMap;
-}
+    async reviewUnknownTeams() {
+        if (this.unknownTeams.size === 0) {
+            return;
+        }
 
-function clusterTeamNames(candidates: TeamCandidate[]): TeamCluster[] {
-    const clusters: TeamCluster[] = [];
-    const processed = new Set<string>();
+        console.log(`Found ${this.unknownTeams.size} unknown teams`);
 
-    const sorted = [...candidates].sort((a, b) => b.occurences - a.occurences);
-
-    for (const candidate of sorted) {
-        if (processed.has(candidate.rawName)) continue;
-
-        const normalized = normalizeTeamName(candidate.rawName);
-        const cluster: TeamCluster = {
-            canonical: candidate.rawName,
-            aliases: [candidate.rawName],
-            confidence: 'high',
-            needsReview: false,
+        const reviewData = {
+            summary: {
+                totalUnknown: this.unknownTeams.size,
+                totalOccurrences: Array.from(this.unknownTeams.values()).reduce(
+                    (sum, t) => sum + t.occurrences,
+                    0,
+                ),
+            },
+            unknownTeams: Array.from(this.unknownTeams.values())
+                .sort((a, b) => b.occurrences - a.occurrences)
+                .map((team) => ({
+                    name: team.name,
+                    occurrences: team.occurrences,
+                    affectedMatches: team.matchIds.length,
+                    similarTeams: team.similarTo,
+                    action: null as 'CREATE' | 'ALIAS' | 'IGNORE' | null,
+                    assignToTeamId: team.similarTo?.[0]?.teamId || null,
+                    notes: '',
+                })),
         };
 
-        for (const other of candidates) {
-            if (other.rawName === candidate.rawName) continue;
-            if (processed.has(other.rawName)) continue;
+        fs.writeFileSync('unknown_teams_review.json', JSON.stringify(reviewData, null, 2), 'utf-8');
 
-            const otherNormalized = normalizeTeamName(other.rawName);
-            const similarity = calculateSimilarity(normalized, otherNormalized);
+        console.log('\n📄 Unknown teams saved to: unknown_teams_review.json');
+        console.log('\nActions:');
+        console.log('  - CREATE: Create new team');
+        console.log('  - ALIAS: Add as alias to existing team (set assignToTeamId)');
+        console.log('  - IGNORE: Skip this team');
 
-            if (similarity > 0.85) {
-                cluster.aliases.push(other.rawName);
-                processed.add(other.rawName);
-                cluster.confidence = 'high';
-            } else if (similarity > 0.7) {
-                cluster.aliases.push(other.rawName);
-                processed.add(other.rawName);
-                cluster.confidence = 'medium';
-                cluster.needsReview = true;
-            }
-        }
-
-        processed.add(candidate.rawName);
-        clusters.push(cluster);
-    }
-
-    return clusters;
-}
-
-function generateReviewFile(clusters: TeamCluster[]): void {
-    const reviewNeeded = clusters.filter((c) => c.needsReview);
-    const autoApproved = clusters.filter((c) => !c.needsReview);
-
-    const reviewData = {
-        summary: {
-            totalClusters: clusters.length,
-            autoApproved: autoApproved.length,
-            needsReview: reviewNeeded.length,
-        },
-        autoApproved: autoApproved.map((c) => ({
-            canonical: c.canonical,
-            aliases: c.aliases,
-            confidence: c.confidence,
-        })),
-        needsReview: reviewNeeded.map((c) => ({
-            canonical: c.canonical,
-            aliases: c.aliases,
-            confidence: c.confidence,
-            action: 'KEEP' as 'KEEP' | 'MERGE' | 'SPLIT' | 'DELETE',
-            mergeWith: null as string | null,
-            notes: '',
-        })),
-    };
-
-    fs.writeFileSync('team_review.json', JSON.stringify(reviewData, null, 2), 'utf-8');
-}
-
-const KNOWN_DIFFERENT_TEAMS = [['wolves', 'dire wolves']];
-
-const KNOWN_SAME_TEAMS = [
-    ['team liquid', 'liquid'],
-    ['g2 esports', 'g2'],
-    ['faze clan', 'faze'],
-    ['ninjas in pyjamas', 'nip'],
-    ['Darkzero', 'dz'],
-    ['Spacestation Gaming', 'SSG'],
-];
-
-function applyKnownRules(clusters: TeamCluster[]): TeamCluster[] {
-    for (const [canonical, alias] of KNOWN_SAME_TEAMS) {
-        const canonicalCluster = clusters.find(
-            (c) => normalizeTeamName(c.canonical) === normalizeTeamName(canonical),
-        );
-        const aliasCluster = clusters.find(
-            (c) => normalizeTeamName(c.canonical) === normalizeTeamName(alias),
-        );
-
-        if (canonicalCluster && aliasCluster) {
-            canonicalCluster.aliases.push(...aliasCluster.aliases);
-            clusters = clusters.filter((c) => c !== aliasCluster);
-        }
-    }
-
-    for (const [team1, team2] of KNOWN_DIFFERENT_TEAMS) {
-        const cluster = clusters.find((c) =>
-            c.aliases.some(
-                (a) =>
-                    normalizeTeamName(a) === normalizeTeamName(team1) ||
-                    normalizeTeamName(a) === normalizeTeamName(team2),
-            ),
-        );
-
-        if (cluster && cluster.aliases.length > 1) {
-            cluster.needsReview = true;
-            cluster.confidence = 'low';
-        }
-    }
-
-    return clusters;
-}
-
-async function importTeamsToDatabase(reviewedClusters: TeamCluster[], gameId: number) {
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    );
-
-    for (const cluster of reviewedClusters) {
-        const { data: existingTeam } = await supabase
-            .from('teams')
-            .select('id, name')
-            .ilike('name', cluster.canonical)
-            .single();
-
-        let teamId: number;
-
-        if (existingTeam) {
-            teamId = existingTeam.id;
-            console.log(`Team exists: ${cluster.canonical}`);
-        } else {
-            const { data: newTeam, error } = await supabase
-                .from('teams')
-                .insert({
-                    name: cluster.canonical,
-                    game_id: gameId,
-                })
-                .select('id')
-                .single();
-
-            if (error) {
-                console.error(`Error creating team ${cluster.canonical}:`, error);
-                continue;
-            }
-
-            teamId = newTeam.id;
-            console.log(`Created team: ${cluster.canonical}`);
-        }
-
-        for (const alias of cluster.aliases) {
-            if (alias === cluster.canonical) continue;
-
-            const { error } = await supabase.from('team_aliases').upsert(
-                {
-                    team_id: teamId,
-                    alias: alias,
-                    alias_normalized: normalizeTeamName(alias),
-                },
-                {
-                    onConflict: 'alias',
-                },
-            );
-
-            if (error) {
-                console.error(`Error adding alias ${alias}:`, error);
-            } else {
-                console.log(`Added alias: ${alias}`);
-            }
-        }
-    }
-}
-
-export async function resolveTeams(matches: Match[], gameId: number) {
-    const teamCandidates = extractTeamNames(matches);
-    const candidates = Array.from(teamCandidates.values());
-
-    console.log(`Found ${candidates.length} unique team names`);
-
-    let clusters = clusterTeamNames(candidates);
-
-    clusters = applyKnownRules(clusters);
-
-    generateReviewFile(clusters);
-
-    console.log('\n⏸️  Please review team_review.json and edit the "needsReview" section');
-    console.log('   Set "action" to:');
-    console.log('   - KEEP: Keep this cluster as-is');
-    console.log('   - MERGE: Merge with another team (set "mergeWith")');
-    console.log('   - SPLIT: Split aliases into separate teams');
-    console.log('   - DELETE: Remove this cluster\n');
-
-    const readline = require('readline').createInterface({
-        input: process.stdin,
-        output: process.stdout,
-    });
-
-    return new Promise<void>((resolve) => {
-        readline.question('Continue with import? (y/n): ', async (answer: string) => {
-            readline.close();
-
-            if (answer.toLowerCase() === 'y') {
-                console.log('\n Reading reviewed file...');
-                const reviewed = JSON.parse(fs.readFileSync('team_review.json', 'utf-8'));
-
-                const finalClusters = [
-                    ...reviewed.autoApproved,
-                    ...reviewed.needsReview.filter((r: any) => r.action === 'KEEP'),
-                ];
-
-                await importTeamsToDatabase(finalClusters, gameId);
-
-                console.log('\nDone!');
-            } else {
-                console.log('Cancelled');
-            }
-
-            resolve();
+        const readline = require('readline').createInterface({
+            input: process.stdin,
+            output: process.stdout,
         });
-    });
+
+        return new Promise<void>((resolve) => {
+            readline.question('\nReview and edit the file, then press Enter to continue...', () => {
+                readline.close();
+                this.processReviewedTeams();
+                resolve();
+            });
+        });
+    }
+
+    private async processReviewedTeams() {
+        const reviewFile = 'unknown_teams_review.json';
+
+        if (!fs.existsSync(reviewFile)) {
+            console.log('Review file not found');
+            return;
+        }
+
+        const reviewData = JSON.parse(fs.readFileSync(reviewFile, 'utf-8'));
+        const supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            {
+                auth: {
+                    autoRefreshToken: false,
+                    persistSession: false,
+                },
+            },
+        );
+
+        for (const team of reviewData.unknownTeams) {
+            if (team.action === 'CREATE') {
+                const { data, error } = await supabase
+                    .from('teams')
+                    .insert({
+                        name: team.name,
+                        game_id: this.gameId,
+                    })
+                    .select('id')
+                    .single();
+
+                if (error) {
+                    console.error(`Error creating team ${team.name}:`, error);
+                } else {
+                    console.log(`Created team: ${team.name} (ID: ${data.id})`);
+                    this.teamLookup.set(this.normalize(team.name), data.id);
+                }
+            } else if (team.action === 'ALIAS' && team.assignToTeamId) {
+                const { error } = await supabase.from('team_aliases').insert({
+                    team_id: team.assignToTeamId,
+                    alias: team.name,
+                    alias_normalized: this.normalize(team.name),
+                });
+
+                if (error) {
+                    console.error(`Error adding alias ${team.name}:`, error);
+                } else {
+                    console.log(`Added alias: ${team.name} to Team ID ${team.assignToTeamId}`);
+                    this.teamLookup.set(this.normalize(team.name), team.assignToTeamId);
+                }
+            } else if (team.action === 'IGNORE') {
+                console.log(`Ignored: ${team.name}`);
+            }
+        }
+    }
+
+    getStats() {
+        return {
+            knownTeams: this.allTeams.length,
+            totalAliases: this.teamLookup.size,
+            unknownTeams: this.unknownTeams.size,
+        };
+    }
 }
 
-export function resolveTeamId(teamName: string, lookupMap: Map<string, number>): number | null {
-    const normalized = teamName.toLowerCase().trim();
-    const teamId = lookupMap.get(normalized) || null;
-
-    return teamId;
-}
+export default TeamResolver;

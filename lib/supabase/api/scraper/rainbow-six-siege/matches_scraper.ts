@@ -2,9 +2,8 @@ import 'dotenv/config';
 import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
 import { type Tournament } from './tournaments_scraper';
-import fs from 'fs';
-import { resolveTeams, buildTeamLookupMap, resolveTeamId } from './teamnames_resolver';
-import { get } from 'http';
+import fs, { Stats } from 'fs';
+import TeamResolver from './teamnames_resolver';
 
 export type Match = {
     match_id: number;
@@ -267,7 +266,7 @@ function calculateMatchScore(text: string): { team1Score: number; team2Score: nu
     return { team1Score, team2Score };
 }
 
-function parseMatch(text: string, teamLookup: Map<string, number>): Match | null {
+function parseMatch(text: string, teamResolver: TeamResolver): Match | null {
     const match_id = getParam(text, 'siegegg');
     const team1_name = getParam(text, 'opponent1');
     const team2_name = getParam(text, 'opponent2');
@@ -284,8 +283,8 @@ function parseMatch(text: string, teamLookup: Map<string, number>): Match | null
         return null;
     }
 
-    const team1_id = resolveTeamId(team1_name, teamLookup);
-    const team2_id = resolveTeamId(team2_name, teamLookup);
+    const team1_id = teamResolver.resolveTeamId(team1_name, parseInt(match_id));
+    const team2_id = teamResolver.resolveTeamId(team2_name, parseInt(match_id));
 
     if (!team1_id) {
         console.warn(`Unknown team: ${team1_name}`);
@@ -404,7 +403,7 @@ function parseMatchesFromStage(
     text: string,
     tournament: Tournament,
     stage: string | null,
-    teamLookup: Map<string, number>,
+    teamResolver: TeamResolver,
 ) {
     const matches: Match[] = [];
     const lines = text.split('\n');
@@ -434,7 +433,7 @@ function parseMatchesFromStage(
         }
         if (/{{Match\b/.test(line.trim())) {
             if (insideMatch && currentMatchText.length > 0) {
-                const parsedMatch = parseMatch(currentMatchText.join('\n'), teamLookup);
+                const parsedMatch = parseMatch(currentMatchText.join('\n'), teamResolver);
                 if (parsedMatch) {
                     parsedMatch.tournament_id = tournament.id;
                     parsedMatch.stage = stage;
@@ -460,7 +459,7 @@ function parseMatchesFromStage(
             depth = (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
 
             if (depth === 0) {
-                const parsedMatch = parseMatch(currentMatchText.join('\n'), teamLookup);
+                const parsedMatch = parseMatch(currentMatchText.join('\n'), teamResolver);
                 if (parsedMatch) {
                     parsedMatch.tournament_id = tournament.id;
                     parsedMatch.stage = stage;
@@ -490,7 +489,7 @@ function parseMatchesFromStage(
             depth += (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
 
             if (depth === 0) {
-                const parsedMatch = parseMatch(currentMatchText.join('\n'), teamLookup);
+                const parsedMatch = parseMatch(currentMatchText.join('\n'), teamResolver);
                 if (parsedMatch) {
                     parsedMatch.tournament_id = tournament.id;
                     parsedMatch.stage = stage;
@@ -536,7 +535,7 @@ async function fetchTournamentWikitext(
     tournaments: Tournament[],
     batch: string,
     overview: TournamentOverview[],
-    teamLookup: Map<string, number>,
+    teamResolver: TeamResolver,
 ) {
     const subPagesArray: { tournament: Tournament; subPage: string }[] = [];
 
@@ -579,7 +578,7 @@ async function fetchTournamentWikitext(
             const wikitext = stages[stageIdx];
             const stage = getParam(wikitext, 'Stage') ? getParam(wikitext, 'Stage') : 'Playoffs';
 
-            const matches = parseMatchesFromStage(wikitext, tournament, stage, teamLookup);
+            const matches = parseMatchesFromStage(wikitext, tournament, stage, teamResolver);
 
             if (matches.length === 0) {
                 const sectionPattern = /{{#(?:lst|section):([^|]+)\|[^}]*}}/g;
@@ -618,7 +617,7 @@ async function fetchSubpages(
     tournaments: Tournament[],
     batch: string,
     overview: TournamentOverview[],
-    teamLookup: Map<string, number>,
+    teamResolver: TeamResolver,
 ) {
     const wikitext_api_url = `https://liquipedia.net/rainbowsix/api.php?action=query&prop=revisions&titles=${batch}&rvprop=content&format=json`;
 
@@ -659,7 +658,7 @@ async function fetchSubpages(
 
         console.log('stage:', stage);
 
-        const matches = parseMatchesFromStage(wikitext, tournament, stage, teamLookup);
+        const matches = parseMatchesFromStage(wikitext, tournament, stage, teamResolver);
 
         tournamentData.stages.push({
             stageIndex: 5,
@@ -690,14 +689,16 @@ export async function getAllTournamentPages(gameSlug: string) {
     );
 
     const gameId = await getGameId(gameSlug);
-    const tournaments = await getAllTournamentsFromDB(gameId);
-    const teamLookup = await buildTeamLookupMap(gameId);
 
+    const tournaments = await getAllTournamentsFromDB(gameId);
     const tournamentPages = tournaments.map((tournament) => {
         return tournament.url
             .replace('https://liquipedia.net/rainbowsix/', '')
             .replaceAll('/', '%2F');
     });
+
+    const teamResolver = new TeamResolver();
+    await teamResolver.initialize(gameId);
 
     const batchRequests = generateBatchRequests(tournamentPages);
 
@@ -710,7 +711,7 @@ export async function getAllTournamentPages(gameSlug: string) {
             tournaments,
             batch,
             overview,
-            teamLookup,
+            teamResolver,
         );
 
         if (subPagesArray && subPagesArray.length > 0) {
@@ -725,10 +726,15 @@ export async function getAllTournamentPages(gameSlug: string) {
     console.log(subPagesBatchRequest);
 
     for (const batch of subPagesBatchRequest) {
-        await fetchSubpages(tournaments, batch, overview, teamLookup);
+        await fetchSubpages(tournaments, batch, overview, teamResolver);
     }
 
     //resolveTeams(matches, gameId);
+
+    const teamStats = teamResolver.getStats();
+    if (teamStats.unknownTeams > 0) {
+        await teamResolver.reviewUnknownTeams();
+    }
 
     overview.sort((a, b) => parseInt(a.pageId) - parseInt(b.pageId));
 
