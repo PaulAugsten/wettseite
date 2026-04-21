@@ -278,7 +278,7 @@ function parseMatch(text: string, teamResolver: TeamResolver): Match | null {
 
     if (!(match_id && team1_name && team2_name)) {
         console.error(
-            `missing Matchid${match_id}, team1 name${team1_name} or team2 name ${team2_name}`,
+            `missing Matchid: ${match_id}, team1 name: ${team1_name} or team2 name: ${team2_name}`,
         );
         return null;
     }
@@ -722,8 +722,6 @@ export async function getAllTournamentPages(gameSlug: string) {
     const subPagesBatchRequest = generateBatchRequests(
         subpagesToFetch.map((subPage) => subPage.subPage),
     );
-
-    console.log(subPagesBatchRequest);
 
     for (const batch of subPagesBatchRequest) {
         await fetchSubpages(tournaments, batch, overview, teamResolver);
