@@ -33,7 +33,7 @@ export default async function Game({ params }: GamePageParameters) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols">
                 {data?.tournaments.map(
-                    (event: {
+                    (tournament: {
                         id: number;
                         name: string;
                         location: string;
@@ -42,14 +42,14 @@ export default async function Game({ params }: GamePageParameters) {
                         slug: string;
                     }) => (
                         <Link
-                            key={event.id}
+                            key={tournament.id}
                             className="bg-white shadow-md rounded-lg p-4 transition t..."
-                            href={`/${game}/${event.slug}`}
+                            href={`/${game}/${tournament.slug}`}
                         >
-                            <h3 className="text-lg font-bold mb-2">{event.name}</h3>
-                            <p className="text-gray-600">Location: {event.location}</p>
-                            <p className="text-gray-600">Prize Pool: {event.prize_pool}</p>
-                            <p className="text-gray-500 text-sm">Status: {event.status}</p>
+                            <h3 className="text-lg font-bold mb-2">{tournament.name}</h3>
+                            <p className="text-gray-600">Location: {tournament.location}</p>
+                            <p className="text-gray-600">Prize Pool: {tournament.prize_pool}</p>
+                            <p className="text-gray-500 text-sm">Status: {tournament.status}</p>
                         </Link>
                     ),
                 )}

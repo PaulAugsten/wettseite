@@ -1,14 +1,14 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 
-type matchPageParameters = {
+type TournamentPageParameters = {
     params: {
-        match: string;
+        tournament: string;
     };
 };
 
-export default async function Game({ params }: matchPageParameters) {
-    const { match } = await params;
+export default async function Game({ params }: TournamentPageParameters) {
+    const { tournament } = await params;
     const supabase = await createClient();
 
     const { data, error } = await supabase
@@ -17,22 +17,23 @@ export default async function Game({ params }: matchPageParameters) {
             `*,
             matches (*)`,
         )
-        .eq('slug', match)
-        //.order('tournaments.start_date')
+        .eq('slug', tournament)
+        .order('date', { referencedTable: 'matches', ascending: false })
         .single();
 
     if (error || !data) {
+        console.log(error);
         return <div>Event not found</div>;
     }
 
-    console.log(data.tournaments);
+    console.log(data.matches);
 
     return (
         <div>
             <h1>{data.name}</h1>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols">
-                {data?.tournaments.map(
+                {data?.matches.map(
                     (match: { id: number; name: string; status: string; slug: string }) => (
                         <Link
                             key={match.id}
