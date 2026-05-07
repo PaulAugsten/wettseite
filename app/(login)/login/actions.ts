@@ -22,14 +22,24 @@ export async function login(previousState: LoginState, formData: FormData): Prom
         return { message: 'Missing username or password', errors: '500' };
     }
 
-    const { response, error } = await supabase.functions.invoke('username-login', {
-        body: data,
+    const { data: email, error: profileError } = await supabase.rpc('get_email_by_username', {
+        p_username: data.username,
     });
 
-    console.log(response);
+    console.log(data);
+    console.log(email);
+
+    if (profileError || !email) {
+        return { message: 'User not found', errors: '500' };
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: data.password,
+    });
 
     if (error) {
-        return { message: 'Login failed', errors: '500' };
+        return { message: 'Invalid credentials', errors: '500' };
     }
 
     revalidatePath('/', 'layout');
