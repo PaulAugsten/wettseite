@@ -18,7 +18,7 @@ const Home = async () => {
 
     return (
         <main>
-            <div className="text-5xl underline">Welcome, Paul!</div>
+            <div className="text-7xl">Welcome!</div>
             <Hello />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols">
