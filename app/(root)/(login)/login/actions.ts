@@ -27,12 +27,13 @@ export async function login(previousState: LoginState, formData: FormData): Prom
     });
 
     console.log(response);
+
     if (error) {
         return { message: 'Login failed', errors: '500' };
     }
 
     revalidatePath('/', 'layout');
-    redirect('/account');
+    redirect('/');
 
     //unreachable at the moment because of the redirect
     // return { success: true };

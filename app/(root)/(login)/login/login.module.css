@@ -1,6 +1,4 @@
-/* Glassmorphism Login Form - Complete & Self-Contained */
-
-:global(body) {
+.loginContainer {
     margin: 0;
     box-sizing: border-box;
     font-family:
@@ -19,7 +17,7 @@
     line-height: 1.6;
 }
 
-.loginContainer {
+.loginInner {
     width: 100%;
     max-width: 420px;
     perspective: 1000px;
