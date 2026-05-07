@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 type TournamentPageParameters = {
     params: {
+        game: string;
         tournament: string;
     };
 };
