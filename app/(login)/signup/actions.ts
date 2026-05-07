@@ -13,22 +13,41 @@ export async function signup(previousState: SignupState, formData: FormData): Pr
     const supabase = await createClient();
 
     // TODO: implement validation
-    const data = {
-        email: formData.get('email') as string,
-        password: formData.get('password') as string,
-        options: {
-            // emailRedirectTo: 'https://example.com/welcome',
-            data: {
-                username: formData.get('username') as string,
-            },
-        },
-    };
 
-    const { error } = await supabase.auth.signUp(data);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    const username = formData.get('username') as string;
 
-    if (error) {
-        console.log('Signup error:', error);
-        redirect('/error');
+    if (!email || !password || !username) {
+        return { message: 'Missing fields', errors: '500' };
+    }
+
+    const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', username)
+        .single();
+
+    if (existingProfile) {
+        return { message: 'Username already taken', errors: '500' };
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+    });
+
+    if (error || !data.user) {
+        return { message: error?.message ?? 'Signup failed', errors: '500' };
+    }
+
+    const { error: profileError } = await supabase.from('profiles').insert({
+        id: data.user.id,
+        username,
+    });
+
+    if (profileError) {
+        return { message: 'Failed to create profile', errors: '500' };
     }
 
     revalidatePath('/', 'layout');

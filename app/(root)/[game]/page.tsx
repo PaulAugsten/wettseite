@@ -22,7 +22,7 @@ export default async function Game({ params }: GamePageParameters) {
         .single();
 
     if (error || !data) {
-        return <div>No Games found</div>;
+        return <div>Site is under construction</div>;
     }
 
     console.log(data.tournaments);
