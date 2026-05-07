@@ -2,10 +2,14 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-
 import { createClient } from '@/lib/supabase/server';
 
-export async function signup(formData: FormData) {
+interface SignupState {
+    message: string;
+    errors?: string;
+}
+
+export async function signup(previousState: SignupState, formData: FormData): Promise<SignupState> {
     const supabase = await createClient();
 
     // TODO: implement validation
@@ -28,5 +32,5 @@ export async function signup(formData: FormData) {
     }
 
     revalidatePath('/', 'layout');
-    redirect('/account');
+    redirect('/');
 }

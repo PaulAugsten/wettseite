@@ -3,6 +3,7 @@
 import { useActionState } from 'react';
 import { login } from './actions';
 import styles from './login.module.css';
+import Link from 'next/link';
 
 export default function LoginPage() {
     const [state, loginFormAction] = useActionState(login, { message: '' });
@@ -50,9 +51,9 @@ export default function LoginPage() {
                                 />
                                 <span className={styles.focusBorder}></span>
                             </div>
-                            <a className={styles.forgotPassword} href="/password_reset">
+                            <Link className={styles.forgotPassword} href="/password_reset">
                                 Forgot password?
-                            </a>
+                            </Link>
                         </div>
                         <div className={styles.formOptions}>
                             <div className={styles.rememberWrapper}>
@@ -73,9 +74,9 @@ export default function LoginPage() {
                         <div className={styles.loginFooter}>
                             <p>
                                 Don&apos;t have an account?&nbsp;
-                                <a className={styles.signupLink} href="/signup">
+                                <Link className={styles.signupLink} href="/signup">
                                     Sign Up
-                                </a>
+                                </Link>
                             </p>
                         </div>
                     </form>
