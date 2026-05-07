@@ -62,6 +62,10 @@ class TeamResolver {
         }
     }
 
+    getGameId() {
+        return this.gameId;
+    }
+
     resolveTeamId(teamName: string, matchId: number): number | null {
         const normalized = this.normalize(teamName);
         const teamId = this.teamLookup.get(normalized);

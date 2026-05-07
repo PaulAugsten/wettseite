@@ -3,12 +3,73 @@
     "pageId": "75382",
     "title": "BLAST_Major/2026/May",
     "totalStages": 3,
-    "totalMatches": 0,
+    "totalMatches": 4,
     "stages": [
       {
         "stageIndex": 0,
-        "matchCount": 0,
-        "matches": []
+        "matchCount": 4,
+        "matches": [
+          {
+            "id": 3474,
+            "game_id": 2,
+            "tournament_id": 261,
+            "stage": "Phase 1 - GSL Stage",
+            "group": null,
+            "bracket": null,
+            "round": "Upper Bracket Quarterfinals",
+            "team1_id": 52,
+            "team2_id": 95,
+            "team1_score": 1,
+            "team2_score": 0,
+            "status": "finished",
+            "date": "2026-05-06T02:00:00.000Z"
+          },
+          {
+            "id": 3475,
+            "game_id": 2,
+            "tournament_id": 261,
+            "stage": "Phase 1 - GSL Stage",
+            "group": null,
+            "bracket": null,
+            "round": "Upper Bracket Quarterfinals",
+            "team1_id": 86,
+            "team2_id": 104,
+            "team1_score": 0,
+            "team2_score": 0,
+            "status": "planned",
+            "date": "2026-05-08T18:00:00.000Z"
+          },
+          {
+            "id": 3476,
+            "game_id": 2,
+            "tournament_id": 261,
+            "stage": "Phase 1 - GSL Stage",
+            "group": null,
+            "bracket": null,
+            "round": "Upper Bracket Quarterfinals",
+            "team1_id": 18,
+            "team2_id": 93,
+            "team1_score": 0,
+            "team2_score": 0,
+            "status": "planned",
+            "date": "2026-05-08T19:30:00.000Z"
+          },
+          {
+            "id": 3477,
+            "game_id": 2,
+            "tournament_id": 261,
+            "stage": "Phase 1 - GSL Stage",
+            "group": null,
+            "bracket": null,
+            "round": "Upper Bracket Quarterfinals",
+            "team1_id": 41,
+            "team2_id": 105,
+            "team1_score": 0,
+            "team2_score": 0,
+            "status": "planned",
+            "date": "2026-05-08T21:00:00.000Z"
+          }
+        ]
       },
       {
         "stageIndex": 1,
