@@ -6,7 +6,8 @@ import fs, { Stats } from 'fs';
 import TeamResolver from './teamnames_resolver';
 
 export type Match = {
-    match_id: number;
+    id: number;
+    game_id: number;
     tournament_id: number | undefined;
     stage: string | null;
     group: string | null;
@@ -221,6 +222,27 @@ function parseWikitextDate(dateText: string): string | null {
 }
 
 function calculateMatchScore(text: string): { team1Score: number; team2Score: number } {
+    const team1ScoreMatch = text.match(/\|opponent1={{TeamOpponent\|[^|]+\|score=([A-Z0-9]+)/);
+    const team2ScoreMatch = text.match(/\|opponent2={{TeamOpponent\|[^|]+\|score=([A-Z0-9]+)/);
+
+    if (team1ScoreMatch && team2ScoreMatch) {
+        const team1Score = team1ScoreMatch[1];
+        const team2Score = team2ScoreMatch[1];
+
+        if (team1Score === 'W' || team2Score === 'FF') {
+            return { team1Score: 1, team2Score: 0 };
+        } else if (team2Score === 'W' || team1Score === 'FF') {
+            return { team1Score: 0, team2Score: 1 };
+        }
+
+        if (!isNaN(parseInt(team1Score)) && !isNaN(parseInt(team2Score))) {
+            return {
+                team1Score: parseInt(team1Score),
+                team2Score: parseInt(team2Score),
+            };
+        }
+    }
+
     let team1Score = 0;
     let team2Score = 0;
     let mapIndex = 1;
@@ -325,7 +347,8 @@ function parseMatch(text: string, teamResolver: TeamResolver): Match | null {
     else if (new Date() > new Date(date)) status = 'live';
 
     return {
-        match_id: parseInt(match_id),
+        id: parseInt(match_id),
+        game_id: teamResolver.getGameId(),
         tournament_id: 0,
         stage: null,
         group: null,
@@ -690,7 +713,11 @@ async function fetchSubpages(
     return overview;
 }
 
-export async function getMatchesOfTournament(gameSlug: string, tournamentIds: number[] = []) {
+export async function getMatchesOfTournament(
+    gameSlug: string,
+    insert_into_db: boolean,
+    tournamentIds: number[] = [],
+) {
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -717,7 +744,7 @@ export async function getMatchesOfTournament(gameSlug: string, tournamentIds: nu
     const batchRequests = generateBatchRequests(tournamentPages);
 
     const overview: TournamentOverview[] = [];
-    let allMatches: Match[] = [];
+    const allMatches: Match[] = [];
     const subpagesToFetch: { tournament: Tournament; subPage: string }[] = [];
 
     for (const batch of batchRequests) {
@@ -741,7 +768,11 @@ export async function getMatchesOfTournament(gameSlug: string, tournamentIds: nu
         await fetchSubpages(tournaments, batch, overview, teamResolver);
     }
 
-    //resolveTeams(matches, gameId);
+    for (const page of overview) {
+        for (const stage of page.stages) {
+            allMatches.push(...stage.matches);
+        }
+    }
 
     const teamStats = teamResolver.getStats();
     if (teamStats.unknownTeams > 0) {
@@ -752,15 +783,19 @@ export async function getMatchesOfTournament(gameSlug: string, tournamentIds: nu
 
     fs.writeFileSync('tournament_overview.json', JSON.stringify(overview, null, 2), 'utf-8');
 
-    /* const { data, error } = await supabase
-        .from('tournaments')
-        .upsert(tournaments, { onConflict: 'name' })
-        .select();
+    if (insert_into_db) {
+        const { data, error } = await supabase
+            .from('matches')
+            .upsert(allMatches, { onConflict: 'id' })
+            .select();
 
-    if (error || !data) {
-        console.log('Error inserting tournaments into the DB:', error);
-        return 0;
-    }*/
+        if (error || !data) {
+            console.log('Error inserting matches into the DB:', error);
+            return 0;
+        }
+    } else {
+        console.log(allMatches);
+    }
 }
 
-getMatchesOfTournament('rainbow-six-siege', [261]);
+getMatchesOfTournament('rainbow-six-siege', true, [261]);
