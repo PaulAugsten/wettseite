@@ -89,7 +89,10 @@ async function getGameId(gameSlug: string): Promise<number> {
     return data.id;
 }
 
-async function getAllTournamentsFromDB(gameId: number): Promise<Tournament[]> {
+async function getTournamentsFromDB(
+    gameId: number,
+    tournamentIds: number[] = [],
+): Promise<Tournament[]> {
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -101,18 +104,29 @@ async function getAllTournamentsFromDB(gameId: number): Promise<Tournament[]> {
         },
     );
 
-    const { data, error } = await supabase
-        .from('games')
-        .select(`*, tournaments(*)`)
-        .eq('id', gameId)
-        .single();
+    if (tournamentIds.length > 0) {
+        const { data, error } = await supabase
+            .from('tournaments')
+            .select('*')
+            .eq('game_id', gameId)
+            .in('id', tournamentIds);
+
+        if (error || !data) {
+            console.log('Error getting tournaments from DB:', error);
+            return [];
+        }
+
+        return data;
+    }
+
+    const { data, error } = await supabase.from('tournaments').select('*').eq('game_id', gameId);
 
     if (error || !data) {
         console.log('Error getting tournaments from DB:', error);
         return [];
     }
 
-    return data.tournaments;
+    return data;
 }
 
 function getRound(text: string, key: string) {
@@ -676,7 +690,7 @@ async function fetchSubpages(
     return overview;
 }
 
-export async function getAllTournamentPages(gameSlug: string) {
+export async function getMatchesOfTournament(gameSlug: string, tournamentIds: number[] = []) {
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -690,7 +704,7 @@ export async function getAllTournamentPages(gameSlug: string) {
 
     const gameId = await getGameId(gameSlug);
 
-    const tournaments = await getAllTournamentsFromDB(gameId);
+    const tournaments = await getTournamentsFromDB(gameId, tournamentIds);
     const tournamentPages = tournaments.map((tournament) => {
         return tournament.url
             .replace('https://liquipedia.net/rainbowsix/', '')
@@ -749,4 +763,4 @@ export async function getAllTournamentPages(gameSlug: string) {
     }*/
 }
 
-getAllTournamentPages('rainbow-six-siege');
+getMatchesOfTournament('rainbow-six-siege', [261]);
