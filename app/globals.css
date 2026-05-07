@@ -1,26 +1,139 @@
 @import 'tailwindcss';
 
 :root {
-    --background: #ffffff;
-    --foreground: #171717;
+    --bg-primary: #0f0f0f;
+    --bg-secondary: #1a1a1a;
+    --bg-card: #1f1f1f;
+    --border: rgba(255, 255, 255, 0.08);
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.6);
+    --accent: #3b82f6;
+    --navbar-height: 72px;
 }
 
-@theme inline {
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-    --font-sans: var(--font-geist-sans);
-    --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-    :root {
-        --background: #0a0a0a;
-        --foreground: #ededed;
-    }
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 body {
-    background: var(--background);
-    color: var(--foreground);
-    font-family: Arial, Helvetica, sans-serif;
+    background: radial-gradient(circle at top, #1f1f1f 0%, #0f0f0f 60%, #050505 100%);
+    color: var(--text-primary);
+    font-family:
+        'Inter',
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        Roboto,
+        sans-serif;
+    min-height: 100vh;
+}
+
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    height: var(--navbar-height);
+    background: rgba(15, 15, 15, 0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+}
+
+.navInner {
+    width: 100%;
+    padding: 0 24px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.navLogo {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    text-decoration: none;
+    letter-spacing: -0.5px;
+    margin-right: 16px;
+}
+
+.navLinks {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.navLink {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 6px;
+    transition:
+        color 0.2s,
+        background 0.2s;
+}
+
+.navLink:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.navAuth {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.navUsername {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    margin-right: 8px;
+}
+
+.navBtn {
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 8px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    border: none;
+}
+
+.navBtnOutline {
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid var(--border);
+}
+
+.navBtnOutline:hover {
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.navBtnFilled {
+    color: white;
+    background: var(--accent);
+}
+
+.navBtnFilled:hover {
+    background: var(--accent-hover);
+}
+
+.rootLayout {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.pageContent {
+    flex: 1;
+    width: 100%;
+    padding: 32px 24px;
 }
