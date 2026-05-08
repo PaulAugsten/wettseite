@@ -19,7 +19,12 @@ const Home = async () => {
     return (
         <main>
             <div className="text-7xl">Welcome!</div>
-            <Hello />
+        </main>
+    );
+};
+
+/*
+<Hello />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols">
                 {data.map((game: { id: number; name: string; slug: string }) => (
@@ -33,8 +38,6 @@ const Home = async () => {
                     </Link>
                 ))}
             </div>
-        </main>
-    );
-};
+            */
 
 export default Home;
