@@ -1,9 +1,8 @@
 const About = () => {
-    throw new Error('Not implemented');
-
     return (
         <div>
-            <h1>About</h1>;
+            <h1>About</h1>
+            <h2>Site is under construction</h2>
         </div>
     );
 };

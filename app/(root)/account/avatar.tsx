@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Image from 'next/image';
-import { error } from 'console';
 
 export default function Avatar({
     uid,
@@ -47,7 +46,7 @@ export default function Avatar({
 
             const file = event.target.files[0];
             const fileExt = file.name.split('.').pop();
-            const filePath = '${uid}-${Math.random()}.${fileExt}';
+            const filePath = `${uid}-${Math.random()}.${fileExt}`;
 
             const { error: uploadError } = await supabase.storage
                 .from('avatars')

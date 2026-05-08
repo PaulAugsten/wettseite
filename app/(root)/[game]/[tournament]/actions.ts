@@ -24,8 +24,6 @@ export async function predict(matchId: number, teamId: number, path: string) {
         { onConflict: 'user_id, match_id' },
     );
 
-    console.log(`Made prediction for user ${user.email}: {${matchId}, ${teamId}}`);
-
     if (error) {
         return { error: error.message };
     }

@@ -21,7 +21,7 @@ export async function createClient() {
                         );
                     } catch {
                         // The 'setAll' method was called from a Server Component.
-                        // This an be ignord if you have proxy refreshing
+                        // This can be ignord if you have proxy refreshing
                         // user sessions.
                     }
                 },
