@@ -35,19 +35,13 @@ export async function signup(previousState: SignupState, formData: FormData): Pr
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+            data: { username },
+        },
     });
 
     if (error || !data.user) {
         return { message: error?.message ?? 'Signup failed', errors: '500' };
-    }
-
-    const { error: profileError } = await supabase.from('profiles').insert({
-        id: data.user.id,
-        username,
-    });
-
-    if (profileError) {
-        return { message: 'Failed to create profile', errors: '500' };
     }
 
     revalidatePath('/', 'layout');
