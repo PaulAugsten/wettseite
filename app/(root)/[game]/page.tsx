@@ -45,13 +45,13 @@ function TournamentCard({ tournament, game }: { tournament: Tournament; game: st
                     {tournament.start_date && (
                         <span className="tournamentMetaItem">
                             {' '}
-                            {new Date(tournament.start_date).toLocaleDateString('en-US', {
+                            {new Date(tournament.start_date).toLocaleDateString('en-GB', {
                                 day: 'numeric',
                                 month: 'short',
                                 year: 'numeric',
                             })}
                             {tournament.end_date &&
-                                ` - ${new Date(tournament.end_date).toLocaleDateString('en-US', {
+                                ` - ${new Date(tournament.end_date).toLocaleDateString('en-GB', {
                                     day: 'numeric',
                                     month: 'short',
                                     year: 'numeric',
