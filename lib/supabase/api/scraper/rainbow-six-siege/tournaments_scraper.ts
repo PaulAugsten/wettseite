@@ -136,7 +136,8 @@ async function getTournamentMetaData(url: string) {
     return tournament;
 }
 
-async function scrapeTournaments(url: string, insert_into_db: boolean) {
+export async function scrapeTournaments(insert_into_db: boolean) {
+    const url = liquipedia_tournaments_url;
     const { data } = await axios.get(url);
     const $ = cheerio.load(data);
 
@@ -205,7 +206,7 @@ async function scrapeTournaments(url: string, insert_into_db: boolean) {
         console.log(tournaments);
     }
 
-    getMatchesOfTournament(game_slug, false);
+    //getMatchesOfTournament(game_slug, false);
 }
 
-scrapeTournaments(liquipedia_tournaments_url, false).catch(console.error);
+scrapeTournaments(false).catch(console.error);
