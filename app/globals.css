@@ -355,3 +355,126 @@ body {
 .tournamentCard:hover .tournamentViewMore {
     color: #93c5fd;
 }
+
+/* --- Match List ------------------ */
+.matchList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.matchCard {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
+}
+
+.matchCard:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.matchTeams {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 16px;
+}
+
+.matchTeam {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.matchTeamLeft {
+    text-align: right;
+}
+
+.matchTeamRight {
+    text-align: left;
+}
+
+.matchTeamName {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.matchTeamShort {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.matchScore {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 80px;
+}
+
+.matchScoreText {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.matchScoreTime {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.matchScoreLive {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #f87171;
+    animation: pulse 2s infinite;
+}
+
+.matchFooter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+    flex-wrap: wrap;
+}
+
+.matchRound,
+.matchStage {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 8px;
+}
+
+.matchStatusBadge {
+    margin-left: auto;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+}
+
+.matchStatusBadge.statusFinished {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-secondary);
+}
+
+.matchStatusBadge.statusLive {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+}
+
+.matchStatusBadge.statusUpcoming {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+}
