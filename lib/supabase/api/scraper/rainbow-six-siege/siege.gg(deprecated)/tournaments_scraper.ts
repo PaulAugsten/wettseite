@@ -253,7 +253,7 @@ async function scrapeTournaments(liquipedia_url: string, siegegg_url: string) {
         }
 
         return null;
-    });
+    }).filter((t): t is NonNullable<typeof t> => t !== null);
 
     console.log(`Found ${tournaments.length} Tournaments.`);
 
