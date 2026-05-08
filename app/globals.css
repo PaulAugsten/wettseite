@@ -478,3 +478,80 @@ body {
     background: rgba(59, 130, 246, 0.15);
     color: #60a5fa;
 }
+
+/* --- Predictions ---------------------- */
+
+.matchTeamBtn {
+    background: transparent;
+    border: none;
+    cursor: default;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition:
+        background 0.2s,
+        border-color 0.2s;
+    border: 2px solid transparent;
+}
+
+.matchTeamClickable {
+    cursor: pointer;
+}
+
+.matchTeamClickable:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.matchTeamPredicted {
+    border-color: var(--accent) !important;
+    background: rgba(59, 130, 246, 0.08) !important;
+}
+
+.matchPredictedBadge {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--accent);
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+.predictionBar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.predictionBarTrack {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.predictionBarFill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 999px;
+    transition: width 0.4s ease;
+}
+
+.predictionPercentage {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 32px;
+}
+
+.predictionPercentageLeft {
+    text-align: right;
+}
+
+.predictionPercentageRight {
+    text-align: left;
+}
+
+.matchLoginHint {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}

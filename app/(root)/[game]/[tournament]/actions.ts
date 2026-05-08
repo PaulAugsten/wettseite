@@ -18,11 +18,13 @@ export async function predict(matchId: number, teamId: number, path: string) {
         {
             user_id: user.id,
             match_id: matchId,
-            predicted_winne_id: teamId,
+            predicted_winner_id: teamId,
             updated_at: new Date().toISOString(),
         },
-        { onConflict: 'user_id, matchid' },
+        { onConflict: 'user_id, match_id' },
     );
+
+    console.log(`Made prediction for user ${user.email}: {${matchId}, ${teamId}}`);
 
     if (error) {
         return { error: error.message };
