@@ -13,8 +13,6 @@ export async function getGames(): Promise<{ data: Game[] | null; error: Error | 
 
     const { data, error } = await supabase.from('games').select('*');
 
-    console.log(data);
-
     if (error) {
         console.log('Error fetching games: ', error);
         return { data: null, error };
@@ -23,4 +21,4 @@ export async function getGames(): Promise<{ data: Game[] | null; error: Error | 
     return { data, error: null };
 }
 
-// EXAMPLE: Wenn eine funktion oft wiederverwendet wird / an verschiedenen Stellen dann hier als seperate utility funktion. Das obige ist nur ein beispiel, es wird derweil nur auf der Homepage verwendet
+// EXAMPLE: If a function is frequently reused, or used in various places, it should be implemented here as a separate utility function. The above serves merely as an example; currently, it is used only on the homepage.

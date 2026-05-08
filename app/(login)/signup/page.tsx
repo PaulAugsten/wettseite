@@ -5,7 +5,7 @@ import { signup } from './actions';
 import styles from './signup.module.css';
 import Link from 'next/link';
 
-export default function LoginPage() {
+export default function SignupPage() {
     const [state, signupFormAction] = useActionState(signup, { message: '' });
 
     return (

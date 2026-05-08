@@ -2,7 +2,7 @@ import 'dotenv/config';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { createClient } from '@supabase/supabase-js';
-import { getAllTournamentPages } from './matches_scraper';
+import { getMatchesOfTournament } from './matches_scraper';
 
 const liquipedia_tournaments_url = 'https://liquipedia.net/rainbowsix/S-Tier_Tournaments';
 const game_slug = 'rainbow-six-siege';
@@ -205,7 +205,7 @@ async function scrapeTournaments(url: string, insert_into_db: boolean) {
         console.log(tournaments);
     }
 
-    getAllTournamentPages(game_slug);
+    getMatchesOfTournament(game_slug, false);
 }
 
 scrapeTournaments(liquipedia_tournaments_url, false).catch(console.error);

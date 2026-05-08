@@ -26,9 +26,6 @@ export async function login(previousState: LoginState, formData: FormData): Prom
         p_username: data.username,
     });
 
-    console.log(data);
-    console.log(email);
-
     if (profileError || !email) {
         return { message: 'User not found', errors: '500' };
     }
