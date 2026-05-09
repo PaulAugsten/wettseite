@@ -8,6 +8,8 @@ type Standing = {
 export default function PredictionStandings({ standings }: { standings: Standing[] }) {
     const sorted = [...standings].sort((a, b) => b.points - a.points);
 
+    if (sorted.length === 0) return;
+
     return (
         <div className="standingsTable">
             <h2 className="standingstitle">Standings</h2>
