@@ -303,7 +303,7 @@ function calculateMatchScore(text: string): { team1Score: number; team2Score: nu
 }
 
 function parseMatch(text: string, teamResolver: TeamResolver): Match | null {
-    const match_id = getParam(text, 'siegegg');
+    const match_id = getParam(text, 'r6esports');
     const team1_name = getParam(text, 'opponent1');
     const team2_name = getParam(text, 'opponent2');
     const finished = getParam(text, 'finished');
