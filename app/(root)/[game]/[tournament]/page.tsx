@@ -1,4 +1,5 @@
 import MatchCard from '@/components/MatchCardClientComponent';
+import PredictionStandings from '@/components/PredictionStandings';
 import { createClient } from '@/lib/supabase/server';
 
 type TournamentPageParameters = {
@@ -104,6 +105,11 @@ export default async function Tournament({ params }: TournamentPageParameters) {
               .in('match_id', matchIds)
         : { data: [] };
 
+    const { data: prediction_standings } = await supabase
+        .from('prediction_standings')
+        .select('*')
+        .eq('tournament_id', data.id);
+
     const userPredictionMap = new Map(
         (userPredictions ?? []).map((p) => [p.match_id, p.predicted_winner_id]),
     );
@@ -149,27 +155,34 @@ export default async function Tournament({ params }: TournamentPageParameters) {
                 )}
             </div>
 
-            <MatchSection
-                title="Live"
-                matches={live}
-                userPredictionMap={userPredictionMap}
-                predictionStats={predictionStats}
-                isLoggedIn={!!user}
-            />
-            <MatchSection
-                title="Upcoming"
-                matches={upcoming}
-                userPredictionMap={userPredictionMap}
-                predictionStats={predictionStats}
-                isLoggedIn={!!user}
-            />
-            <MatchSection
-                title="Finished"
-                matches={finished}
-                userPredictionMap={userPredictionMap}
-                predictionStats={predictionStats}
-                isLoggedIn={!!user}
-            />
+            <div className="tournamentLayout">
+                <div className="matchesColumn">
+                    <MatchSection
+                        title="Live"
+                        matches={live}
+                        userPredictionMap={userPredictionMap}
+                        predictionStats={predictionStats}
+                        isLoggedIn={!!user}
+                    />
+                    <MatchSection
+                        title="Upcoming"
+                        matches={upcoming}
+                        userPredictionMap={userPredictionMap}
+                        predictionStats={predictionStats}
+                        isLoggedIn={!!user}
+                    />
+                    <MatchSection
+                        title="Finished"
+                        matches={finished}
+                        userPredictionMap={userPredictionMap}
+                        predictionStats={predictionStats}
+                        isLoggedIn={!!user}
+                    />
+                </div>
+                <div className="standingsColumn">
+                    <PredictionStandings standings={prediction_standings ?? []} />
+                </div>
+            </div>
         </div>
     );
 

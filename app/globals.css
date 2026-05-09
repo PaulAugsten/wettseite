@@ -11,6 +11,10 @@
     --navbar-height: 72px;
 }
 
+html {
+    background-color: #050505;
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -250,6 +254,12 @@ body {
     color: var(--text-secondary);
     margin-top: 4px;
     font-size: 1rem;
+}
+
+.tournamentLayout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
 }
 
 /* --- Tournament Section -------------------- */
@@ -554,4 +564,76 @@ body {
     font-size: 0.8rem;
     color: var(--text-secondary);
     font-style: italic;
+}
+
+/* --- Standings Table ------------------- */
+.standingsTable {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    position: sticky;
+    top: calc(var(--navbar-height) + 16px);
+}
+
+.standingsTitle {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.standingsTable table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.standingsTable th {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0 8px 10px 8px;
+    text-align: left;
+}
+
+.standingsTable th:last-child {
+    text-align: right;
+}
+
+.standingsTable td {
+    padding: 10px 8px;
+    font-size: 1rem;
+    color: var(--text-primary);
+    border-top: 1px solid var(--border);
+}
+
+.standingsTable td:last-child {
+    text-align: right;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.standingsRank {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    width: 24px;
+}
+
+.standingsRank.top1 {
+    color: #fbbf24;
+    font-weight: 700;
+}
+
+.standingsRank.top2 {
+    color: #94a3b8;
+    font-weight: 700;
+}
+
+.standingsRank.top3 {
+    color: #b45309;
+    font-weight: 700;
 }
