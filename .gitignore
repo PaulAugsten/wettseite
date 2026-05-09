@@ -42,4 +42,5 @@ next-env.d.ts
 
 # generated .json files
 team_review*.json
+unknown_teams_review.json
 tournament_overview.json
