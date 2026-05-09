@@ -673,9 +673,11 @@ async function scrapeMatches() {
                 const stage = getParam(stageText, 'Stage') ?? 'Playoffs';
                 const matches = parseMatchesFromStage(stageText, tournament, stage, teamResolver);
                 if (matches.length === 0) {
-                    for (const sp of [
+                    const spMatches = [
                         ...stageText.matchAll(/{{#(?:lst|section):([^|]+)\|[^}]*}}/g),
-                    ]) {
+                        ...stageText.matchAll(/{{ShowStandings\|page=([^|}]+)/g),
+                    ];
+                    for (const sp of spMatches) {
                         subpagesToFetch.push({
                             tournament,
                             subPage: sp[1].trim().replaceAll(' ', '_'),
