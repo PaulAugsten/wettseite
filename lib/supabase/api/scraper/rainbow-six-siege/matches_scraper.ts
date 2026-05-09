@@ -143,9 +143,22 @@ function getGroup(text: string) {
 }
 
 function getSubpageStage(text: string) {
-    const regex = /^===([^=]+)===$/m;
-    const match = text.match(regex);
-    return match ? match[1].trim() : null;
+    const stageTemplateMatch = text.match(/\{\{Stage\|([^}]+)\}\}/);
+    if (stageTemplateMatch) return stageTemplateMatch[1].trim();
+
+    if (/\{\{SwissStandings/.test(text)) return 'Swiss Stage';
+
+    const NON_STAGE_HEADINGS = new Set(['Standings', 'Results', 'Schedule', 'Overview']);
+    const headingRegex = /^===([^=]+)===$/gm;
+    let match;
+    while ((match = headingRegex.exec(text)) !== null) {
+        const heading = match[1].trim();
+        if (!NON_STAGE_HEADINGS.has(heading)) {
+            return heading;
+        }
+    }
+
+    return null;
 }
 
 function getParam(text: string, key: string) {
@@ -619,8 +632,11 @@ async function fetchTournamentWikitext(
 
             if (matches.length === 0) {
                 const sectionPattern = /{{#(?:lst|section):([^|]+)\|[^}]*}}/g;
-
-                const subPages = [...wikitext.matchAll(sectionPattern)];
+                const showStandingsPattern = /{{ShowStandings\|page=([^|}]+)/g;
+                const subPages = [
+                    ...wikitext.matchAll(sectionPattern),
+                    ...wikitext.matchAll(showStandingsPattern),
+                ];
 
                 for (const subPage of subPages) {
                     const subPageString = subPage[1].trim().replaceAll(' ', '_');
@@ -798,4 +814,5 @@ export async function getMatchesOfTournament(
     }
 }
 
+// TODO: implement automatic choosing of matches to scrape
 getMatchesOfTournament('rainbow-six-siege', true, [261]);
