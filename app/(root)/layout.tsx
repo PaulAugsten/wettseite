@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import UserMenu from '@/components/UserMenuClientComponent';
 import NavLinks from '@/components/NavLinks';
+import InstallPrompt from '@/components/InstallPrompt';
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
     const supabase = await createClient();
@@ -23,6 +24,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
     return (
         <div className="rootLayout">
+            <InstallPrompt></InstallPrompt>
+
             <nav className="navbar">
                 <div className="navInner">
                     <Link href="/" className="navLogo">
