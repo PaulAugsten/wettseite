@@ -18,6 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
     title: 'Home - Wettsite',
     description: 'Create small betting pools with friends',
+    manifest: '/manifest.json',
     openGraph: {
         // ...openGraphImage,
         title: 'Home',
