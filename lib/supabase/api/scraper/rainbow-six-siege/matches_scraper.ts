@@ -6,7 +6,7 @@ import fs, { Stats } from 'fs';
 import TeamResolver from './teamnames_resolver';
 
 export type Match = {
-    external_id: number;
+    id: number;
     game_id: number;
     tournament_id: number | undefined;
     stage: string | null;
@@ -360,7 +360,7 @@ function parseMatch(text: string, teamResolver: TeamResolver): Match | null {
     else if (new Date() > new Date(date)) status = 'live';
 
     return {
-        external_id: parseInt(match_id),
+        id: parseInt(match_id),
         game_id: teamResolver.getGameId(),
         tournament_id: 0,
         stage: null,
@@ -802,7 +802,7 @@ export async function getMatchesOfTournament(
     if (insert_into_db) {
         const { data, error } = await supabase
             .from('matches')
-            .upsert(allMatches, { onConflict: 'tournament_id, team1_id, team2_id, date' })
+            .upsert(allMatches, { onConflict: 'id' })
             .select();
 
         if (error || !data) {
