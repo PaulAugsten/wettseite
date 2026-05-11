@@ -6,7 +6,7 @@ import fs, { Stats } from 'fs';
 import TeamResolver from './teamnames_resolver';
 
 export type Match = {
-    id: number;
+    external_id: number;
     game_id: number;
     tournament_id: number | undefined;
     stage: string | null;
@@ -146,7 +146,7 @@ function getSubpageStage(text: string) {
     const stageTemplateMatch = text.match(/\{\{Stage\|([^}]+)\}\}/);
     if (stageTemplateMatch) return stageTemplateMatch[1].trim();
 
-    if (/\{\{SwissStandings/.test(text)) return 'Swiss Stage';
+    if (/\{\{SwissStandings/.test(text)) return 'Phase 2 - Swiss Stage';
 
     const NON_STAGE_HEADINGS = new Set(['Standings', 'Results', 'Schedule', 'Overview']);
     const headingRegex = /^===([^=]+)===$/gm;
@@ -360,7 +360,7 @@ function parseMatch(text: string, teamResolver: TeamResolver): Match | null {
     else if (new Date() > new Date(date)) status = 'live';
 
     return {
-        id: parseInt(match_id),
+        external_id: parseInt(match_id),
         game_id: teamResolver.getGameId(),
         tournament_id: 0,
         stage: null,
@@ -802,7 +802,7 @@ export async function getMatchesOfTournament(
     if (insert_into_db) {
         const { data, error } = await supabase
             .from('matches')
-            .upsert(allMatches, { onConflict: 'id' })
+            .upsert(allMatches, { onConflict: 'tournament_id, team1_id, team2_id, date' })
             .select();
 
         if (error || !data) {

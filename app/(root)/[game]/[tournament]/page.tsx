@@ -132,7 +132,7 @@ export default async function Tournament({ params }: TournamentPageParameters) {
 
     const live = matches.filter((m) => m.status === 'live');
     const upcoming = matches.filter((m) => m.status === 'planned');
-    const finished = matches.filter((m) => m.status === 'finished');
+    const finished = matches.filter((m) => m.status === 'finished').toReversed();
 
     return (
         <div className="gamePage">
