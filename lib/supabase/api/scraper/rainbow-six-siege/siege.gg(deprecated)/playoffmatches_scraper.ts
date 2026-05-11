@@ -8,8 +8,8 @@ import crypto from 'crypto';
 type Match = {
     match_id: string;
     tournament_id: number;
-    stage: string | null;
-    group: string | null;
+    stage: string;
+    group: string;
     bracket: string;
     round: string;
     team1_name: string;
@@ -188,8 +188,8 @@ export async function scrapePlayoffMatches(tournament_id: number, url: string) {
                         const match_id_data = {
                             match_id: '',
                             tournament_id,
-                            stage,
-                            group,
+                            stage: '', // needs a fix if it should be used, stage is not "" here
+                            group: '',
                             bracket,
                             round,
                             team1_name,
@@ -204,8 +204,8 @@ export async function scrapePlayoffMatches(tournament_id: number, url: string) {
                         matches.push({
                             match_id,
                             tournament_id,
-                            stage,
-                            group,
+                            stage: '',
+                            group: '',
                             bracket,
                             round,
                             team1_name,

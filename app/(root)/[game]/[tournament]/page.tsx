@@ -24,10 +24,10 @@ type Match = {
     team1_score: number;
     team2_score: number;
     status: string;
-    round: string | null;
-    stage: string | null;
-    group: string | null;
-    bracket: string | null;
+    round: string;
+    stage: string;
+    group: string;
+    bracket: string;
 };
 
 function MatchSection({
