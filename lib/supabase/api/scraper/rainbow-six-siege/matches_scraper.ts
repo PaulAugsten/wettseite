@@ -6,13 +6,13 @@ import fs, { Stats } from 'fs';
 import TeamResolver from './teamnames_resolver';
 
 export type Match = {
-    id: number;
+    external_id: number;
     game_id: number;
     tournament_id: number | undefined;
-    stage: string | null;
-    group: string | null;
-    bracket: string | null;
-    round: string | null;
+    stage: string;
+    group: string;
+    bracket: string;
+    round: string;
     team1_id: number;
     team2_id: number;
     team1_score: number | null;
@@ -360,13 +360,13 @@ function parseMatch(text: string, teamResolver: TeamResolver): Match | null {
     else if (new Date() > new Date(date)) status = 'live';
 
     return {
-        id: parseInt(match_id),
+        external_id: parseInt(match_id),
         game_id: teamResolver.getGameId(),
         tournament_id: 0,
-        stage: null,
-        group: null,
-        bracket: null,
-        round: null,
+        stage: '',
+        group: '',
+        bracket: '',
+        round: '',
         team1_id,
         team2_id,
         team1_score,
@@ -474,23 +474,32 @@ function parseMatchesFromStage(
             !line.includes('dateheader')
         ) {
             currentRound = getRound(line, 'header');
+        } else if (!insideMatch) {
+            const hiddenSortMatch = line.trim().match(/^===={{HiddenSort\|(.+?)}}====$/);
+            if (hiddenSortMatch) {
+                currentRound = hiddenSortMatch[1].trim();
+            }
         }
+
         if (!insideMatch && line.includes('Group')) {
             const group = getGroup(line);
             if (group) {
                 currentGroup = group;
             }
         }
+
         if (/{{Match\b/.test(line.trim())) {
             if (insideMatch && currentMatchText.length > 0) {
                 const parsedMatch = parseMatch(currentMatchText.join('\n'), teamResolver);
                 if (parsedMatch) {
                     parsedMatch.tournament_id = tournament.id;
-                    parsedMatch.stage = stage;
-                    parsedMatch.round = currentRound;
+                    parsedMatch.stage = stage ?? '';
+                    parsedMatch.round = currentRound ?? '';
+                    parsedMatch.group = '';
+                    parsedMatch.bracket = '';
 
                     if (stage?.includes('Group')) {
-                        parsedMatch.group = currentGroup;
+                        parsedMatch.group = currentGroup ?? '';
                     } else if (stage === 'Playoffs') {
                         if (currentRound?.includes('Upper')) {
                             parsedMatch.bracket = 'Upper';
@@ -512,11 +521,13 @@ function parseMatchesFromStage(
                 const parsedMatch = parseMatch(currentMatchText.join('\n'), teamResolver);
                 if (parsedMatch) {
                     parsedMatch.tournament_id = tournament.id;
-                    parsedMatch.stage = stage;
-                    parsedMatch.round = currentRound;
+                    parsedMatch.stage = stage ?? '';
+                    parsedMatch.round = currentRound ?? '';
+                    parsedMatch.group = '';
+                    parsedMatch.bracket = '';
 
                     if (stage?.includes('Group')) {
-                        parsedMatch.group = currentGroup;
+                        parsedMatch.group = currentGroup ?? '';
                     } else if (stage === 'Playoffs') {
                         if (currentRound?.includes('Upper')) {
                             parsedMatch.bracket = 'Upper';
@@ -542,11 +553,13 @@ function parseMatchesFromStage(
                 const parsedMatch = parseMatch(currentMatchText.join('\n'), teamResolver);
                 if (parsedMatch) {
                     parsedMatch.tournament_id = tournament.id;
-                    parsedMatch.stage = stage;
-                    parsedMatch.round = currentRound;
+                    parsedMatch.stage = stage ?? '';
+                    parsedMatch.round = currentRound ?? '';
+                    parsedMatch.group = '';
+                    parsedMatch.bracket = '';
 
                     if (stage?.includes('Group')) {
-                        parsedMatch.group = currentGroup;
+                        parsedMatch.group = currentGroup ?? '';
                     } else if (stage === 'Playoffs') {
                         if (currentRound?.includes('Upper')) {
                             parsedMatch.bracket = 'Upper';
@@ -802,7 +815,9 @@ export async function getMatchesOfTournament(
     if (insert_into_db) {
         const { data, error } = await supabase
             .from('matches')
-            .upsert(allMatches, { onConflict: 'id' })
+            .upsert(allMatches, {
+                onConflict: 'tournament_id, team1_id, team2_id, stage, group, round, bracket',
+            })
             .select();
 
         if (error || !data) {
@@ -815,4 +830,4 @@ export async function getMatchesOfTournament(
 }
 
 // TODO: implement automatic choosing of matches to scrape
-getMatchesOfTournament('rainbow-six-siege', true, [261]);
+getMatchesOfTournament('rainbow-six-siege', false, [261]);

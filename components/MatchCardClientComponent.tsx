@@ -19,10 +19,10 @@ type Match = {
     team1_score: number;
     team2_score: number;
     status: string;
-    round: string | null;
-    stage: string | null;
-    group: string | null;
-    bracket: string | null;
+    round: string;
+    stage: string;
+    group: string;
+    bracket: string;
 };
 
 type Props = {
@@ -37,7 +37,8 @@ export default function MatchCard({ match, userPrediction, stats, isLoggedIn }: 
     const [loading, setLoading] = useState(false);
     const pathname = usePathname();
 
-    const canPredict = isLoggedIn && match.status === 'planned' && new Date() < new Date(match.date);
+    const canPredict =
+        isLoggedIn && match.status === 'planned' && new Date() < new Date(match.date);
 
     const team1PredictionPercentage =
         stats.total > 0 ? Math.round((stats.team1 / stats.total) * 100) : 50;

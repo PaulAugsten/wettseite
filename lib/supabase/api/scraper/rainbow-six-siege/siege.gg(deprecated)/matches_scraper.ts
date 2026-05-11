@@ -7,8 +7,8 @@ import { type Tournament } from './tournaments_scraper';
 type Match = {
     match_id: string;
     tournament_id: number;
-    stage: string | null;
-    group: string | null;
+    stage: string;
+    group: string;
     bracket: string;
     round: string;
     team1_name: string;
