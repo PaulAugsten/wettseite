@@ -830,4 +830,4 @@ export async function getMatchesOfTournament(
 }
 
 // TODO: implement automatic choosing of matches to scrape
-getMatchesOfTournament('rainbow-six-siege', false, [261]);
+getMatchesOfTournament('rainbow-six-siege', true, [261]);
