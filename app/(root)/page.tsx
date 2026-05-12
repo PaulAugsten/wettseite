@@ -1,5 +1,3 @@
-import Link from 'next/link';
-import Hello from '../../components/hello';
 import { TournamentCard } from '@/components/TournamentCard';
 import { createClient } from '@/lib/supabase/server';
 
@@ -41,17 +39,6 @@ function Section({
 const Home = async () => {
     const supabase = await createClient();
 
-    const { data, error } = await supabase.from('games').select('*');
-
-    if (error) {
-        console.log('Error fetching games: ', error);
-        return (
-            <main>
-                <div className="text-red-500">Error loading games: {error.message}</div>
-            </main>
-        );
-    }
-
     const { data: games, error: tournamentError } = await supabase
         .from('games')
         .select(
@@ -64,10 +51,6 @@ const Home = async () => {
     }
 
     const liveGames = games as Games[];
-
-    console.log(liveGames);
-
-    liveGames.map((game) => console.log(game));
 
     return (
         <main>

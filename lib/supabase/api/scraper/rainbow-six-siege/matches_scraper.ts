@@ -2,7 +2,7 @@ import 'dotenv/config';
 import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
 import { type Tournament } from './tournaments_scraper';
-import fs, { Stats } from 'fs';
+import fs from 'fs';
 import TeamResolver from './teamnames_resolver';
 
 export type Match = {
@@ -17,6 +17,7 @@ export type Match = {
     team2_id: number;
     team1_score: number | null;
     team2_score: number | null;
+    winner_id: number | null;
     status: 'planned' | 'live' | 'finished';
     date: string;
 };
@@ -324,6 +325,7 @@ function parseMatch(text: string, teamResolver: TeamResolver): Match | null {
     const scores = calculateMatchScore(text);
     const team1_score = scores?.team1Score;
     const team2_score = scores?.team2Score;
+    let winner_id = null;
 
     if (!(match_id && team1_name && team2_name)) {
         console.error(
@@ -359,6 +361,12 @@ function parseMatch(text: string, teamResolver: TeamResolver): Match | null {
     if (finished === 'true') status = 'finished';
     else if (new Date() > new Date(date)) status = 'live';
 
+    if (team1_score > team2_score && status === 'finished') {
+        winner_id = team1_id;
+    } else if (team1_score < team2_score && status === 'finished') {
+        winner_id = team2_id;
+    }
+
     return {
         external_id: parseInt(match_id),
         game_id: teamResolver.getGameId(),
@@ -371,6 +379,7 @@ function parseMatch(text: string, teamResolver: TeamResolver): Match | null {
         team2_id,
         team1_score,
         team2_score,
+        winner_id,
         status,
         date,
     };

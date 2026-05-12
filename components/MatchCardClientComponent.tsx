@@ -18,6 +18,7 @@ type Match = {
     team2: Team;
     team1_score: number;
     team2_score: number;
+    winner_id: number;
     status: string;
     round: string;
     stage: string;
@@ -64,7 +65,17 @@ export default function MatchCard({ match, userPrediction, stats, isLoggedIn }: 
                     <p className="matchTeamName">{match.team1?.name ?? 'TBD'}</p>
                     <p className="matchTeamShort">{match.team1?.short_name ?? ''}</p>
                     {localPrediction === match.team1.id && (
-                        <span className="matchPredictedBadge">Your Pick ✓</span>
+                        <span
+                            className={
+                                match.status === 'finished'
+                                    ? localPrediction === match.winner_id
+                                        ? 'matchPredictedBadgeCorrect'
+                                        : 'matchPredictedBadgeWrong'
+                                    : 'matchPredictedBadge'
+                            }
+                        >
+                            Your Pick ✓
+                        </span>
                     )}
                 </button>
 
@@ -93,7 +104,17 @@ export default function MatchCard({ match, userPrediction, stats, isLoggedIn }: 
                     <p className="matchTeamName">{match.team2.name ?? 'TBD'}</p>
                     <p className="matchTeamShort">{match.team2.short_name ?? ''}</p>
                     {localPrediction === match.team2.id && (
-                        <span className="matchPredictedBadge">Your Pick ✓</span>
+                        <span
+                            className={
+                                match.status === 'finished'
+                                    ? localPrediction === match.winner_id
+                                        ? 'matchPredictedBadgeCorrect'
+                                        : 'matchPredictedBadgeWrong'
+                                    : 'matchPredictedBadge'
+                            }
+                        >
+                            Your Pick ✓
+                        </span>
                     )}
                 </button>
             </div>
