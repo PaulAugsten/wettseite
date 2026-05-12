@@ -78,9 +78,11 @@ export default async function Tournament({ params }: TournamentPageParameters) {
                 *,
                 team1:teams!matches_team1_id_fkey (id, name, short_name, slug),
                 team2:teams!matches_team2_id_fkey (id, name, short_name, slug)
-            )`,
+            ),
+            games!inner(id, name, slug)`,
         )
         .eq('slug', tournament)
+        .eq('games.slug', game)
         .order('date', { referencedTable: 'matches', ascending: true })
         .single();
 
