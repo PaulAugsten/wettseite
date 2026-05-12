@@ -1,6 +1,42 @@
 import Link from 'next/link';
 import Hello from '../../components/hello';
+import { TournamentCard } from '@/components/TournamentCard';
 import { createClient } from '@/lib/supabase/server';
+
+type Games = { id: number; name: string; slug: string; tournaments: Tournament[] };
+
+type Tournament = {
+    id: number;
+    name: string;
+    location: string;
+    prize_pool: string;
+    status: 'scheduled' | 'live' | 'finished';
+    slug: string;
+    start_date: string;
+    end_date: string;
+};
+
+function Section({
+    title,
+    tournaments,
+    game,
+}: {
+    title: string;
+    tournaments: Tournament[];
+    game: string;
+}) {
+    if (tournaments.length === 0) return null;
+    return (
+        <div className="tournamentSection">
+            <h2 className="tournamentSectionTitle">{title}</h2>
+            <div className="tournamentGrid">
+                {tournaments.map((tournament) => (
+                    <TournamentCard key={tournament.id} tournament={tournament} game={game} />
+                ))}
+            </div>
+        </div>
+    );
+}
 
 const Home = async () => {
     const supabase = await createClient();
@@ -16,9 +52,35 @@ const Home = async () => {
         );
     }
 
+    const { data: games, error: tournamentError } = await supabase
+        .from('games')
+        .select(
+            `*,
+            tournaments(*)`,
+        )
+        .eq('tournaments.status', 'live');
+    if (tournamentError) {
+        console.log('Error fetching tournaments: ', tournamentError);
+    }
+
+    const liveGames = games as Games[];
+
+    console.log(liveGames);
+
+    liveGames.map((game) => console.log(game));
+
     return (
         <main>
-            <div className="text-7xl">Welcome!</div>
+            <div className="text-6xl">Welcome!</div>
+
+            {liveGames.map((game) => (
+                <Section
+                    key={game.id}
+                    title="Ongoing Tournament"
+                    tournaments={game.tournaments}
+                    game={game.slug}
+                />
+            ))}
         </main>
     );
 };
