@@ -23,6 +23,7 @@ type Match = {
     team2: Team;
     team1_score: number;
     team2_score: number;
+    winner_id: number;
     status: string;
     round: string;
     stage: string;
