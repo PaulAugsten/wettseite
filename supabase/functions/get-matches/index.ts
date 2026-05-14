@@ -720,11 +720,7 @@ async function scrapeMatches() {
     }
 
     if (allMatches.length > 0) {
-        const { error } = await supabase
-            .from('matches')
-            .upsert(allMatches, {
-                onConflict: 'tournament_id, team1_id, team2_id, stage, group, round, bracket',
-            });
+        const { error } = await supabase.from('matches').insert(allMatches);
         if (error) throw new Error(`DB upsert failed: ${error.message}`);
     }
 

@@ -819,15 +819,12 @@ export async function getMatchesOfTournament(
 
     overview.sort((a, b) => parseInt(a.pageId) - parseInt(b.pageId));
 
+    allMatches.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
     fs.writeFileSync('tournament_overview.json', JSON.stringify(overview, null, 2), 'utf-8');
 
     if (insert_into_db) {
-        const { data, error } = await supabase
-            .from('matches')
-            .upsert(allMatches, {
-                onConflict: 'tournament_id, team1_id, team2_id, stage, group, round, bracket',
-            })
-            .select();
+        const { data, error } = await supabase.from('matches').insert(allMatches).select();
 
         if (error || !data) {
             console.log('Error inserting matches into the DB:', error);
