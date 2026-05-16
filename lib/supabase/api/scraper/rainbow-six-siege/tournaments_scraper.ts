@@ -115,7 +115,8 @@ async function getTournamentMetaData(url: string) {
     let status = 'live' as 'live' | 'scheduled' | 'finished';
     if (new Date() < start_date) {
         status = 'scheduled';
-    } else if (new Date() > end_date) {
+    } else if (new Date().getDate() > end_date.getDate() + 1) {
+        // TODO: make "live" dependent on the status of the last game
         status = 'finished';
     }
 
