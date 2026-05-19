@@ -1,14 +1,26 @@
 import 'dotenv/config';
 import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
-import { type Tournament } from './tournaments_scraper';
 import fs from 'fs';
 import TeamResolver from './teamnames_resolver';
+
+// Tournament type for fetching from db (with id)
+type Tournament = {
+    id: number;
+    name: string;
+    game_id: number;
+    location: string;
+    prize_pool: string;
+    start_date: string;
+    end_date: string;
+    status: 'scheduled' | 'live' | 'finished';
+    url: string;
+};
 
 export type Match = {
     external_id: number;
     game_id: number;
-    tournament_id: number | undefined;
+    tournament_id: number;
     stage: string;
     group: string;
     bracket: string;
@@ -69,7 +81,7 @@ const TIMEZONE_OFFSETS: Record<string, string> = {
     AWST: '+08:00', // Australian Western Standard Time
 };
 
-async function getGameId(gameSlug: string): Promise<number> {
+async function getGameId(gameSlug: string): Promise<number | undefined> {
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -85,7 +97,7 @@ async function getGameId(gameSlug: string): Promise<number> {
 
     if (error || !data) {
         console.log('Error getting game_id from DB:', error);
-        return -1;
+        return undefined;
     }
 
     return data.id;
@@ -769,7 +781,16 @@ export async function getMatchesOfTournament(
 
     const gameId = await getGameId(gameSlug);
 
+    if (!gameId) {
+        console.log(`Game not found for slug: ${gameSlug}`);
+        return 0;
+    }
+
     const tournaments = await getTournamentsFromDB(gameId, tournamentIds);
+    if (!tournaments) {
+        console.log(`No tournaments found for slug: ${gameSlug} (Id: ${gameId})`);
+        return 0;
+    }
     const tournamentPages = tournaments.map((tournament) => {
         return tournament.url
             .replace('https://liquipedia.net/rainbowsix/', '')
