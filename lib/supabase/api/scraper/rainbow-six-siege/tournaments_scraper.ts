@@ -2,13 +2,12 @@ import 'dotenv/config';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { createClient } from '@supabase/supabase-js';
-import { getMatchesOfTournament } from './matches_scraper';
 
 const liquipedia_tournaments_url = 'https://liquipedia.net/rainbowsix/S-Tier_Tournaments';
 const game_slug = 'rainbow-six-siege';
 
-export type Tournament = {
-    id?: number;
+// Tournament type for inserting into db (no id)
+type Tournament = {
     name: string;
     game_id: number;
     location: string;
