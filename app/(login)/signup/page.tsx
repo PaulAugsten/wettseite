@@ -1,9 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useActionState } from 'react';
 import { signup } from './actions';
 import styles from './signup.module.css';
-import Link from 'next/link';
 
 export default function SignupPage() {
     const [state, signupFormAction] = useActionState(signup, { message: '' });
@@ -16,7 +16,9 @@ export default function SignupPage() {
                         <h2>Create your account</h2>
                         <p>Sign up below</p>
                     </div>
-                    <div className={`${styles.errorMessage} ${state.errors ? styles.show : ''}`}>
+                    <div
+                        className={`${styles.errorMessage} ${state.errors ? styles.show : ''}`}
+                    >
                         <p>{state.message}</p>
                     </div>
 
@@ -31,7 +33,6 @@ export default function SignupPage() {
                                     autoCapitalize="none"
                                     autoCorrect="off"
                                     autoComplete="username"
-                                    autoFocus
                                     required
                                 />
                                 <span className={styles.focusBorder}></span>
@@ -53,7 +54,9 @@ export default function SignupPage() {
                             </div>
                         </div>
                         <div className={styles.formGroup}>
-                            <div className={`${styles.inputWrapper} ${styles.passwordWrapper}`}>
+                            <div
+                                className={`${styles.inputWrapper} ${styles.passwordWrapper}`}
+                            >
                                 <label htmlFor="password">Password</label>
                                 <input
                                     id="password"
@@ -65,6 +68,7 @@ export default function SignupPage() {
                             </div>
                         </div>
                         <button
+                            type="submit"
                             className={`${styles.btn} ${styles.signupBtn}`}
                             formAction={signupFormAction}
                         >
@@ -74,7 +78,10 @@ export default function SignupPage() {
                         <div className={styles.signupFooter}>
                             <p>
                                 Already have an account?&nbsp;
-                                <Link className={styles.loginLink} href="/login">
+                                <Link
+                                    className={styles.loginLink}
+                                    href="/login"
+                                >
                                     Log in
                                 </Link>
                             </p>

@@ -9,7 +9,10 @@ interface LoginState {
     errors?: string;
 }
 
-export async function login(previousState: LoginState, formData: FormData): Promise<LoginState> {
+export async function login(
+    _previousState: LoginState,
+    formData: FormData,
+): Promise<LoginState> {
     const supabase = await createClient();
 
     // TODO: implement validation
@@ -22,9 +25,12 @@ export async function login(previousState: LoginState, formData: FormData): Prom
         return { message: 'Missing username or password', errors: '500' };
     }
 
-    const { data: email, error: profileError } = await supabase.rpc('get_email_by_username', {
-        p_username: data.username,
-    });
+    const { data: email, error: profileError } = await supabase.rpc(
+        'get_email_by_username',
+        {
+            p_username: data.username,
+        },
+    );
 
     if (profileError || !email) {
         return { message: 'User not found', errors: '500' };

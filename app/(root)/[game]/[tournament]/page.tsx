@@ -41,7 +41,10 @@ function MatchSection({
     title: string;
     matches: Match[];
     userPredictionMap: Map<number, number>;
-    predictionStats: Map<number, { team1: number; team2: number; total: number }>;
+    predictionStats: Map<
+        number,
+        { team1: number; team2: number; total: number }
+    >;
     isLoggedIn: boolean;
 }) {
     if (matches.length === 0) return null;
@@ -54,7 +57,13 @@ function MatchSection({
                         key={match.id}
                         match={match}
                         userPrediction={userPredictionMap.get(match.id) ?? null}
-                        stats={predictionStats.get(match.id) ?? { team1: 0, team2: 0, total: 0 }}
+                        stats={
+                            predictionStats.get(match.id) ?? {
+                                team1: 0,
+                                team2: 0,
+                                total: 0,
+                            }
+                        }
                         isLoggedIn={isLoggedIn}
                     />
                 ))}
@@ -117,9 +126,14 @@ export default async function Tournament({ params }: TournamentPageParameters) {
         (userPredictions ?? []).map((p) => [p.match_id, p.predicted_winner_id]),
     );
 
-    const predictionStats = new Map<number, { team1: number; team2: number; total: number }>();
+    const predictionStats = new Map<
+        number,
+        { team1: number; team2: number; total: number }
+    >();
     for (const match of matches) {
-        const matchPredictions = (allPredictions ?? []).filter((p) => p.match_id === match.id);
+        const matchPredictions = (allPredictions ?? []).filter(
+            (p) => p.match_id === match.id,
+        );
         const team1Count = matchPredictions.filter(
             (p) => p.predicted_winner_id === match.team1?.id,
         ).length;
@@ -135,7 +149,9 @@ export default async function Tournament({ params }: TournamentPageParameters) {
 
     const live = matches.filter((m) => m.status === 'live');
     const upcoming = matches.filter((m) => m.status === 'planned');
-    const finished = matches.filter((m) => m.status === 'finished').toReversed();
+    const finished = matches
+        .filter((m) => m.status === 'finished')
+        .toReversed();
 
     return (
         <div className="gamePage">
@@ -183,7 +199,9 @@ export default async function Tournament({ params }: TournamentPageParameters) {
                     />
                 </div>
                 <div className="standingsColumn">
-                    <PredictionStandings standings={prediction_standings ?? []} />
+                    <PredictionStandings
+                        standings={prediction_standings ?? []}
+                    />
                 </div>
             </div>
         </div>

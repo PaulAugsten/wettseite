@@ -1,7 +1,7 @@
 'use client';
+import type { User } from '@supabase/supabase-js';
 import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { type User } from '@supabase/supabase-js';
 import Avatar from './avatar';
 
 export default function AccountForm({ user }: { user: User | null }) {
@@ -33,7 +33,7 @@ export default function AccountForm({ user }: { user: User | null }) {
                 setWebsite(data.website);
                 setAvatarUrl(data.avatar_url);
             }
-        } catch (error) {
+        } catch {
             alert('Error loading user data!');
         } finally {
             setLoading(false);
@@ -41,8 +41,9 @@ export default function AccountForm({ user }: { user: User | null }) {
     }, [user, supabase]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- getProfile sets loading state for the initial fetch
         getProfile();
-    }, [user, getProfile]);
+    }, [getProfile]);
 
     async function updateProfile({
         username,
@@ -67,7 +68,7 @@ export default function AccountForm({ user }: { user: User | null }) {
             });
             if (error) throw error;
             alert('Profile updated!');
-        } catch (error) {
+        } catch {
             alert('Error updating the data!');
         } finally {
             setLoading(false);
@@ -84,7 +85,12 @@ export default function AccountForm({ user }: { user: User | null }) {
                 size={150}
                 onUpload={(url) => {
                     setAvatarUrl(url);
-                    updateProfile({ fullname, username, website, avatar_url: url });
+                    updateProfile({
+                        fullname,
+                        username,
+                        website,
+                        avatar_url: url,
+                    });
                 }}
             />
 
@@ -122,8 +128,16 @@ export default function AccountForm({ user }: { user: User | null }) {
 
             <div>
                 <button
+                    type="button"
                     className="button primary block"
-                    onClick={() => updateProfile({ fullname, username, website, avatar_url })}
+                    onClick={() =>
+                        updateProfile({
+                            fullname,
+                            username,
+                            website,
+                            avatar_url,
+                        })
+                    }
                     disabled={loading}
                 >
                     {loading ? 'Loading ...' : 'Update'}

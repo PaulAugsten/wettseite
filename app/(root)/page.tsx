@@ -1,7 +1,12 @@
 import { TournamentCard } from '@/components/TournamentCard';
 import { createClient } from '@/lib/supabase/server';
 
-type Games = { id: number; name: string; slug: string; tournaments: Tournament[] };
+type Games = {
+    id: number;
+    name: string;
+    slug: string;
+    tournaments: Tournament[];
+};
 
 type Tournament = {
     id: number;
@@ -29,7 +34,11 @@ function Section({
             <h2 className="tournamentSectionTitle">{title}</h2>
             <div className="tournamentGrid">
                 {tournaments.map((tournament) => (
-                    <TournamentCard key={tournament.id} tournament={tournament} game={game} />
+                    <TournamentCard
+                        key={tournament.id}
+                        tournament={tournament}
+                        game={game}
+                    />
                 ))}
             </div>
         </div>
@@ -39,15 +48,22 @@ function Section({
 const Home = async () => {
     const supabase = await createClient();
 
-    const { data: games, error: tournamentError } = await supabase
+    const { data: games, error: gamesError } = await supabase
         .from('games')
         .select(
             `*,
             tournaments(*)`,
         )
         .eq('tournaments.status', 'live');
-    if (tournamentError) {
-        console.log('Error fetching tournaments: ', tournamentError);
+
+    if (gamesError || !games) {
+        console.log('Error fetching games: ', gamesError);
+        return (
+            <div>
+                Error fetching games. Check your internet connection and try
+                again.
+            </div>
+        );
     }
 
     const liveGames = games as Games[];

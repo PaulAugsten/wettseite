@@ -2,13 +2,14 @@
     margin: 0;
     box-sizing: border-box;
     font-family:
-        'Inter',
-        -apple-system,
-        BlinkMacSystemFont,
-        'Segoe UI',
-        Roboto,
+        "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
         sans-serif;
-    background: radial-gradient(circle at top, #1f1f1f 0%, #0f0f0f 60%, #050505 100%);
+    background: radial-gradient(
+        circle at top,
+        #1f1f1f 0%,
+        #0f0f0f 60%,
+        #050505 100%
+    );
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -124,13 +125,18 @@
 }
 
 .btn::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
     transition: left 0.5s ease;
 }
 
@@ -186,7 +192,7 @@
     cursor: pointer;
 }
 
-.rememberWrapper input[type='checkbox'] {
+.rememberWrapper input[type="checkbox"] {
     display: none;
 }
 
@@ -214,14 +220,17 @@
     backdrop-filter: blur(10px);
 }
 
-.rememberWrapper input[type='checkbox']:checked ~ .checkboxLabel .checkmark {
+.rememberWrapper input[type="checkbox"]:checked ~ .checkboxLabel .checkmark {
     background: #06b6d4;
     border-color: #06b6d4;
     transform: scale(1.1);
 }
 
-.rememberWrapper input[type='checkbox']:checked ~ .checkboxLabel .checkmark::after {
-    content: '✓';
+.rememberWrapper
+    input[type="checkbox"]:checked
+    ~ .checkboxLabel
+    .checkmark::after {
+    content: "✓";
     color: white;
     font-size: 11px;
     font-weight: bold;
@@ -413,7 +422,7 @@
 }
 
 .forgotPassword::after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: -2px;
     left: 0;
@@ -449,7 +458,7 @@
 
 .divider::before,
 .divider::after {
-    content: '';
+    content: "";
     flex: 1;
     height: 1px;
     background: rgba(255, 255, 255, 0.08);
@@ -521,7 +530,7 @@
 }
 
 .signupLink::after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: -2px;
     left: 0;

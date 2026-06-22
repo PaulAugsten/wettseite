@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 :root {
     --bg-primary: #0f0f0f;
@@ -15,6 +15,8 @@
 
 html {
     background-color: #050505;
+    max-width: 100%;
+    overflow-x: hidden;
 }
 
 * {
@@ -24,14 +26,15 @@ html {
 }
 
 body {
-    background: radial-gradient(circle at top, #1f1f1f 0%, #0f0f0f 60%, #050505 100%);
+    background: radial-gradient(
+        circle at top,
+        #1f1f1f 0%,
+        #0f0f0f 60%,
+        #050505 100%
+    );
     color: var(--text-primary);
     font-family:
-        'Inter',
-        -apple-system,
-        BlinkMacSystemFont,
-        'Segoe UI',
-        Roboto,
+        "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
         sans-serif;
     min-height: 100vh;
 }
@@ -143,9 +146,9 @@ body {
 }
 
 .navLinkActive {
-    color: var(--text-primary) !important;
+    color: var(--text-primary);
     font-weight: 600;
-    background: rgba(255, 255, 255, 0.08) !important;
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .navAuth {
@@ -549,7 +552,6 @@ body {
 
 .matchTeamBtn {
     background: transparent;
-    border: none;
     cursor: default;
     padding: 8px 12px;
     border-radius: 8px;
@@ -568,8 +570,8 @@ body {
 }
 
 .matchTeamPredicted {
-    border-color: var(--accent) !important;
-    background: rgba(59, 130, 246, 0.08) !important;
+    border-color: var(--accent);
+    background: rgba(59, 130, 246, 0.08);
 }
 
 .matchPredictedBadge {
@@ -605,7 +607,6 @@ body {
 
 .predictionBarFill {
     height: 100%;
-    background: var(--accent);
     border-radius: 999px;
     transition: width 0.8s ease;
     background: linear-gradient(90deg, #3b82f6, #6366f1);

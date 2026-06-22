@@ -1,8 +1,8 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { predict } from '@/app/(root)/[game]/[tournament]/actions';
-import { usePathname } from 'next/navigation';
 
 type Team = {
     id: number;
@@ -33,13 +33,22 @@ type Props = {
     isLoggedIn: boolean;
 };
 
-export default function MatchCard({ match, userPrediction, stats, isLoggedIn }: Props) {
-    const [localPrediction, setLocalPrediction] = useState<number | null>(userPrediction);
+export default function MatchCard({
+    match,
+    userPrediction,
+    stats,
+    isLoggedIn,
+}: Props) {
+    const [localPrediction, setLocalPrediction] = useState<number | null>(
+        userPrediction,
+    );
     const [loading, setLoading] = useState(false);
     const pathname = usePathname();
 
     const canPredict =
-        isLoggedIn && match.status === 'planned' && new Date() < new Date(match.date);
+        isLoggedIn &&
+        match.status === 'planned' &&
+        new Date() < new Date(match.date);
 
     const team1PredictionPercentage =
         stats.total > 0 ? Math.round((stats.team1 / stats.total) * 100) : 50;
@@ -58,12 +67,17 @@ export default function MatchCard({ match, userPrediction, stats, isLoggedIn }: 
         <div className="matchCard">
             <div className="matchTeams">
                 <button
+                    type="button"
                     className={`matchTeam matchTeamLeft matchTeamBtn ${canPredict ? 'matchTeamClickable' : ''} ${localPrediction === match.team1.id ? 'matchTeamPredicted' : ''}`}
                     onClick={() => match.team1 && handlePredict(match.team1.id)}
                     disabled={!canPredict || loading}
                 >
-                    <p className="matchTeamName">{match.team1?.name ?? 'TBD'}</p>
-                    <p className="matchTeamShort">{match.team1?.short_name ?? ''}</p>
+                    <p className="matchTeamName">
+                        {match.team1?.name ?? 'TBD'}
+                    </p>
+                    <p className="matchTeamShort">
+                        {match.team1?.short_name ?? ''}
+                    </p>
                     {localPrediction === match.team1.id && (
                         <span
                             className={
@@ -97,12 +111,15 @@ export default function MatchCard({ match, userPrediction, stats, isLoggedIn }: 
                 </div>
 
                 <button
+                    type="button"
                     className={`matchTeam matchTeamRight matchTeamBtn ${canPredict ? 'matchTeamClickable' : ''} ${localPrediction === match.team2.id ? 'matchTeamPredicted' : ''}`}
                     onClick={() => match.team2 && handlePredict(match.team2.id)}
                     disabled={!canPredict || loading}
                 >
                     <p className="matchTeamName">{match.team2.name ?? 'TBD'}</p>
-                    <p className="matchTeamShort">{match.team2.short_name ?? ''}</p>
+                    <p className="matchTeamShort">
+                        {match.team2.short_name ?? ''}
+                    </p>
                     {localPrediction === match.team2.id && (
                         <span
                             className={
@@ -119,7 +136,7 @@ export default function MatchCard({ match, userPrediction, stats, isLoggedIn }: 
                 </button>
             </div>
 
-            {stats.total > 0 && match.status != 'planned' && (
+            {stats.total > 0 && match.status !== 'planned' && (
                 <div className="predictionBar">
                     <span className="predictionPrecentage predictionPercentageLeft">
                         {team1PredictionPercentage}%
@@ -137,8 +154,12 @@ export default function MatchCard({ match, userPrediction, stats, isLoggedIn }: 
             )}
 
             <div className="matchFooter">
-                {match.round && <span className="matchRound">{match.round}</span>}
-                {match.stage && <span className="matchStage">{match.stage}</span>}
+                {match.round && (
+                    <span className="matchRound">{match.round}</span>
+                )}
+                {match.stage && (
+                    <span className="matchStage">{match.stage}</span>
+                )}
                 {!isLoggedIn && match.status === 'planned' && (
                     <span className="matchLoginHint">Log in to predict</span>
                 )}

@@ -2,17 +2,22 @@
     "name": "wettsite",
     "version": "0.1.0",
     "private": true,
-    "packageManager": "pnpm@11.8.0",
-    "engines": {
-        "node": ">=26 <27",
-        "pnpm": ">=11"
-    },
     "scripts": {
-        "dev": "next dev",
+        "analyze": "ANALYZE=true next build",
         "build": "next build",
+        "dev": "next dev",
+        "doctor": "npx react-doctor@latest",
+        "format": "biome format --write .",
+        "knip": "knip",
+        "lint": "biome check .",
+        "lint:fix": "biome check --write .",
+        "lint:next": "eslint",
         "start": "next start",
-        "lint": "eslint",
-        "doctor": "npx react-doctor@latest"
+        "test": "vitest run",
+        "test:coverage": "vitest run --coverage",
+        "test:e2e": "playwright test",
+        "test:watch": "vitest",
+        "typecheck": "tsc --noEmit"
     },
     "dependencies": {
         "@ducanh2912/next-pwa": "^10.2.9",
@@ -31,15 +36,27 @@
         "react-dom": "^19.2.7"
     },
     "devDependencies": {
+        "@biomejs/biome": "^2.5.0",
+        "@next/bundle-analyzer": "^16.2.9",
+        "@playwright/test": "^1.61.0",
         "@tailwindcss/postcss": "^4.3.1",
         "@types/node": "^26.0.0",
         "@types/react": "^19.2.17",
         "@types/react-dom": "^19.2.3",
+        "@vitejs/plugin-react": "^6.0.2",
         "eslint": "^9.39.4",
         "eslint-config-next": "^16.2.9",
+        "jsdom": "^29.1.1",
+        "knip": "^6.17.1",
         "supabase": "^2.107.0",
         "tailwindcss": "^4.3.1",
         "tsx": "^4.22.4",
-        "typescript": "^6.0.3"
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.9"
+    },
+    "packageManager": "pnpm@11.8.0",
+    "engines": {
+        "node": ">=26 <27",
+        "pnpm": ">=11"
     }
 }

@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server';
 import { TournamentCard } from '@/components/TournamentCard';
+import { createClient } from '@/lib/supabase/server';
 
 type GamePageParameters = {
     params: {
@@ -33,7 +33,11 @@ function Section({
             <h2 className="tournamentSectionTitle">{title}</h2>
             <div className="tournamentGrid">
                 {tournaments.map((tournament) => (
-                    <TournamentCard key={tournament.id} tournament={tournament} game={game} />
+                    <TournamentCard
+                        key={tournament.id}
+                        tournament={tournament}
+                        game={game}
+                    />
                 ))}
             </div>
         </div>
@@ -51,7 +55,10 @@ export default async function Game({ params }: GamePageParameters) {
             tournaments (*)`,
         )
         .eq('slug', game)
-        .order('start_date', { referencedTable: 'tournaments', ascending: false })
+        .order('start_date', {
+            referencedTable: 'tournaments',
+            ascending: false,
+        })
         .single();
 
     if (error || !data) {
@@ -59,16 +66,23 @@ export default async function Game({ params }: GamePageParameters) {
     }
 
     // Group by status
-    const live = data.tournaments.filter((t: { status: string }) => t.status === 'live');
-    const upcoming = data.tournaments.filter((t: { status: string }) => t.status === 'scheduled');
-    const finished = data.tournaments.filter((t: { status: string }) => t.status === 'finished');
+    const live = data.tournaments.filter(
+        (t: { status: string }) => t.status === 'live',
+    );
+    const upcoming = data.tournaments.filter(
+        (t: { status: string }) => t.status === 'scheduled',
+    );
+    const finished = data.tournaments.filter(
+        (t: { status: string }) => t.status === 'finished',
+    );
 
     return (
         <div className="gamePage">
             <div className="gamePageHeader">
                 <h1 className="gamePageTitle">{data.name}</h1>
                 <p className="gamePageSubtitle">
-                    {data.tournaments.length} tournament{data.tournaments.length !== 1 ? 's' : ''}
+                    {data.tournaments.length} tournament
+                    {data.tournaments.length !== 1 ? 's' : ''}
                 </p>
             </div>
 

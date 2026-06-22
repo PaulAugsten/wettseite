@@ -1,5 +1,6 @@
+import fs from 'node:fs';
+import { createInterface } from 'node:readline';
 import { createClient } from '@supabase/supabase-js';
-import fs from 'fs';
 
 type UnknownTeam = {
     name: string;
@@ -49,7 +50,9 @@ class TeamResolver {
             this.allTeams.push({
                 id: team.id,
                 name: team.name,
-                aliases: team.team_aliases.map((a: any) => a.alias),
+                aliases: team.team_aliases.map(
+                    (a: { alias: string }) => a.alias,
+                ),
             });
 
             const normalizedName = this.normalize(team.name);
@@ -100,15 +103,21 @@ class TeamResolver {
             .replace(/[^\w\s]/g, '');
     }
 
-    private findSimilarTeams(teamName: string, threshold = 0.7): UnknownTeam['similarTo'] {
+    private findSimilarTeams(
+        teamName: string,
+        threshold = 0.7,
+    ): NonNullable<UnknownTeam['similarTo']> {
         const normalized = this.normalize(teamName);
-        const similar: UnknownTeam['similarTo'] = [];
+        const similar: NonNullable<UnknownTeam['similarTo']> = [];
 
         for (const team of this.allTeams) {
             const candidates = [team.name, ...team.aliases];
 
             for (const candidate of candidates) {
-                const similarity = this.calculateSimilarity(normalized, this.normalize(candidate));
+                const similarity = this.calculateSimilarity(
+                    normalized,
+                    this.normalize(candidate),
+                );
 
                 if (similarity >= threshold) {
                     similar.push({
@@ -142,24 +151,24 @@ class TeamResolver {
         }
 
         for (let j = 0; j <= str1.length; j++) {
-            matrix[0][j] = j;
+            matrix[0]![j] = j;
         }
 
         for (let i = 1; i <= str2.length; i++) {
             for (let j = 1; j <= str1.length; j++) {
                 if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
-                    matrix[i][j] = matrix[i - 1][j - 1];
+                    matrix[i]![j] = matrix[i - 1]![j - 1]!;
                 } else {
-                    matrix[i][j] = Math.min(
-                        matrix[i - 1][j - 1] + 1,
-                        matrix[i][j - 1] + 1,
-                        matrix[i - 1][j] + 1,
+                    matrix[i]![j] = Math.min(
+                        matrix[i - 1]![j - 1]! + 1,
+                        matrix[i]![j - 1]! + 1,
+                        matrix[i - 1]![j]! + 1,
                     );
                 }
             }
         }
 
-        return matrix[str2.length][str1.length];
+        return matrix[str2.length]![str1.length]!;
     }
 
     async reviewUnknownTeams() {
@@ -190,25 +199,34 @@ class TeamResolver {
                 })),
         };
 
-        fs.writeFileSync('unknown_teams_review.json', JSON.stringify(reviewData, null, 2), 'utf-8');
+        fs.writeFileSync(
+            'unknown_teams_review.json',
+            JSON.stringify(reviewData, null, 2),
+            'utf-8',
+        );
 
         console.log('\n📄 Unknown teams saved to: unknown_teams_review.json');
         console.log('\nActions:');
         console.log('  - CREATE: Create new team');
-        console.log('  - ALIAS: Add as alias to existing team (set assignToTeamId)');
+        console.log(
+            '  - ALIAS: Add as alias to existing team (set assignToTeamId)',
+        );
         console.log('  - IGNORE: Skip this team');
 
-        const readline = require('readline').createInterface({
+        const readline = createInterface({
             input: process.stdin,
             output: process.stdout,
         });
 
         return new Promise<void>((resolve) => {
-            readline.question('\nReview and edit the file, then press Enter to continue...', () => {
-                readline.close();
-                this.processReviewedTeams();
-                resolve();
-            });
+            readline.question(
+                '\nReview and edit the file, then press Enter to continue...',
+                () => {
+                    readline.close();
+                    this.processReviewedTeams();
+                    resolve();
+                },
+            );
         });
     }
 
@@ -259,8 +277,13 @@ class TeamResolver {
                 if (error) {
                     console.error(`Error adding alias ${team.name}:`, error);
                 } else {
-                    console.log(`Added alias: ${team.name} to Team ID ${team.assignToTeamId}`);
-                    this.teamLookup.set(this.normalize(team.name), team.assignToTeamId);
+                    console.log(
+                        `Added alias: ${team.name} to Team ID ${team.assignToTeamId}`,
+                    );
+                    this.teamLookup.set(
+                        this.normalize(team.name),
+                        team.assignToTeamId,
+                    );
                 }
             } else if (team.action === 'IGNORE') {
                 console.log(`Ignored: ${team.name}`);

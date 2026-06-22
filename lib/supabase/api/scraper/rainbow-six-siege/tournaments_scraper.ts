@@ -1,9 +1,10 @@
 import 'dotenv/config';
+import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { createClient } from '@supabase/supabase-js';
 
-const liquipedia_tournaments_url = 'https://liquipedia.net/rainbowsix/S-Tier_Tournaments';
+const liquipedia_tournaments_url =
+    'https://liquipedia.net/rainbowsix/S-Tier_Tournaments';
 const game_slug = 'rainbow-six-siege';
 
 // Tournament type for inserting into db (no id)
@@ -47,38 +48,40 @@ async function getTournamentMetaData(url: string) {
     const { data } = await axios.get(url);
     const $ = cheerio.load(data);
 
-    const name = $('.infobox-header.wiki-backgroundcolor-light')
-        .not('.infobox-header-2')
-        .contents()
-        .filter(function () {
-            return this.type === 'text';
-        })
-        .first()
-        .text()
-        .trim()
-        .replace('R6 ', '')
-        .split(' -')[0];
+    const name =
+        $('.infobox-header.wiki-backgroundcolor-light')
+            .not('.infobox-header-2')
+            .contents()
+            .filter(function () {
+                return this.type === 'text';
+            })
+            .first()
+            .text()
+            .trim()
+            .replace('R6 ', '')
+            .split(' -')[0] ?? '';
 
     const game_id = await getGameId();
 
-    const location =
-        $('.infobox-cell-2.infobox-description')
-            .filter(function () {
-                return $(this).text().trim() === 'Location:';
-            })
-            .next()
-            .html()
-            ?.trim()
-            .split('&nbsp;')[1]
-            .split('<br>')[0] +
-        ', ' +
+    const locationHtml = $('.infobox-cell-2.infobox-description')
+        .filter(function () {
+            return $(this).text().trim() === 'Location:';
+        })
+        .next()
+        .html()
+        ?.trim();
+    const locationCity =
+        locationHtml?.split('&nbsp;')[1]?.split('<br>')[0] ?? '';
+    const locationCountry =
         $('.infobox-cell-2.infobox-description')
             .filter(function () {
                 return $(this).text().trim() === 'Location:';
             })
             .next()
             .find('a')
-            .attr('title');
+            .attr('title') ?? '';
+
+    const location = `${locationCity}, ${locationCountry}`;
 
     const prize_pool = $('.infobox-cell-2.infobox-description')
         .filter(function () {
@@ -147,7 +150,8 @@ export async function scrapeTournaments(insert_into_db: boolean) {
 
     for (const tournamentEl of tournamentElements) {
         const tournamentCancelled =
-            $(tournamentEl).find('[style*="text-decoration:line-through"]').length > 0;
+            $(tournamentEl).find('[style*="text-decoration:line-through"]')
+                .length > 0;
 
         if (tournamentCancelled) {
             continue;
@@ -175,9 +179,7 @@ export async function scrapeTournaments(insert_into_db: boolean) {
         const metadata = await getTournamentMetaData(tournament_url);
 
         if (metadata) {
-            {
-                tournaments.push(metadata);
-            }
+            tournaments.push(metadata);
         }
     }
 

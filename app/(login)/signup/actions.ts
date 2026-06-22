@@ -9,7 +9,10 @@ interface SignupState {
     errors?: string;
 }
 
-export async function signup(previousState: SignupState, formData: FormData): Promise<SignupState> {
+export async function signup(
+    _previousState: SignupState,
+    formData: FormData,
+): Promise<SignupState> {
     const supabase = await createClient();
 
     // TODO: implement validation

@@ -1,6 +1,21 @@
 repos:
   - repo: local
     hooks:
+      - id: lint
+        name: biome check
+        entry: pnpm lint
+        language: system
+        pass_filenames: false
+      - id: lint-next
+        name: eslint
+        entry: pnpm lint:next
+        language: system
+        pass_filenames: false
+      - id: typecheck
+        name: tsc --noEmit
+        entry: pnpm typecheck
+        language: system
+        pass_filenames: false
       - id: build
         name: pnpm build
         entry: pnpm build
