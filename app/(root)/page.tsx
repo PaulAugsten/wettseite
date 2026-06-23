@@ -34,11 +34,7 @@ function Section({
             <h2 className="tournamentSectionTitle">{title}</h2>
             <div className="tournamentGrid">
                 {tournaments.map((tournament) => (
-                    <TournamentCard
-                        key={tournament.id}
-                        tournament={tournament}
-                        game={game}
-                    />
+                    <TournamentCard key={tournament.id} tournament={tournament} game={game} />
                 ))}
             </div>
         </div>
@@ -58,12 +54,7 @@ const Home = async () => {
 
     if (gamesError || !games) {
         console.log('Error fetching games: ', gamesError);
-        return (
-            <div>
-                Error fetching games. Check your internet connection and try
-                again.
-            </div>
-        );
+        return <div>Error fetching games. Check your internet connection and try again.</div>;
     }
 
     const liveGames = games as Games[];

@@ -33,22 +33,13 @@ type Props = {
     isLoggedIn: boolean;
 };
 
-export default function MatchCard({
-    match,
-    userPrediction,
-    stats,
-    isLoggedIn,
-}: Props) {
-    const [localPrediction, setLocalPrediction] = useState<number | null>(
-        userPrediction,
-    );
+export default function MatchCard({ match, userPrediction, stats, isLoggedIn }: Props) {
+    const [localPrediction, setLocalPrediction] = useState<number | null>(userPrediction);
     const [loading, setLoading] = useState(false);
     const pathname = usePathname();
 
     const canPredict =
-        isLoggedIn &&
-        match.status === 'planned' &&
-        new Date() < new Date(match.date);
+        isLoggedIn && match.status === 'planned' && new Date() < new Date(match.date);
 
     const team1PredictionPercentage =
         stats.total > 0 ? Math.round((stats.team1 / stats.total) * 100) : 50;
@@ -72,12 +63,8 @@ export default function MatchCard({
                     onClick={() => match.team1 && handlePredict(match.team1.id)}
                     disabled={!canPredict || loading}
                 >
-                    <p className="matchTeamName">
-                        {match.team1?.name ?? 'TBD'}
-                    </p>
-                    <p className="matchTeamShort">
-                        {match.team1?.short_name ?? ''}
-                    </p>
+                    <p className="matchTeamName">{match.team1?.name ?? 'TBD'}</p>
+                    <p className="matchTeamShort">{match.team1?.short_name ?? ''}</p>
                     {localPrediction === match.team1.id && (
                         <span
                             className={
@@ -117,9 +104,7 @@ export default function MatchCard({
                     disabled={!canPredict || loading}
                 >
                     <p className="matchTeamName">{match.team2.name ?? 'TBD'}</p>
-                    <p className="matchTeamShort">
-                        {match.team2.short_name ?? ''}
-                    </p>
+                    <p className="matchTeamShort">{match.team2.short_name ?? ''}</p>
                     {localPrediction === match.team2.id && (
                         <span
                             className={
@@ -154,12 +139,8 @@ export default function MatchCard({
             )}
 
             <div className="matchFooter">
-                {match.round && (
-                    <span className="matchRound">{match.round}</span>
-                )}
-                {match.stage && (
-                    <span className="matchStage">{match.stage}</span>
-                )}
+                {match.round && <span className="matchRound">{match.round}</span>}
+                {match.stage && <span className="matchStage">{match.stage}</span>}
                 {!isLoggedIn && match.status === 'planned' && (
                     <span className="matchLoginHint">Log in to predict</span>
                 )}

@@ -3,8 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
-const liquipedia_tournaments_url =
-    'https://liquipedia.net/rainbowsix/S-Tier_Tournaments';
+const liquipedia_tournaments_url = 'https://liquipedia.net/rainbowsix/S-Tier_Tournaments';
 const game_slug = 'rainbow-six-siege';
 
 // Tournament type for inserting into db (no id)
@@ -70,8 +69,7 @@ async function getTournamentMetaData(url: string) {
         .next()
         .html()
         ?.trim();
-    const locationCity =
-        locationHtml?.split('&nbsp;')[1]?.split('<br>')[0] ?? '';
+    const locationCity = locationHtml?.split('&nbsp;')[1]?.split('<br>')[0] ?? '';
     const locationCountry =
         $('.infobox-cell-2.infobox-description')
             .filter(function () {
@@ -150,8 +148,7 @@ export async function scrapeTournaments(insert_into_db: boolean) {
 
     for (const tournamentEl of tournamentElements) {
         const tournamentCancelled =
-            $(tournamentEl).find('[style*="text-decoration:line-through"]')
-                .length > 0;
+            $(tournamentEl).find('[style*="text-decoration:line-through"]').length > 0;
 
         if (tournamentCancelled) {
             continue;

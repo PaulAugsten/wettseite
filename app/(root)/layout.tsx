@@ -4,11 +4,7 @@ import NavLinks from '@/components/NavLinks';
 import UserMenu from '@/components/UserMenuClientComponent';
 import { createClient } from '@/lib/supabase/server';
 
-export default async function RootLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
     const supabase = await createClient();
 
     const {
@@ -43,16 +39,10 @@ export default async function RootLayout({
                             <UserMenu username={username} />
                         ) : (
                             <>
-                                <Link
-                                    href="/login"
-                                    className="navBtn navBtnOutline"
-                                >
+                                <Link href="/login" className="navBtn navBtnOutline">
                                     Log in
                                 </Link>
-                                <Link
-                                    href="/signup"
-                                    className="navBtn navBtnFilled"
-                                >
+                                <Link href="/signup" className="navBtn navBtnFilled">
                                     Sign up
                                 </Link>
                             </>

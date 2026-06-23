@@ -1,9 +1,5 @@
 {
     "$schema": "https://unpkg.com/knip@6/schema.json",
     "next": true,
-    "entry": [
-        "next.config.ts",
-        "instrumentation.ts",
-        "lib/supabase/api/scraper/**/*_scraper.ts"
-    ]
+    "entry": ["next.config.ts", "instrumentation.ts", "lib/supabase/api/scraper/**/*_scraper.ts"]
 }

@@ -39,9 +39,7 @@ export default function LoginPage() {
                             </div>
                         </div>
                         <div className={styles.formGroup}>
-                            <div
-                                className={`${styles.inputWrapper} ${styles.passwordWrapper}`}
-                            >
+                            <div className={`${styles.inputWrapper} ${styles.passwordWrapper}`}>
                                 <label htmlFor="password">Password</label>
                                 <input
                                     id="password"
@@ -52,20 +50,14 @@ export default function LoginPage() {
                                 />
                                 <span className={styles.focusBorder}></span>
                             </div>
-                            <Link
-                                className={styles.forgotPassword}
-                                href="/password_reset"
-                            >
+                            <Link className={styles.forgotPassword} href="/password_reset">
                                 Forgot password?
                             </Link>
                         </div>
                         <div className={styles.formOptions}>
                             <div className={styles.rememberWrapper}>
                                 <input type="checkbox" id="remember" />
-                                <label
-                                    className={styles.checkboxLabel}
-                                    htmlFor="remember"
-                                >
+                                <label className={styles.checkboxLabel} htmlFor="remember">
                                     <span className={styles.checkmark}></span>
                                     Remember me
                                 </label>
@@ -82,10 +74,7 @@ export default function LoginPage() {
                         <div className={styles.loginFooter}>
                             <p>
                                 Don&apos;t have an account?&nbsp;
-                                <Link
-                                    className={styles.signupLink}
-                                    href="/signup"
-                                >
+                                <Link className={styles.signupLink} href="/signup">
                                     Sign Up
                                 </Link>
                             </p>

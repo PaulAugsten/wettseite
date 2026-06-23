@@ -13,13 +13,7 @@ type Tournament = {
     end_date: string;
 };
 
-export function TournamentCard({
-    tournament,
-    game,
-}: {
-    tournament: Tournament;
-    game: string;
-}) {
+export function TournamentCard({ tournament, game }: { tournament: Tournament; game: string }) {
     return (
         <Link href={`/${game}/${tournament.slug}`} className="tournamentCard">
             <div className="tournamentCardHeader">
@@ -39,30 +33,21 @@ export function TournamentCard({
 
                 <div className="tournamentMeta">
                     {tournament.location && (
-                        <span className="tournamentMetaItem">
-                            {tournament.location}
-                        </span>
+                        <span className="tournamentMetaItem">{tournament.location}</span>
                     )}
                     {tournament.prize_pool && (
-                        <span className="tournamentMetaItem">
-                            {tournament.prize_pool}
-                        </span>
+                        <span className="tournamentMetaItem">{tournament.prize_pool}</span>
                     )}
                     {tournament.start_date && (
                         <span className="tournamentMetaItem">
                             {' '}
-                            {new Date(tournament.start_date).toLocaleDateString(
-                                'en-GB',
-                                {
-                                    day: 'numeric',
-                                    month: 'short',
-                                    year: 'numeric',
-                                },
-                            )}
+                            {new Date(tournament.start_date).toLocaleDateString('en-GB', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                            })}
                             {tournament.end_date &&
-                                ` - ${new Date(
-                                    tournament.end_date,
-                                ).toLocaleDateString('en-GB', {
+                                ` - ${new Date(tournament.end_date).toLocaleDateString('en-GB', {
                                     day: 'numeric',
                                     month: 'short',
                                     year: 'numeric',

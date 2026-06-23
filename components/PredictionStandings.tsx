@@ -5,11 +5,7 @@ type Standing = {
     total_predictions: number;
 };
 
-export default function PredictionStandings({
-    standings,
-}: {
-    standings: Standing[];
-}) {
+export default function PredictionStandings({ standings }: { standings: Standing[] }) {
     const sorted = [...standings].sort((a, b) => b.points - a.points);
 
     if (sorted.length === 0) return;

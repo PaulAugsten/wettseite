@@ -7,16 +7,14 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export default function InstallPrompt() {
-    const [installPrompt, setInstallPrompt] =
-        useState<BeforeInstallPromptEvent | null>(null);
+    const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
     const [dismissed, setDismissed] = useState(false);
 
     const isIOS =
         typeof navigator !== 'undefined' &&
         /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
     const isStandalone =
-        typeof window !== 'undefined' &&
-        window.matchMedia('(display-mode: standalone)').matches;
+        typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches;
     const showIOSHint = isIOS && !isStandalone;
 
     useEffect(() => {
@@ -58,9 +56,8 @@ export default function InstallPrompt() {
             ) : (
                 <>
                     <p className="installPromptText">
-                        Add Wettsite to your homescreenfor the best experience
-                        by tapping the <strong>Share</strong> button, then{' '}
-                        <strong>Add to Home Screen</strong>.
+                        Add Wettsite to your homescreenfor the best experience by tapping the{' '}
+                        <strong>Share</strong> button, then <strong>Add to Home Screen</strong>.
                     </p>
                     <div className="installPromptActions">
                         <button

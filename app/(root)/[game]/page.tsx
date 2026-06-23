@@ -33,11 +33,7 @@ function Section({
             <h2 className="tournamentSectionTitle">{title}</h2>
             <div className="tournamentGrid">
                 {tournaments.map((tournament) => (
-                    <TournamentCard
-                        key={tournament.id}
-                        tournament={tournament}
-                        game={game}
-                    />
+                    <TournamentCard key={tournament.id} tournament={tournament} game={game} />
                 ))}
             </div>
         </div>
@@ -66,15 +62,9 @@ export default async function Game({ params }: GamePageParameters) {
     }
 
     // Group by status
-    const live = data.tournaments.filter(
-        (t: { status: string }) => t.status === 'live',
-    );
-    const upcoming = data.tournaments.filter(
-        (t: { status: string }) => t.status === 'scheduled',
-    );
-    const finished = data.tournaments.filter(
-        (t: { status: string }) => t.status === 'finished',
-    );
+    const live = data.tournaments.filter((t: { status: string }) => t.status === 'live');
+    const upcoming = data.tournaments.filter((t: { status: string }) => t.status === 'scheduled');
+    const finished = data.tournaments.filter((t: { status: string }) => t.status === 'finished');
 
     return (
         <div className="gamePage">

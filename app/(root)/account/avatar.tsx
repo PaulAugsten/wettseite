@@ -22,9 +22,7 @@ export default function Avatar({
     useEffect(() => {
         async function downloadImage(path: string) {
             try {
-                const { data, error } = await supabase.storage
-                    .from('avatars')
-                    .download(path);
+                const { data, error } = await supabase.storage.from('avatars').download(path);
                 if (error) {
                     throw error;
                 }
@@ -39,9 +37,7 @@ export default function Avatar({
         if (url) downloadImage(url);
     }, [url, supabase]);
 
-    const uploadAvatar: React.ChangeEventHandler<HTMLInputElement> = async (
-        event,
-    ) => {
+    const uploadAvatar: React.ChangeEventHandler<HTMLInputElement> = async (event) => {
         try {
             setUploading(true);
 
@@ -81,10 +77,7 @@ export default function Avatar({
                     style={{ height: size, width: size }}
                 />
             ) : (
-                <div
-                    className="avatar no-image"
-                    style={{ height: size, width: size }}
-                />
+                <div className="avatar no-image" style={{ height: size, width: size }} />
             )}
             <div style={{ width: size }}>
                 <label className="button primary block" htmlFor="single">

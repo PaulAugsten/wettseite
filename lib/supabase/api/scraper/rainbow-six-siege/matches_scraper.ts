@@ -93,11 +93,7 @@ async function getGameId(gameSlug: string): Promise<number | undefined> {
         },
     );
 
-    const { data, error } = await supabase
-        .from('games')
-        .select(`id`)
-        .eq('slug', gameSlug)
-        .single();
+    const { data, error } = await supabase.from('games').select(`id`).eq('slug', gameSlug).single();
 
     if (error || !data) {
         console.log('Error getting game_id from DB:', error);
@@ -137,10 +133,7 @@ async function getTournamentsFromDB(
         return data;
     }
 
-    const { data, error } = await supabase
-        .from('tournaments')
-        .select('*')
-        .eq('game_id', gameId);
+    const { data, error } = await supabase.from('tournaments').select('*').eq('game_id', gameId);
 
     if (error || !data) {
         console.log('Error getting tournaments from DB:', error);
@@ -169,12 +162,7 @@ function getSubpageStage(text: string) {
 
     if (/\{\{SwissStandings/.test(text)) return 'Phase 2 - Swiss Stage';
 
-    const NON_STAGE_HEADINGS = new Set([
-        'Standings',
-        'Results',
-        'Schedule',
-        'Overview',
-    ]);
+    const NON_STAGE_HEADINGS = new Set(['Standings', 'Results', 'Schedule', 'Overview']);
     const headingRegex = /^===([^=]+)===$/gm;
     let match = headingRegex.exec(text);
     while (match !== null) {
@@ -192,9 +180,7 @@ function getParam(text: string, key: string) {
     let regex = new RegExp(`\\|${key}=([^\\n|}]*)`);
 
     if (key === 'opponent1' || key === 'opponent2') {
-        const templateRegex = new RegExp(
-            `\\|${key}={{TeamOpponent\\|([^}]+)}}`,
-        );
+        const templateRegex = new RegExp(`\\|${key}={{TeamOpponent\\|([^}]+)}}`);
         const templateMatch = text.match(templateRegex);
 
         const templateContent = templateMatch?.[1];
@@ -268,12 +254,8 @@ function calculateMatchScore(text: string): {
     team1Score: number;
     team2Score: number;
 } {
-    const team1ScoreMatch = text.match(
-        /\|opponent1={{TeamOpponent\|[^|]+\|score=([A-Z0-9]+)/,
-    );
-    const team2ScoreMatch = text.match(
-        /\|opponent2={{TeamOpponent\|[^|]+\|score=([A-Z0-9]+)/,
-    );
+    const team1ScoreMatch = text.match(/\|opponent1={{TeamOpponent\|[^|]+\|score=([A-Z0-9]+)/);
+    const team2ScoreMatch = text.match(/\|opponent2={{TeamOpponent\|[^|]+\|score=([A-Z0-9]+)/);
 
     const team1ScoreText = team1ScoreMatch?.[1];
     const team2ScoreText = team2ScoreMatch?.[1];
@@ -288,10 +270,7 @@ function calculateMatchScore(text: string): {
             return { team1Score: 0, team2Score: 1 };
         }
 
-        if (
-            !Number.isNaN(parseInt(team1Score, 10)) &&
-            !Number.isNaN(parseInt(team2Score, 10))
-        ) {
+        if (!Number.isNaN(parseInt(team1Score, 10)) && !Number.isNaN(parseInt(team2Score, 10))) {
             return {
                 team1Score: parseInt(team1Score, 10),
                 team2Score: parseInt(team2Score, 10),
@@ -304,10 +283,7 @@ function calculateMatchScore(text: string): {
     let mapIndex = 1;
 
     while (true) {
-        const mapPattern = new RegExp(
-            `\\|map${mapIndex}={{Map\\|map=([^|]+)\\|([^}]+)}}`,
-            's',
-        );
+        const mapPattern = new RegExp(`\\|map${mapIndex}={{Map\\|map=([^|]+)\\|([^}]+)}}`, 's');
 
         const mapMatch = text.match(mapPattern);
 
@@ -337,38 +313,14 @@ function calculateMatchScore(text: string): {
             t1Total = parseInt(score1Text, 10);
             t2Total = parseInt(score2Text, 10);
         } else {
-            const t1atk = parseInt(
-                mapContent.match(/t1atk=(\d+)/)?.[1] || '0',
-                10,
-            );
-            const t1def = parseInt(
-                mapContent.match(/t1def=(\d+)/)?.[1] || '0',
-                10,
-            );
-            const t2atk = parseInt(
-                mapContent.match(/t2atk=(\d+)/)?.[1] || '0',
-                10,
-            );
-            const t2def = parseInt(
-                mapContent.match(/t2def=(\d+)/)?.[1] || '0',
-                10,
-            );
-            const t1otatk = parseInt(
-                mapContent.match(/t1otatk=(\d+)/)?.[1] || '0',
-                10,
-            );
-            const t1otdef = parseInt(
-                mapContent.match(/t1otdef=(\d+)/)?.[1] || '0',
-                10,
-            );
-            const t2otatk = parseInt(
-                mapContent.match(/t2otatk=(\d+)/)?.[1] || '0',
-                10,
-            );
-            const t2otdef = parseInt(
-                mapContent.match(/t2otdef=(\d+)/)?.[1] || '0',
-                10,
-            );
+            const t1atk = parseInt(mapContent.match(/t1atk=(\d+)/)?.[1] || '0', 10);
+            const t1def = parseInt(mapContent.match(/t1def=(\d+)/)?.[1] || '0', 10);
+            const t2atk = parseInt(mapContent.match(/t2atk=(\d+)/)?.[1] || '0', 10);
+            const t2def = parseInt(mapContent.match(/t2def=(\d+)/)?.[1] || '0', 10);
+            const t1otatk = parseInt(mapContent.match(/t1otatk=(\d+)/)?.[1] || '0', 10);
+            const t1otdef = parseInt(mapContent.match(/t1otdef=(\d+)/)?.[1] || '0', 10);
+            const t2otatk = parseInt(mapContent.match(/t2otatk=(\d+)/)?.[1] || '0', 10);
+            const t2otdef = parseInt(mapContent.match(/t2otdef=(\d+)/)?.[1] || '0', 10);
 
             t1Total = t1atk + t1def + t1otatk + t1otdef;
             t2Total = t2atk + t2def + t2otatk + t2otdef;
@@ -404,14 +356,8 @@ function parseMatch(text: string, teamResolver: TeamResolver): Match | null {
         return null;
     }
 
-    const team1_id = teamResolver.resolveTeamId(
-        team1_name,
-        parseInt(match_id, 10),
-    );
-    const team2_id = teamResolver.resolveTeamId(
-        team2_name,
-        parseInt(match_id, 10),
-    );
+    const team1_id = teamResolver.resolveTeamId(team1_name, parseInt(match_id, 10));
+    const team2_id = teamResolver.resolveTeamId(team2_name, parseInt(match_id, 10));
 
     if (!team1_id) {
         console.warn(`Unknown team: ${team1_name}`);
@@ -546,11 +492,7 @@ function parseMatchesFromStage(
     let depth = 0;
 
     for (const line of lines) {
-        if (
-            !insideMatch &&
-            line.trim().startsWith('<!--') &&
-            line.includes('-->')
-        ) {
+        if (!insideMatch && line.trim().startsWith('<!--') && line.includes('-->')) {
             currentRound = extractCommentContent(line);
         } else if (
             !insideMatch &&
@@ -560,9 +502,7 @@ function parseMatchesFromStage(
         ) {
             currentRound = getRound(line, 'header');
         } else if (!insideMatch) {
-            const hiddenSortMatch = line
-                .trim()
-                .match(/^===={{HiddenSort\|(.+?)}}====$/);
+            const hiddenSortMatch = line.trim().match(/^===={{HiddenSort\|(.+?)}}====$/);
             const hiddenSortContent = hiddenSortMatch?.[1];
             if (hiddenSortContent) {
                 currentRound = hiddenSortContent.trim();
@@ -578,10 +518,7 @@ function parseMatchesFromStage(
 
         if (/{{Match\b/.test(line.trim())) {
             if (insideMatch && currentMatchText.length > 0) {
-                const parsedMatch = parseMatch(
-                    currentMatchText.join('\n'),
-                    teamResolver,
-                );
+                const parsedMatch = parseMatch(currentMatchText.join('\n'), teamResolver);
                 if (parsedMatch) {
                     parsedMatch.tournament_id = tournament.id;
                     parsedMatch.stage = stage ?? '';
@@ -606,15 +543,10 @@ function parseMatchesFromStage(
 
             currentMatchText = [line];
             insideMatch = true;
-            depth =
-                (line.match(/\{/g) || []).length -
-                (line.match(/\}/g) || []).length;
+            depth = (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
 
             if (depth === 0) {
-                const parsedMatch = parseMatch(
-                    currentMatchText.join('\n'),
-                    teamResolver,
-                );
+                const parsedMatch = parseMatch(currentMatchText.join('\n'), teamResolver);
                 if (parsedMatch) {
                     parsedMatch.tournament_id = tournament.id;
                     parsedMatch.stage = stage ?? '';
@@ -643,15 +575,10 @@ function parseMatchesFromStage(
 
         if (insideMatch) {
             currentMatchText.push(line);
-            depth +=
-                (line.match(/\{/g) || []).length -
-                (line.match(/\}/g) || []).length;
+            depth += (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
 
             if (depth === 0) {
-                const parsedMatch = parseMatch(
-                    currentMatchText.join('\n'),
-                    teamResolver,
-                );
+                const parsedMatch = parseMatch(currentMatchText.join('\n'), teamResolver);
                 if (parsedMatch) {
                     parsedMatch.tournament_id = tournament.id;
                     parsedMatch.stage = stage ?? '';
@@ -688,8 +615,7 @@ function generateBatchRequests(tournamentPages: string[]) {
         if (pageIndex % 50 === 0) {
             batchRequests[batchIndex] = page;
         } else {
-            batchRequests[batchIndex] =
-                `${batchRequests[batchIndex] ?? ''}|${page}`;
+            batchRequests[batchIndex] = `${batchRequests[batchIndex] ?? ''}|${page}`;
         }
     });
 
@@ -724,9 +650,7 @@ async function fetchTournamentWikitext(
         const wikitext = page.revisions[0]['*'];
         console.log(`Page: ${pageTitle}`);
 
-        const tournament = tournaments.find((tournament) =>
-            tournament.url.includes(pageTitle),
-        );
+        const tournament = tournaments.find((tournament) => tournament.url.includes(pageTitle));
         const stages = wikitextSplitStages(wikitext);
 
         if (!tournament) continue;
@@ -744,12 +668,7 @@ async function fetchTournamentWikitext(
         for (const [stageIdx, wikitext] of stages.entries()) {
             const stage = getParam(wikitext, 'Stage') ?? 'Playoffs';
 
-            const matches = parseMatchesFromStage(
-                wikitext,
-                tournament,
-                stage,
-                teamResolver,
-            );
+            const matches = parseMatchesFromStage(wikitext, tournament, stage, teamResolver);
 
             if (matches.length === 0) {
                 const sectionPattern = /{{#(?:lst|section):([^|]+)\|[^}]*}}/g;
@@ -762,9 +681,7 @@ async function fetchTournamentWikitext(
                 for (const subPage of subPages) {
                     const subPageMatch = subPage[1];
                     if (!subPageMatch) continue;
-                    const subPageString = subPageMatch
-                        .trim()
-                        .replaceAll(' ', '_');
+                    const subPageString = subPageMatch.trim().replaceAll(' ', '_');
                     if (
                         subPageString &&
                         !subPagesArray.includes({
@@ -816,10 +733,7 @@ async function fetchSubpages(
     for (const pageId in data.query.pages) {
         const page = pages[pageId];
         const pageTitle: string = page.title.trim().replaceAll(' ', '_');
-        const tournamentTitle = pageTitle.substring(
-            0,
-            pageTitle.lastIndexOf('/'),
-        );
+        const tournamentTitle = pageTitle.substring(0, pageTitle.lastIndexOf('/'));
         if (!page.revisions) {
             console.error("Page doesn't exist (yet): ", pageTitle);
             continue;
@@ -845,12 +759,7 @@ async function fetchSubpages(
 
         console.log('stage:', stage);
 
-        const matches = parseMatchesFromStage(
-            wikitext,
-            tournament,
-            stage,
-            teamResolver,
-        );
+        const matches = parseMatchesFromStage(wikitext, tournament, stage, teamResolver);
 
         tournamentData.stages.push({
             stageIndex: 5,
@@ -893,9 +802,7 @@ export async function getMatchesOfTournament(
 
     const tournaments = await getTournamentsFromDB(gameId, tournamentIds);
     if (!tournaments) {
-        console.log(
-            `No tournaments found for slug: ${gameSlug} (Id: ${gameId})`,
-        );
+        console.log(`No tournaments found for slug: ${gameSlug} (Id: ${gameId})`);
         return 0;
     }
     const tournamentPages = tournaments.map((tournament) => {
@@ -947,21 +854,12 @@ export async function getMatchesOfTournament(
 
     overview.sort((a, b) => parseInt(a.pageId, 10) - parseInt(b.pageId, 10));
 
-    allMatches.sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-    );
+    allMatches.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    fs.writeFileSync(
-        'tournament_overview.json',
-        JSON.stringify(overview, null, 2),
-        'utf-8',
-    );
+    fs.writeFileSync('tournament_overview.json', JSON.stringify(overview, null, 2), 'utf-8');
 
     if (insert_into_db) {
-        const { data, error } = await supabase
-            .from('matches')
-            .insert(allMatches)
-            .select();
+        const { data, error } = await supabase.from('matches').insert(allMatches).select();
 
         if (error || !data) {
             console.log('Error inserting matches into the DB:', error);

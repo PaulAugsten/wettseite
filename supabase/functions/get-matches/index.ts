@@ -72,13 +72,9 @@ const TIMEZONE_OFFSETS: Record<string, string> = {
 };
 
 function getSupabase() {
-    return createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SERVICE_ROLE_KEY')!,
-        {
-            auth: { autoRefreshToken: false, persistSession: false },
-        },
-    );
+    return createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SERVICE_ROLE_KEY')!, {
+        auth: { autoRefreshToken: false, persistSession: false },
+    });
 }
 
 class TeamResolver {
@@ -105,9 +101,7 @@ class TeamResolver {
             this.allTeams.push({
                 id: team.id,
                 name: team.name,
-                aliases: team.team_aliases.map(
-                    (a: { alias: string }) => a.alias,
-                ),
+                aliases: team.team_aliases.map((a: { alias: string }) => a.alias),
             });
 
             this.teamLookup.set(this.normalize(team.name), team.id);
@@ -183,9 +177,7 @@ function getParam(text: string, key: string) {
     let regex = new RegExp(`\\|${key}=([^\\n|}]*)`);
 
     if (key === 'opponent1' || key === 'opponent2') {
-        const templateRegex = new RegExp(
-            `\\|${key}={{TeamOpponent\\|([^}]+)}}`,
-        );
+        const templateRegex = new RegExp(`\\|${key}={{TeamOpponent\\|([^}]+)}}`);
         const templateMatch = text.match(templateRegex);
 
         if (!templateMatch) return null;
@@ -258,12 +250,8 @@ function calculateMatchScore(text: string): {
     team1Score: number;
     team2Score: number;
 } {
-    const team1ScoreMatch = text.match(
-        /\|opponent1={{TeamOpponent\|[^|]+\|score=([A-Z0-9]+)/,
-    );
-    const team2ScoreMatch = text.match(
-        /\|opponent2={{TeamOpponent\|[^|]+\|score=([A-Z0-9]+)/,
-    );
+    const team1ScoreMatch = text.match(/\|opponent1={{TeamOpponent\|[^|]+\|score=([A-Z0-9]+)/);
+    const team2ScoreMatch = text.match(/\|opponent2={{TeamOpponent\|[^|]+\|score=([A-Z0-9]+)/);
 
     if (team1ScoreMatch && team2ScoreMatch) {
         const team1Score = team1ScoreMatch[1];
@@ -275,10 +263,7 @@ function calculateMatchScore(text: string): {
             return { team1Score: 0, team2Score: 1 };
         }
 
-        if (
-            !Number.isNaN(parseInt(team1Score, 10)) &&
-            !Number.isNaN(parseInt(team2Score, 10))
-        ) {
+        if (!Number.isNaN(parseInt(team1Score, 10)) && !Number.isNaN(parseInt(team2Score, 10))) {
             return {
                 team1Score: parseInt(team1Score, 10),
                 team2Score: parseInt(team2Score, 10),
@@ -291,10 +276,7 @@ function calculateMatchScore(text: string): {
     let mapIndex = 1;
 
     while (true) {
-        const mapPattern = new RegExp(
-            `\\|map${mapIndex}={{Map\\|map=([^|]+)\\|([^}]+)}}`,
-            's',
-        );
+        const mapPattern = new RegExp(`\\|map${mapIndex}={{Map\\|map=([^|]+)\\|([^}]+)}}`, 's');
 
         const mapMatch = text.match(mapPattern);
 
@@ -323,38 +305,14 @@ function calculateMatchScore(text: string): {
             t1Total = parseInt(score1Match[1], 10);
             t2Total = parseInt(score2Match[1], 10);
         } else {
-            const t1atk = parseInt(
-                mapContent.match(/t1atk=(\d+)/)?.[1] || '0',
-                10,
-            );
-            const t1def = parseInt(
-                mapContent.match(/t1def=(\d+)/)?.[1] || '0',
-                10,
-            );
-            const t2atk = parseInt(
-                mapContent.match(/t2atk=(\d+)/)?.[1] || '0',
-                10,
-            );
-            const t2def = parseInt(
-                mapContent.match(/t2def=(\d+)/)?.[1] || '0',
-                10,
-            );
-            const t1otatk = parseInt(
-                mapContent.match(/t1otatk=(\d+)/)?.[1] || '0',
-                10,
-            );
-            const t1otdef = parseInt(
-                mapContent.match(/t1otdef=(\d+)/)?.[1] || '0',
-                10,
-            );
-            const t2otatk = parseInt(
-                mapContent.match(/t2otatk=(\d+)/)?.[1] || '0',
-                10,
-            );
-            const t2otdef = parseInt(
-                mapContent.match(/t2otdef=(\d+)/)?.[1] || '0',
-                10,
-            );
+            const t1atk = parseInt(mapContent.match(/t1atk=(\d+)/)?.[1] || '0', 10);
+            const t1def = parseInt(mapContent.match(/t1def=(\d+)/)?.[1] || '0', 10);
+            const t2atk = parseInt(mapContent.match(/t2atk=(\d+)/)?.[1] || '0', 10);
+            const t2def = parseInt(mapContent.match(/t2def=(\d+)/)?.[1] || '0', 10);
+            const t1otatk = parseInt(mapContent.match(/t1otatk=(\d+)/)?.[1] || '0', 10);
+            const t1otdef = parseInt(mapContent.match(/t1otdef=(\d+)/)?.[1] || '0', 10);
+            const t2otatk = parseInt(mapContent.match(/t2otatk=(\d+)/)?.[1] || '0', 10);
+            const t2otdef = parseInt(mapContent.match(/t2otdef=(\d+)/)?.[1] || '0', 10);
 
             t1Total = t1atk + t1def + t1otatk + t1otdef;
             t2Total = t2atk + t2def + t2otatk + t2otdef;
@@ -389,14 +347,8 @@ function parseMatch(text: string, teamResolver: TeamResolver): Match | null {
         return null;
     }
 
-    const team1_id = teamResolver.resolveTeamId(
-        team1_name,
-        parseInt(match_id, 10),
-    );
-    const team2_id = teamResolver.resolveTeamId(
-        team2_name,
-        parseInt(match_id, 10),
-    );
+    const team1_id = teamResolver.resolveTeamId(team1_name, parseInt(match_id, 10));
+    const team2_id = teamResolver.resolveTeamId(team2_name, parseInt(match_id, 10));
 
     if (!team1_id) {
         console.warn(`Unknown team: ${team1_name}`);
@@ -528,11 +480,7 @@ function parseMatchesFromStage(
     let depth = 0;
 
     for (const line of lines) {
-        if (
-            !insideMatch &&
-            line.trim().startsWith('<!--') &&
-            line.includes('-->')
-        ) {
+        if (!insideMatch && line.trim().startsWith('<!--') && line.includes('-->')) {
             currentRound = extractCommentContent(line);
         } else if (
             !insideMatch &&
@@ -542,9 +490,7 @@ function parseMatchesFromStage(
         ) {
             currentRound = getRound(line, 'header');
         } else if (!insideMatch) {
-            const hiddenSortMatch = line
-                .trim()
-                .match(/^===={{HiddenSort\|(.+?)}}====$/);
+            const hiddenSortMatch = line.trim().match(/^===={{HiddenSort\|(.+?)}}====$/);
             if (hiddenSortMatch) {
                 currentRound = hiddenSortMatch[1].trim();
             }
@@ -559,10 +505,7 @@ function parseMatchesFromStage(
 
         if (/{{Match\b/.test(line.trim())) {
             if (insideMatch && currentMatchText.length > 0) {
-                const parsedMatch = parseMatch(
-                    currentMatchText.join('\n'),
-                    teamResolver,
-                );
+                const parsedMatch = parseMatch(currentMatchText.join('\n'), teamResolver);
                 if (parsedMatch) {
                     parsedMatch.tournament_id = tournament.id;
                     parsedMatch.stage = stage ?? '';
@@ -587,15 +530,10 @@ function parseMatchesFromStage(
 
             currentMatchText = [line];
             insideMatch = true;
-            depth =
-                (line.match(/\{/g) || []).length -
-                (line.match(/\}/g) || []).length;
+            depth = (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
 
             if (depth === 0) {
-                const parsedMatch = parseMatch(
-                    currentMatchText.join('\n'),
-                    teamResolver,
-                );
+                const parsedMatch = parseMatch(currentMatchText.join('\n'), teamResolver);
                 if (parsedMatch) {
                     parsedMatch.tournament_id = tournament.id;
                     parsedMatch.stage = stage ?? '';
@@ -624,15 +562,10 @@ function parseMatchesFromStage(
 
         if (insideMatch) {
             currentMatchText.push(line);
-            depth +=
-                (line.match(/\{/g) || []).length -
-                (line.match(/\}/g) || []).length;
+            depth += (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
 
             if (depth === 0) {
-                const parsedMatch = parseMatch(
-                    currentMatchText.join('\n'),
-                    teamResolver,
-                );
+                const parsedMatch = parseMatch(currentMatchText.join('\n'), teamResolver);
                 if (parsedMatch) {
                     parsedMatch.tournament_id = tournament.id;
                     parsedMatch.stage = stage ?? '';
@@ -689,17 +622,14 @@ async function fetchWikitext(
     });
 
     if (res.status === 429 && retries > 0) {
-        const retryAfter =
-            parseInt(res.headers.get('Retry-After') || '10', 10) * 1000;
+        const retryAfter = parseInt(res.headers.get('Retry-After') || '10', 10) * 1000;
         console.warn(`Rate limited, retrying after ${retryAfter}ms...`);
         await new Promise((r) => setTimeout(r, retryAfter));
         return fetchWikitext(batch, retries - 1);
     }
 
     if (!res.ok) {
-        throw new Error(
-            `Liquipedia API error: ${res.status} ${res.statusText}`,
-        );
+        throw new Error(`Liquipedia API error: ${res.status} ${res.statusText}`);
     }
     const data = await res.json();
     return data.query.pages;
@@ -721,8 +651,7 @@ async function scrapeMatches() {
         .select('*')
         .eq('game_id', gameId)
         .in('status', ['live', 'scheduled']);
-    if (tournamentError || !tournaments)
-        throw new Error('Could not fetch tournaments');
+    if (tournamentError || !tournaments) throw new Error('Could not fetch tournaments');
 
     if (tournaments.length === 0) {
         console.log('No active tournaments');
@@ -733,9 +662,7 @@ async function scrapeMatches() {
     await teamResolver.initialize(gameId);
 
     const tournamentPages = tournaments.map((t: Tournament) => {
-        return t.url
-            .replace('https://liquipedia.net/rainbowsix/', '')
-            .replaceAll('/', '%2F');
+        return t.url.replace('https://liquipedia.net/rainbowsix/', '').replaceAll('/', '%2F');
     });
 
     const allMatches: Match[] = [];
@@ -755,27 +682,16 @@ async function scrapeMatches() {
             }
 
             const wikitext = page.revisions[0]['*'];
-            const tournament = tournaments.find((t: Tournament) =>
-                t.url.includes(pageTitle),
-            );
+            const tournament = tournaments.find((t: Tournament) => t.url.includes(pageTitle));
             if (!tournament) continue;
             const stages = wikitextSplitStages(wikitext);
             for (const stageText of stages) {
                 const stage = getParam(stageText, 'Stage') ?? 'Playoffs';
-                const matches = parseMatchesFromStage(
-                    stageText,
-                    tournament,
-                    stage,
-                    teamResolver,
-                );
+                const matches = parseMatchesFromStage(stageText, tournament, stage, teamResolver);
                 if (matches.length === 0) {
                     const spMatches = [
-                        ...stageText.matchAll(
-                            /{{#(?:lst|section):([^|]+)\|[^}]*}}/g,
-                        ),
-                        ...stageText.matchAll(
-                            /{{ShowStandings\|page=([^|}]+)/g,
-                        ),
+                        ...stageText.matchAll(/{{#(?:lst|section):([^|]+)\|[^}]*}}/g),
+                        ...stageText.matchAll(/{{ShowStandings\|page=([^|}]+)/g),
                     ];
                     for (const sp of spMatches) {
                         subpagesToFetch.push({
@@ -789,9 +705,7 @@ async function scrapeMatches() {
         }
     }
 
-    for (const batch of generateBatchRequests(
-        subpagesToFetch.map((s) => s.subPage),
-    )) {
+    for (const batch of generateBatchRequests(subpagesToFetch.map((s) => s.subPage))) {
         await new Promise((r) => setTimeout(r, 5000));
 
         const pages = await fetchWikitext(batch);
@@ -800,23 +714,11 @@ async function scrapeMatches() {
             const pageTitle: string = page.title.trim().replaceAll(' ', '_');
             if (!page.revisions) continue;
             const wikitext = page.revisions[0]['*'];
-            const tournamentTitle = pageTitle.substring(
-                0,
-                pageTitle.lastIndexOf('/'),
-            );
-            const tournament = tournaments.find((t: Tournament) =>
-                t.url.includes(tournamentTitle),
-            );
+            const tournamentTitle = pageTitle.substring(0, pageTitle.lastIndexOf('/'));
+            const tournament = tournaments.find((t: Tournament) => t.url.includes(tournamentTitle));
             if (!tournament) continue;
             const stage = getSubpageStage(wikitext) ?? 'Swiss Stage';
-            allMatches.push(
-                ...parseMatchesFromStage(
-                    wikitext,
-                    tournament,
-                    stage,
-                    teamResolver,
-                ),
-            );
+            allMatches.push(...parseMatchesFromStage(wikitext, tournament, stage, teamResolver));
         }
     }
 
@@ -827,9 +729,7 @@ async function scrapeMatches() {
 
     const teamStats = teamResolver.getStats();
     if (teamStats.unknownTeams > 0) {
-        console.warn(
-            `Unknown teams: (${teamStats.unknownTeams}): check function logs`,
-        );
+        console.warn(`Unknown teams: (${teamStats.unknownTeams}): check function logs`);
     }
 
     return { scraped: allMatches.length, unknownTeams: teamStats.unknownTeams };
