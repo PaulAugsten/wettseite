@@ -11,15 +11,17 @@ function commandExists(command) {
 
 if (!commandExists('pre-commit')) {
     console.warn(
-        '\n[postinstall] pre-commit is not installed, so git hooks (lint/typecheck/build on commit) are NOT active.\n' +
+        '\n[postinstall] pre-commit is not installed, so git hooks (lint on commit, commit message linting, typecheck/build on push) are NOT active.\n' +
             '  Install it with: pipx install pre-commit  (or: pip install pre-commit)\n' +
-            '  Then run: pre-commit install\n',
+            '  Then run: pre-commit install -t pre-commit -t commit-msg -t pre-push\n',
     );
     process.exit(0);
 }
 
 try {
-    execSync('pre-commit install', { stdio: 'inherit' });
+    execSync('pre-commit install -t pre-commit -t commit-msg -t pre-push', {
+        stdio: 'inherit',
+    });
 } catch {
     console.warn('[postinstall] Failed to run "pre-commit install" — run it manually.');
 }
