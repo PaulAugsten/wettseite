@@ -1,0 +1,44 @@
+name: E2E (preview)
+
+# Vercel fires deployment_status when a preview build finishes, carrying the
+# preview URL in target_url. We run Playwright against that URL instead of a
+# locally-built copy, so the gate is the deploy that will actually ship.
+on:
+    deployment_status:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: e2e-${{ github.event.deployment.sha }}
+    cancel-in-progress: true
+
+jobs:
+    e2e:
+        # Only run once Vercel reports a successful Preview deploy (skip Production
+        # deploys and skip the in-progress/queued/failure states of this same event).
+        if: |
+            github.event.deployment_status.state == 'success' &&
+            github.event.deployment.environment == 'Preview'
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+            - uses: actions/setup-node@v4
+              with: { node-version-file: .nvmrc, cache: pnpm }
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm exec playwright install --with-deps chromium firefox webkit
+            - name: Run Playwright against the preview URL
+              run: pnpm test:e2e
+              env:
+                  BASE_URL: ${{ github.event.deployment_status.target_url }}
+                  # Set this repo secret if Vercel Deployment Protection is on for
+                  # previews; otherwise tests will just hit the protection login page.
+                  VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+            - uses: actions/upload-artifact@v4
+              if: ${{ !cancelled() }}
+              with:
+                  name: playwright-report
+                  path: playwright-report/
+                  retention-days: 14
