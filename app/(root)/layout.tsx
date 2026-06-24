@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import InstallPrompt from '@/components/InstallPrompt';
 import NavLinks from '@/components/NavLinks';
-import UserMenu from '@/components/UserMenuClientComponent';
+import UserMenu from '@/components/UserMenu';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

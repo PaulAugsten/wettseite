@@ -1,4 +1,4 @@
-import MatchCard from '@/components/MatchCardClientComponent';
+import MatchCard from '@/components/MatchCard';
 import PredictionStandings from '@/components/PredictionStandings';
 import { createClient } from '@/lib/supabase/server';
 

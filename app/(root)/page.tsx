@@ -1,4 +1,5 @@
-import { TournamentCard } from '@/components/TournamentCard';
+import type { Tournament } from '@/components/TournamentCard';
+import { TournamentSection } from '@/components/TournamentSection';
 import { createClient } from '@/lib/supabase/server';
 
 type Games = {
@@ -7,39 +8,6 @@ type Games = {
     slug: string;
     tournaments: Tournament[];
 };
-
-type Tournament = {
-    id: number;
-    name: string;
-    location: string;
-    prize_pool: string;
-    status: 'scheduled' | 'live' | 'finished';
-    slug: string;
-    start_date: string;
-    end_date: string;
-};
-
-function Section({
-    title,
-    tournaments,
-    game,
-}: {
-    title: string;
-    tournaments: Tournament[];
-    game: string;
-}) {
-    if (tournaments.length === 0) return null;
-    return (
-        <div className="tournamentSection">
-            <h2 className="tournamentSectionTitle">{title}</h2>
-            <div className="tournamentGrid">
-                {tournaments.map((tournament) => (
-                    <TournamentCard key={tournament.id} tournament={tournament} game={game} />
-                ))}
-            </div>
-        </div>
-    );
-}
 
 const Home = async () => {
     const supabase = await createClient();
@@ -64,7 +32,7 @@ const Home = async () => {
             <div className="text-6xl">Welcome!</div>
 
             {liveGames.map((game) => (
-                <Section
+                <TournamentSection
                     key={game.id}
                     title="Ongoing Tournament"
                     tournaments={game.tournaments}
@@ -74,22 +42,5 @@ const Home = async () => {
         </main>
     );
 };
-
-/*
-<Hello />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols">
-                {data.map((game: { id: number; name: string; slug: string }) => (
-                    <Link
-                        key={game.id}
-                        className="bg-white shadow-md rounded-lg p-4 transition t..."
-                        href={`/${game.slug}`}
-                    >
-                        <h3 className="text-lg font-bold mb-2">{game.name}</h3>
-                        <p className="text-gray-600">Game ID: {game.id}</p>
-                    </Link>
-                ))}
-            </div>
-            */
 
 export default Home;

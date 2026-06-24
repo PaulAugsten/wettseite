@@ -55,11 +55,13 @@ export default function AccountForm({ user }: { user: User | null }) {
         website: string | null;
         avatar_url: string | null;
     }) {
+        if (!user) return;
+
         try {
             setLoading(true);
 
             const { error } = await supabase.from('users').upsert({
-                id: user?.id as string,
+                id: user.id,
                 full_name: fullname,
                 username,
                 website,
@@ -99,7 +101,7 @@ export default function AccountForm({ user }: { user: User | null }) {
                 <input id="email" type="text" value={user?.email} disabled />
             </div>
             <div>
-                <label htmlFor="fullName">Full Name</label>
+                <label htmlFor="fullname">Full Name</label>
                 <input
                     id="fullname"
                     type="text"

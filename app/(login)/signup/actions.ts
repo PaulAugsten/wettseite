@@ -2,17 +2,13 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import type { AuthActionState } from '@/app/(login)/types';
 import { createClient } from '@/lib/supabase/server';
 
-interface SignupState {
-    message: string;
-    errors?: string;
-}
-
 export async function signup(
-    _previousState: SignupState,
+    _previousState: AuthActionState,
     formData: FormData,
-): Promise<SignupState> {
+): Promise<AuthActionState> {
     const supabase = await createClient();
 
     // TODO: implement validation

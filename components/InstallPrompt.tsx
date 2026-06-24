@@ -56,7 +56,7 @@ export default function InstallPrompt() {
             ) : (
                 <>
                     <p className="installPromptText">
-                        Add Wettsite to your homescreenfor the best experience by tapping the{' '}
+                        Add Wettsite to your homescreen for the best experience by tapping the{' '}
                         <strong>Share</strong> button, then <strong>Add to Home Screen</strong>.
                     </p>
                     <div className="installPromptActions">
