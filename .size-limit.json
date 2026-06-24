@@ -1,0 +1,7 @@
+[
+    {
+        "name": "First Load JS (entry)",
+        "path": ".next/static/chunks/*.js",
+        "limit": "150 KB"
+    }
+]

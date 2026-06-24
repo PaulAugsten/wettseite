@@ -7,7 +7,8 @@
     --border: rgba(255, 255, 255, 0.08);
     --text-primary: #ffffff;
     --text-secondary: rgba(255, 255, 255, 0.6);
-    --accent: #3b82f6;
+    --accent: #2563eb;
+    --accent-text: #93c5fd;
     --color-correct: #22c55e;
     --color-wrong: #ef4444;
     --navbar-height: 72px;
@@ -410,12 +411,12 @@ body {
 .tournamentViewMore {
     font-size: 0.9rem;
     font-weight: 600;
-    color: var(--accent);
+    color: var(--accent-text);
     transition: color 0.2s;
 }
 
 .tournamentCard:hover .tournamentViewMore {
-    color: #93c5fd;
+    color: var(--text-primary);
 }
 
 /* --- Match List ------------------ */
@@ -570,7 +571,7 @@ body {
 .matchPredictedBadge {
     display: block;
     font-size: 0.7rem;
-    color: var(--accent);
+    color: var(--accent-text);
     font-weight: 600;
     margin-top: 4px;
 }
@@ -675,7 +676,7 @@ body {
 .standingsTable td:last-child {
     text-align: right;
     font-weight: 700;
-    color: var(--accent);
+    color: var(--accent-text);
 }
 
 .standingsRank {
