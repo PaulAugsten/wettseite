@@ -1,49 +1,14 @@
 import 'dotenv/config';
-import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { getGameId } from './shared';
+import type { Tournament } from './types';
 
 const liquipedia_tournaments_url = 'https://liquipedia.net/rainbowsix/S-Tier_Tournaments';
 const game_slug = 'rainbow-six-siege';
 
-// Tournament type for inserting into db (no id)
-type Tournament = {
-    name: string;
-    game_id: number;
-    location: string;
-    prize_pool: string;
-    start_date: string;
-    end_date: string;
-    status: 'scheduled' | 'live' | 'finished';
-    url: string;
-};
-
-async function getGameId() {
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        {
-            auth: {
-                autoRefreshToken: false,
-                persistSession: false,
-            },
-        },
-    );
-
-    const { data, error } = await supabase
-        .from('games')
-        .select('id')
-        .eq('slug', game_slug)
-        .single();
-
-    if (error || !data) {
-        console.log('Could not find game id');
-        return 0;
-    }
-    return data.id;
-}
-
-async function getTournamentMetaData(url: string) {
+export async function getTournamentMetaData(url: string) {
     const { data } = await axios.get(url);
     const $ = cheerio.load(data);
 
@@ -60,7 +25,7 @@ async function getTournamentMetaData(url: string) {
             .replace('R6 ', '')
             .split(' -')[0] ?? '';
 
-    const game_id = await getGameId();
+    const game_id = (await getGameId(game_slug)) ?? 0;
 
     const locationHtml = $('.infobox-cell-2.infobox-description')
         .filter(function () {
@@ -137,6 +102,16 @@ async function getTournamentMetaData(url: string) {
     return tournament;
 }
 
+export function shouldIncludeTournament(name: string): boolean {
+    const isTargetTier =
+        name.includes('Major') ||
+        name.includes('Invitational') ||
+        name.includes('World Cup') ||
+        name.includes('RE:L0:AD');
+
+    return isTargetTier && !name.includes('One');
+}
+
 export async function scrapeTournaments(insert_into_db: boolean) {
     const url = liquipedia_tournaments_url;
     const { data } = await axios.get(url);
@@ -156,15 +131,7 @@ export async function scrapeTournaments(insert_into_db: boolean) {
 
         const name = $(tournamentEl).find('td > a').text().trim();
 
-        if (
-            !(
-                name.includes('Major') ||
-                name.includes('Invitational') ||
-                name.includes('World Cup') ||
-                name.includes('RE:L0:AD')
-            ) ||
-            name.includes('One')
-        ) {
+        if (!shouldIncludeTournament(name)) {
             continue;
         }
         const href = $(tournamentEl).find('td > a').attr('href');
@@ -180,16 +147,7 @@ export async function scrapeTournaments(insert_into_db: boolean) {
         }
     }
 
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        {
-            auth: {
-                autoRefreshToken: false,
-                persistSession: false,
-            },
-        },
-    );
+    const supabase = createAdminClient();
 
     if (insert_into_db) {
         const { error } = await supabase
@@ -208,4 +166,6 @@ export async function scrapeTournaments(insert_into_db: boolean) {
     //getMatchesOfTournament(game_slug, false);
 }
 
-scrapeTournaments(false).catch(console.error);
+if (import.meta.url === `file://${process.argv[1]}`) {
+    scrapeTournaments(false).catch(console.error);
+}
