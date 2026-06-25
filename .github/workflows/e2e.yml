@@ -15,11 +15,11 @@ concurrency:
 
 jobs:
     e2e:
-        # Only run once Vercel reports a successful Preview deploy (skip Production
+        # Only run once Vercel reports a successful preview deploy (skip production
         # deploys and skip the in-progress/queued/failure states of this same event).
         if: |
             github.event.deployment_status.state == 'success' &&
-            github.event.deployment.environment == 'Preview'
+            github.event.deployment.environment == 'preview'
         runs-on: ubuntu-latest
         timeout-minutes: 15
         steps:
@@ -46,7 +46,7 @@ jobs:
     lighthouse:
         if: |
             github.event.deployment_status.state == 'success' &&
-            github.event.deployment.environment == 'Preview'
+            github.event.deployment.environment == 'preview'
         runs-on: ubuntu-latest
         timeout-minutes: 10
         steps:
