@@ -12,6 +12,11 @@
 
 # testing
 /coverage
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/.lighthouseci/
 
 # next.js
 /.next/
@@ -32,6 +37,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -44,3 +50,6 @@ next-env.d.ts
 team_review*.json
 unknown_teams_review.json
 tournament_overview.json
+
+# Sentry Config File
+.env.sentry-build-plugin

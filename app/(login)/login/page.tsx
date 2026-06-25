@@ -1,9 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useActionState } from 'react';
 import { login } from './actions';
 import styles from './login.module.css';
-import Link from 'next/link';
 
 export default function LoginPage() {
     const [state, loginFormAction] = useActionState(login, { message: '' });
@@ -33,7 +33,6 @@ export default function LoginPage() {
                                     autoCapitalize="none"
                                     autoCorrect="off"
                                     autoComplete="username"
-                                    autoFocus
                                     required
                                 />
                                 <span className={styles.focusBorder}></span>
@@ -65,6 +64,7 @@ export default function LoginPage() {
                             </div>
                         </div>
                         <button
+                            type="submit"
                             className={`${styles.btn} ${styles.loginBtn}`}
                             formAction={loginFormAction}
                         >

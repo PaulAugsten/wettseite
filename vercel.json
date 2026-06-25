@@ -4,5 +4,10 @@
             "path": "/api/cron/scrape-matches",
             "schedule": "0 0 * * *"
         }
-    ]
+    ],
+    "git": {
+        "deploymentEnabled": {
+            "main": false
+        }
+    }
 }

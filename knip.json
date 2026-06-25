@@ -1,0 +1,14 @@
+{
+    "$schema": "https://unpkg.com/knip@6/schema.json",
+    "next": true,
+    "entry": ["lib/supabase/api/scraper/**/*_scraper.ts"],
+    "ignore": ["supabase/functions/**"],
+    "ignoreDependencies": [
+        "@commitlint/cli",
+        "supabase",
+        "tsx",
+        "@semantic-release/github",
+        "@semantic-release/npm"
+    ],
+    "ignoreBinaries": ["pre-commit"]
+}

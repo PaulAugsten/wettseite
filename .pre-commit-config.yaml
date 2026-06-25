@@ -1,0 +1,37 @@
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      # Scans staged changes before they're even committed, so secrets never leave this machine.
+      - id: gitleaks
+  - repo: local
+    hooks:
+      - id: lint
+        name: biome check (staged files)
+        entry: pnpm exec biome check --write --no-errors-on-unmatched
+        language: system
+        files: \.(js|jsx|ts|tsx|json|css|md)$
+        stages: [pre-commit]
+      - id: lint-next
+        name: eslint (staged files)
+        entry: pnpm exec eslint
+        language: system
+        files: \.(js|jsx|ts|tsx)$
+        stages: [pre-commit]
+      - id: commitlint
+        name: commitlint
+        entry: pnpm exec commitlint --edit
+        language: system
+        stages: [commit-msg]
+      - id: typecheck
+        name: tsc --noEmit
+        entry: pnpm typecheck
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+      - id: build
+        name: pnpm build
+        entry: pnpm build
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

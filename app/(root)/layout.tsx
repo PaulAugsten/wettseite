@@ -1,8 +1,8 @@
-import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
-import UserMenu from '@/components/UserMenuClientComponent';
-import NavLinks from '@/components/NavLinks';
 import InstallPrompt from '@/components/InstallPrompt';
+import NavLinks from '@/components/NavLinks';
+import UserMenu from '@/components/UserMenu';
+import { createClient } from '@/lib/supabase/server';
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
     const supabase = await createClient();

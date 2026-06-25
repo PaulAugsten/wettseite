@@ -162,7 +162,7 @@ function getRound(text: string, key: string) {
 }
 
 function getGroup(text: string) {
-    const regex = new RegExp(`\\=Group([^\\n|}]*)`);
+    const regex = /=Group([^\n|}]*)/;
     const match = text.match(regex);
     return match ? match[1].trim().at(0) : null;
 }
@@ -228,7 +228,7 @@ function parseWikitextDate(dateText: string): string | null {
 
     const parsedDate = new Date(cleanedDateText);
 
-    if (isNaN(parsedDate.getTime())) {
+    if (Number.isNaN(parsedDate.getTime())) {
         console.error('Could not parse date:', cleanedDateText);
         return null;
     }
@@ -246,7 +246,10 @@ function parseWikitextDate(dateText: string): string | null {
     return new Date(isoWithOffset).toISOString();
 }
 
-function calculateMatchScore(text: string): { team1Score: number; team2Score: number } {
+function calculateMatchScore(text: string): {
+    team1Score: number;
+    team2Score: number;
+} {
     const team1ScoreMatch = text.match(/\|opponent1={{TeamOpponent\|[^|]+\|score=([A-Z0-9]+)/);
     const team2ScoreMatch = text.match(/\|opponent2={{TeamOpponent\|[^|]+\|score=([A-Z0-9]+)/);
 
@@ -260,10 +263,10 @@ function calculateMatchScore(text: string): { team1Score: number; team2Score: nu
             return { team1Score: 0, team2Score: 1 };
         }
 
-        if (!isNaN(parseInt(team1Score)) && !isNaN(parseInt(team2Score))) {
+        if (!Number.isNaN(parseInt(team1Score, 10)) && !Number.isNaN(parseInt(team2Score, 10))) {
             return {
-                team1Score: parseInt(team1Score),
-                team2Score: parseInt(team2Score),
+                team1Score: parseInt(team1Score, 10),
+                team2Score: parseInt(team2Score, 10),
             };
         }
     }
@@ -299,17 +302,17 @@ function calculateMatchScore(text: string): { team1Score: number; team2Score: nu
 
         // old format
         if (score1Match && score2Match) {
-            t1Total = parseInt(score1Match[1]);
-            t2Total = parseInt(score2Match[1]);
+            t1Total = parseInt(score1Match[1], 10);
+            t2Total = parseInt(score2Match[1], 10);
         } else {
-            const t1atk = parseInt(mapContent.match(/t1atk=(\d+)/)?.[1] || '0');
-            const t1def = parseInt(mapContent.match(/t1def=(\d+)/)?.[1] || '0');
-            const t2atk = parseInt(mapContent.match(/t2atk=(\d+)/)?.[1] || '0');
-            const t2def = parseInt(mapContent.match(/t2def=(\d+)/)?.[1] || '0');
-            const t1otatk = parseInt(mapContent.match(/t1otatk=(\d+)/)?.[1] || '0');
-            const t1otdef = parseInt(mapContent.match(/t1otdef=(\d+)/)?.[1] || '0');
-            const t2otatk = parseInt(mapContent.match(/t2otatk=(\d+)/)?.[1] || '0');
-            const t2otdef = parseInt(mapContent.match(/t2otdef=(\d+)/)?.[1] || '0');
+            const t1atk = parseInt(mapContent.match(/t1atk=(\d+)/)?.[1] || '0', 10);
+            const t1def = parseInt(mapContent.match(/t1def=(\d+)/)?.[1] || '0', 10);
+            const t2atk = parseInt(mapContent.match(/t2atk=(\d+)/)?.[1] || '0', 10);
+            const t2def = parseInt(mapContent.match(/t2def=(\d+)/)?.[1] || '0', 10);
+            const t1otatk = parseInt(mapContent.match(/t1otatk=(\d+)/)?.[1] || '0', 10);
+            const t1otdef = parseInt(mapContent.match(/t1otdef=(\d+)/)?.[1] || '0', 10);
+            const t2otatk = parseInt(mapContent.match(/t2otatk=(\d+)/)?.[1] || '0', 10);
+            const t2otdef = parseInt(mapContent.match(/t2otdef=(\d+)/)?.[1] || '0', 10);
 
             t1Total = t1atk + t1def + t1otatk + t1otdef;
             t2Total = t2atk + t2def + t2otatk + t2otdef;
@@ -344,8 +347,8 @@ function parseMatch(text: string, teamResolver: TeamResolver): Match | null {
         return null;
     }
 
-    const team1_id = teamResolver.resolveTeamId(team1_name, parseInt(match_id));
-    const team2_id = teamResolver.resolveTeamId(team2_name, parseInt(match_id));
+    const team1_id = teamResolver.resolveTeamId(team1_name, parseInt(match_id, 10));
+    const team2_id = teamResolver.resolveTeamId(team2_name, parseInt(match_id, 10));
 
     if (!team1_id) {
         console.warn(`Unknown team: ${team1_name}`);
@@ -372,7 +375,7 @@ function parseMatch(text: string, teamResolver: TeamResolver): Match | null {
     else if (new Date() > new Date(date)) status = 'live';
 
     return {
-        external_id: parseInt(match_id),
+        external_id: parseInt(match_id, 10),
         game_id: teamResolver.getGameId(),
         tournament_id: 0,
         stage: '',
@@ -599,7 +602,7 @@ function generateBatchRequests(tournamentPages: string[]) {
         if (pageIndex % 50 === 0) {
             batchRequests[batchIndex] = tournamentPages[pageIndex];
         } else {
-            batchRequests[batchIndex] += '|' + tournamentPages[pageIndex];
+            batchRequests[batchIndex] += `|${tournamentPages[pageIndex]}`;
         }
     }
 
@@ -619,7 +622,7 @@ async function fetchWikitext(
     });
 
     if (res.status === 429 && retries > 0) {
-        const retryAfter = parseInt(res.headers.get('Retry-After') || '10') * 1000;
+        const retryAfter = parseInt(res.headers.get('Retry-After') || '10', 10) * 1000;
         console.warn(`Rate limited, retrying after ${retryAfter}ms...`);
         await new Promise((r) => setTimeout(r, retryAfter));
         return fetchWikitext(batch, retries - 1);

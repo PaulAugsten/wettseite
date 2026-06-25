@@ -8,7 +8,10 @@ type Game = {
     created_at: string;
 };
 
-export async function getGames(): Promise<{ data: Game[] | null; error: Error | null }> {
+export async function getGames(): Promise<{
+    data: Game[] | null;
+    error: Error | null;
+}> {
     const supabase = await createClient();
 
     const { data, error } = await supabase.from('games').select('*');

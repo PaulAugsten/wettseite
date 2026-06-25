@@ -1,0 +1,84 @@
+name: E2E (preview)
+
+# Vercel fires deployment_status when a preview build finishes, carrying the
+# preview URL in target_url. We run Playwright against that URL instead of a
+# locally-built copy, so the gate is the deploy that will actually ship.
+on:
+    deployment_status:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: e2e-${{ github.event.deployment.sha }}
+    cancel-in-progress: true
+
+jobs:
+    e2e:
+        # Only run once Vercel reports a successful preview deploy (skip production
+        # deploys and skip the in-progress/queued/failure states of this same event).
+        if: |
+            github.event.deployment_status.state == 'success' &&
+            github.event.deployment.environment == 'preview'
+        runs-on: ubuntu-latest
+        # Run inside the official Playwright image (pinned to the exact @playwright/test
+        # version in package.json) instead of `playwright install --with-deps` on the bare
+        # runner. Font/anti-aliasing can differ subtly between the two, which was causing
+        # small but consistent visual-regression diffs that don't reproduce in this image.
+        container:
+            image: mcr.microsoft.com/playwright:v1.61.1-noble
+            options: --ipc=host
+        timeout-minutes: 15
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+            - uses: actions/setup-node@v4
+              with: { node-version-file: .nvmrc, cache: pnpm }
+            - run: pnpm install --frozen-lockfile
+            - name: Run Playwright against the preview URL
+              run: pnpm test:e2e
+              env:
+                  BASE_URL: ${{ github.event.deployment_status.target_url }}
+                  # Set this repo secret if Vercel Deployment Protection is on for
+                  # previews; otherwise tests will just hit the protection login page.
+                  VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+                  # GitHub Actions container jobs run as root, but $HOME (/github/home) is
+                  # owned by the image's pwuser; Firefox refuses to launch as root unless
+                  # $HOME is also root-owned. This is Playwright's own documented workaround.
+                  HOME: /root
+            - uses: actions/upload-artifact@v4
+              if: ${{ !cancelled() }}
+              with:
+                  name: playwright-report
+                  path: playwright-report/
+                  retention-days: 14
+
+    # Note on lighthouserc.json severities:
+    # - categories:seo is "warn": Vercel sets X-Robots-Tag: noindex on every preview
+    #   deployment (to keep them out of search results), which fails Lighthouse's
+    #   is-crawlable audit regardless of actual SEO quality. Since this job only ever
+    #   audits previews, that assertion could never pass as an "error". See:
+    #   https://vercel.com/kb/guide/are-vercel-preview-deployment-indexed-by-search-engines
+    # - categories:performance and largest-contentful-paint are "warn": /[game] pages
+    #   consistently measure ~4.2s LCP against the 2.5s budget. This is a real,
+    #   reproducible finding (not preview noise) that needs its own investigation;
+    #   downgraded here so it stays visible without blocking unrelated merges.
+    lighthouse:
+        if: |
+            github.event.deployment_status.state == 'success' &&
+            github.event.deployment.environment == 'preview'
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - uses: actions/checkout@v4
+            - name: Lighthouse CI
+              uses: treosh/lighthouse-ci-action@512cc908a55bfb0ad231facca52adf3d3a651df4 # v12
+              with:
+                  # Vercel Deployment Protection blocks plain requests on preview URLs;
+                  # Lighthouse can't set custom headers, so bypass via query param instead.
+                  # See: https://vercel.com/docs/deployment-protection/methods-to-bypass-deployment-protection/protection-bypass-automation
+                  urls: |
+                      ${{ github.event.deployment_status.target_url }}/?x-vercel-protection-bypass=${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}&x-vercel-set-bypass-cookie=true
+                      ${{ github.event.deployment_status.target_url }}/r6?x-vercel-protection-bypass=${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}&x-vercel-set-bypass-cookie=true
+                  configPath: ./lighthouserc.json
+                  uploadArtifacts: true

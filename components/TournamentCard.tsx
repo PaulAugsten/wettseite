@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 
-type Tournament = {
+export type Tournament = {
     id: number;
     name: string;
     location: string;

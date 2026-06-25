@@ -1,26 +1,42 @@
 {
     "compilerOptions": {
-        "target": "ES2017",
-        "lib": ["dom", "dom.iterable", "esnext"],
-        "allowJs": true,
-        "skipLibCheck": true,
-        "strict": true,
-        "noEmit": true,
-        "esModuleInterop": true,
+        // Environment Settings
         "module": "esnext",
         "moduleResolution": "bundler",
-        "resolveJsonModule": true,
-        "isolatedModules": true,
-        "jsx": "react-jsx",
-        "incremental": true,
+        "target": "esnext",
+        "lib": ["dom", "dom.iterable", "esnext"],
+        "paths": {
+            "@/*": ["./*"]
+        },
         "plugins": [
             {
                 "name": "next"
             }
         ],
-        "paths": {
-            "@/*": ["./*"]
-        }
+
+        // Other Outputs
+        "noEmit": true,
+        "incremental": true,
+
+        // Stricter Typechecking Options
+        "noUncheckedIndexedAccess": true,
+        "exactOptionalPropertyTypes": true,
+
+        // Style Options
+        "noImplicitOverride": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
+
+        // Recommended Options
+        "strict": true,
+        "jsx": "react-jsx",
+        "isolatedModules": true,
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "allowJs": true,
+        "forceConsistentCasingInFileNames": true
     },
     "include": [
         "next-env.d.ts",

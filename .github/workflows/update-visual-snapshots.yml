@@ -1,0 +1,39 @@
+name: Update visual snapshots
+
+# Visual baselines (e2e/visual.spec.ts-snapshots/) must be captured against a real
+# deployed preview, not a local build: Vercel's edge rendering (fonts, image
+# optimization) differs enough from `next start` that even static pages mismatch.
+# Run this manually from the Actions tab with the PR's preview URL (Vercel's bot
+# comments it on the PR) whenever a UI change makes the baselines stale.
+on:
+    workflow_dispatch:
+        inputs:
+            preview_url:
+                description: Preview deployment URL (from the Vercel bot's PR comment)
+                required: true
+                type: string
+
+permissions:
+    contents: write
+
+jobs:
+    update-snapshots:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+            - uses: actions/setup-node@v4
+              with: { node-version-file: .nvmrc, cache: pnpm }
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm exec playwright install --with-deps chromium firefox webkit
+            - run: pnpm exec playwright test e2e/visual.spec.ts --update-snapshots
+              env:
+                  BASE_URL: ${{ inputs.preview_url }}
+                  VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+            - name: Commit updated snapshots
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+                  git add e2e/visual.spec.ts-snapshots
+                  git diff --cached --quiet || git commit -m "test: update visual regression snapshots"
+                  git push
