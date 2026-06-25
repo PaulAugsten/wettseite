@@ -1,0 +1,41 @@
+frontend:
+    - changed-files:
+          - any-glob-to-any-file:
+                - "app/**"
+                - "components/**"
+
+backend:
+    - changed-files:
+          - any-glob-to-any-file:
+                - "lib/**"
+                - "supabase/**"
+
+scraper:
+    - changed-files:
+          - any-glob-to-any-file:
+                - "lib/supabase/api/scraper/**"
+
+tests:
+    - changed-files:
+          - any-glob-to-any-file:
+                - "**/*.test.{ts,tsx}"
+                - "e2e/**"
+                - "tests/**"
+
+ci:
+    - changed-files:
+          - any-glob-to-any-file:
+                - ".github/workflows/**"
+
+dependencies:
+    - changed-files:
+          - any-glob-to-any-file:
+                - "package.json"
+                - "pnpm-lock.yaml"
+                - "pnpm-workspace.yaml"
+
+docs:
+    - changed-files:
+          - any-glob-to-any-file:
+                - "**/*.md"
+                - "docs/**"
