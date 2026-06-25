@@ -42,6 +42,10 @@ jobs:
                   # Set this repo secret if Vercel Deployment Protection is on for
                   # previews; otherwise tests will just hit the protection login page.
                   VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+                  # GitHub Actions container jobs run as root, but $HOME (/github/home) is
+                  # owned by the image's pwuser; Firefox refuses to launch as root unless
+                  # $HOME is also root-owned. This is Playwright's own documented workaround.
+                  HOME: /root
             - uses: actions/upload-artifact@v4
               if: ${{ !cancelled() }}
               with:
