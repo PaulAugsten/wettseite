@@ -66,6 +66,12 @@ jobs:
                   NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
                   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
                   SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+                  # Source map upload + release creation no-ops until these secrets exist.
+                  # The build that actually ships runs on Vercel, so set the same vars
+                  # there too once a Sentry project exists.
+                  SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+                  SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+                  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
     # Compares this PR's build against main's build and comments the size diff.
     # PR-only: there's no "base" build to diff against on a plain push to main.
