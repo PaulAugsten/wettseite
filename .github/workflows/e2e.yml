@@ -21,6 +21,13 @@ jobs:
             github.event.deployment_status.state == 'success' &&
             github.event.deployment.environment == 'preview'
         runs-on: ubuntu-latest
+        # Run inside the official Playwright image (pinned to the exact @playwright/test
+        # version in package.json) instead of `playwright install --with-deps` on the bare
+        # runner. Font/anti-aliasing can differ subtly between the two, which was causing
+        # small but consistent visual-regression diffs that don't reproduce in this image.
+        container:
+            image: mcr.microsoft.com/playwright:v1.61.1-noble
+            options: --ipc=host
         timeout-minutes: 15
         steps:
             - uses: actions/checkout@v4
@@ -28,7 +35,6 @@ jobs:
             - uses: actions/setup-node@v4
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
-            - run: pnpm exec playwright install --with-deps chromium firefox webkit
             - name: Run Playwright against the preview URL
               run: pnpm test:e2e
               env:
