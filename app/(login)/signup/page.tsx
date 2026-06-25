@@ -1,9 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useActionState } from 'react';
 import { signup } from './actions';
 import styles from './signup.module.css';
-import Link from 'next/link';
 
 export default function SignupPage() {
     const [state, signupFormAction] = useActionState(signup, { message: '' });
@@ -31,7 +31,6 @@ export default function SignupPage() {
                                     autoCapitalize="none"
                                     autoCorrect="off"
                                     autoComplete="username"
-                                    autoFocus
                                     required
                                 />
                                 <span className={styles.focusBorder}></span>
@@ -65,6 +64,7 @@ export default function SignupPage() {
                             </div>
                         </div>
                         <button
+                            type="submit"
                             className={`${styles.btn} ${styles.signupBtn}`}
                             formAction={signupFormAction}
                         >

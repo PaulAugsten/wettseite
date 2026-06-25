@@ -2,7 +2,8 @@
     "deno.enablePaths": ["supabase/functions"],
     "deno.lint": true,
     "deno.unstable": true,
-    "[typescript]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "biomejs.biome",
+    "[typescript][typescriptreact][javascript][javascriptreact][json][jsonc]": {
+        "editor.defaultFormatter": "biomejs.biome"
     }
 }

@@ -1,0 +1,37 @@
+name: Uptime smoke test
+
+# Synthetic check against production: catches outages that only show up live
+# (DNS, CDN, Supabase connectivity) which preview/CI builds never exercise.
+on:
+    schedule:
+        - cron: '*/10 * * * *'
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: uptime-smoke-test
+    cancel-in-progress: true
+
+jobs:
+    smoke:
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+            - uses: actions/setup-node@v4
+              with: { node-version-file: .nvmrc, cache: pnpm }
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm exec playwright install --with-deps chromium
+            - name: Run smoke test against production
+              run: pnpm exec playwright test e2e/smoke.spec.ts --project=chromium
+              env:
+                  BASE_URL: ${{ vars.PRODUCTION_URL }}
+            - uses: actions/upload-artifact@v4
+              if: ${{ !cancelled() }}
+              with:
+                  name: uptime-smoke-report
+                  path: playwright-report/
+                  retention-days: 7

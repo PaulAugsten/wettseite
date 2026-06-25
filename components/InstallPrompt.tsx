@@ -36,6 +36,7 @@ export default function InstallPrompt() {
                         Add Wettsite to your homescreen for the best experience!
                     </p>
                     <button
+                        type="button"
                         className="installPromptBtn installPromptBtnPrimary"
                         onClick={() => {
                             installPrompt.prompt();
@@ -45,6 +46,7 @@ export default function InstallPrompt() {
                         Install
                     </button>
                     <button
+                        type="button"
                         className="installPromptBtn installPromptBtnPrimary"
                         onClick={() => setDismissed(true)}
                     >
@@ -54,11 +56,12 @@ export default function InstallPrompt() {
             ) : (
                 <>
                     <p className="installPromptText">
-                        Add Wettsite to your homescreenfor the best experience by tapping the{' '}
+                        Add Wettsite to your homescreen for the best experience by tapping the{' '}
                         <strong>Share</strong> button, then <strong>Add to Home Screen</strong>.
                     </p>
                     <div className="installPromptActions">
                         <button
+                            type="button"
                             className="installPromptBtn installPromptBtnPrimary"
                             onClick={() => setDismissed(true)}
                         >

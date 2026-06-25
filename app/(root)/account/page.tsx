@@ -1,5 +1,5 @@
-import AccountForm from './account-form';
 import { createClient } from '@/lib/supabase/server';
+import AccountForm from './account-form';
 
 export default async function Account() {
     const supabase = await createClient();

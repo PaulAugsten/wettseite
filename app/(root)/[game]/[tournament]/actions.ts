@@ -1,7 +1,7 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { createClient } from '@/lib/supabase/server';
 
 export async function predict(matchId: number, teamId: number, path: string) {
     const supabase = await createClient();
@@ -20,7 +20,7 @@ export async function predict(matchId: number, teamId: number, path: string) {
         .eq('id', matchId)
         .single();
 
-    if (!match || match.status !== 'planned' || new Date() >= new Date(match.date)) {
+    if (match?.status !== 'planned' || new Date() >= new Date(match.date)) {
         return { error: 'Prediction deadline has passed' };
     }
 

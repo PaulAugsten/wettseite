@@ -1,0 +1,37 @@
+name: Deploy production
+
+# Runs after CI succeeds on main. The `production` GitHub Environment (required reviewers,
+# wait timer, scoped secrets) gates the job itself — see docs/adr or repo Settings > Environments.
+# Vercel's own auto-deploy for main is disabled via vercel.json (git.deploymentEnabled.main:
+# false) so this is the only path a production deploy can take; preview deploys for other
+# branches/PRs still happen automatically through Vercel's Git integration.
+on:
+    workflow_run:
+        workflows: [CI]
+        types: [completed]
+        branches: [main]
+
+permissions:
+    contents: read
+
+jobs:
+    deploy:
+        if: github.event.workflow_run.conclusion == 'success'
+        runs-on: ubuntu-latest
+        environment: production
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.event.workflow_run.head_sha }}
+            - run: npx vercel@54.17.1 pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+              env:
+                  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+                  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+            - run: npx vercel@54.17.1 build --prod --token=${{ secrets.VERCEL_TOKEN }}
+              env:
+                  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+                  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+            - run: npx vercel@54.17.1 deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+              env:
+                  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+                  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

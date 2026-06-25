@@ -1,4 +1,4 @@
-import MatchCard from '@/components/MatchCardClientComponent';
+import MatchCard from '@/components/MatchCard';
 import PredictionStandings from '@/components/PredictionStandings';
 import { createClient } from '@/lib/supabase/server';
 
@@ -54,7 +54,13 @@ function MatchSection({
                         key={match.id}
                         match={match}
                         userPrediction={userPredictionMap.get(match.id) ?? null}
-                        stats={predictionStats.get(match.id) ?? { team1: 0, team2: 0, total: 0 }}
+                        stats={
+                            predictionStats.get(match.id) ?? {
+                                team1: 0,
+                                team2: 0,
+                                total: 0,
+                            }
+                        }
                         isLoggedIn={isLoggedIn}
                     />
                 ))}

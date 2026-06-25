@@ -1,0 +1,23 @@
+name: Bug report
+description: Something is broken
+labels: [bug]
+body:
+    - type: textarea
+      id: what-happened
+      attributes:
+          label: What happened?
+          description: What you expected instead, too.
+      validations:
+          required: true
+    - type: textarea
+      id: repro
+      attributes:
+          label: Steps to reproduce
+      validations:
+          required: false
+    - type: input
+      id: url
+      attributes:
+          label: URL / page (if applicable)
+      validations:
+          required: false
