@@ -11,7 +11,7 @@ jobs:
         if: github.actor == 'dependabot[bot]'
         runs-on: ubuntu-latest
         steps:
-            - uses: dependabot/fetch-metadata@21025c705c08248db411dc16f3619e6b5f9ea21a # v2
+            - uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
               id: meta
             - name: Enable auto-merge for patch/minor
               if: contains(fromJSON('["version-update:semver-patch","version-update:semver-minor"]'), steps.meta.outputs.update-type)
