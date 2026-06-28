@@ -91,7 +91,7 @@ Copy [.env.example](.env.example) to `.env.local` and fill these in. Never commi
 
 Versioning and `CHANGELOG.md` are automated by
 [semantic-release](release.config.mjs) from [Conventional Commits](https://www.conventionalcommits.org/)
-on every merge to `main` — see [.github/workflows/release.yml](.github/workflows/release.yml).
+on every merge to `main` — see the `release` job in [.github/workflows/ci.yml](.github/workflows/ci.yml).
 `CHANGELOG.md` is generated on the first release and committed by the release workflow, so it
 won't exist until then.
 
