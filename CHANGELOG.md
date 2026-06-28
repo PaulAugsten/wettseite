@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/PaulAugsten/wettseite/compare/v1.0.0...v1.0.1) (2026-06-28)
+
+
+### Bug Fixes
+
+* moved release and deploy workflow into ci to prevent name-spoofing by a fork ([#14](https://github.com/PaulAugsten/wettseite/issues/14)) ([c9a9bb2](https://github.com/PaulAugsten/wettseite/commit/c9a9bb29765c6a3904b7a6d4d42532a59274bcc7))
+
 # 1.0.0 (2026-06-26)
 
 
