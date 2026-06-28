@@ -125,3 +125,64 @@ jobs:
             - if: steps.filter.outputs.deno == 'true'
               working-directory: supabase/functions/get-matches
               run: deno check index.ts
+
+    # Runs semantic-release after CI passes on an actual push to main. Folded into this
+    # workflow (rather than a separate workflow_run-triggered one) to close a "pwn
+    # request" hole: workflow_run's branches filter only matches on the head_branch
+    # *name*, so a fork could name a PR branch "main" and get a separate workflow_run-
+    # triggered workflow to check out + run their code with this job's write secrets.
+    # A push event to main can't be spoofed that way.
+    release:
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        needs: [lint, typecheck, knip, unit, build, bundle-size, deno-check]
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            issues: write
+            pull-requests: write
+        # Separate from the workflow-level concurrency group above: a release in
+        # progress must never be cancelled mid-push by a newer commit landing on main.
+        concurrency:
+            group: release-main
+            cancel-in-progress: false
+        steps:
+            - uses: actions/checkout@v7
+              with:
+                  fetch-depth: 0
+                  # Deploy key with write access, added to the ruleset's bypass list, so the
+                  # release commit can push straight to main despite the "require PR" rule.
+                  # Scoped to just this key, unlike an admin-account bypass.
+                  ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
+            - uses: pnpm/action-setup@v4
+            - uses: actions/setup-node@v4
+              with: { node-version-file: .nvmrc, cache: pnpm }
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm exec semantic-release
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    # The `production` GitHub Environment (required reviewers, wait timer, scoped
+    # secrets) gates this job — see docs/adr or repo Settings > Environments. Vercel's
+    # own auto-deploy for main is disabled via vercel.json (git.deploymentEnabled.main:
+    # false) so this is the only path a production deploy can take; preview deploys for
+    # other branches/PRs still happen automatically through Vercel's Git integration.
+    #
+    # Deploys via a *remote* build (no --prebuilt, no local `vercel build`), deliberately:
+    # several production env vars (e.g. the Supabase service-role key) are marked
+    # "Sensitive" in Vercel, which means their values can never be read back by `vercel
+    # pull`/`env pull` — only by a build running inside Vercel's own container. A local
+    # prebuilt flow would bake in empty strings for those vars every time.
+    deploy:
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        needs: [lint, typecheck, knip, unit, build, bundle-size, deno-check]
+        runs-on: ubuntu-latest
+        environment: production
+        concurrency:
+            group: deploy-production
+            cancel-in-progress: false
+        steps:
+            - uses: actions/checkout@v7
+            - run: npx vercel@54.17.1 deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
+              env:
+                  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+                  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
