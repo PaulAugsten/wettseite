@@ -1,37 +1,87 @@
 @import "tailwindcss";
 
+@theme {
+    /* surfaces */
+    --color-bg: #0a0a0b;
+    --color-surface: #131316;
+    --color-card: #18181d;
+    --color-overlay: #212127;
+
+    /* borders */
+    --color-edge: #26262c;
+    --color-edge-strong: #3f3f46;
+
+    /* text */
+    --color-fg: #f5f5f6;
+    --color-fg-muted: #a1a1aa;
+    --color-fg-subtle: #71717a;
+
+    /* accent */
+    --color-accent: #2563eb;
+    --color-accent-hover: #3b82f6;
+    --color-accent-fg: #60a5fa;
+    --color-accent-muted: rgb(37 99 235 / 0.14);
+
+    /* semantic */
+    --color-success: #22c55e;
+    --color-success-fg: #4ade80;
+    --color-danger: #ef4444;
+    --color-danger-fg: #f87171;
+    --color-live: #ef4444;
+    --color-live-fg: #f87171;
+    --color-live-muted: rgb(239 68 68 / 0.15);
+
+    /* type */
+    --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+    --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+    /* radii */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+
+    --shadow-overlay: 0 12px 32px rgb(0 0 0 / 0.5);
+}
+
 :root {
-    --bg-primary: #0f0f0f;
-    --bg-secondary: #1a1a1a;
-    --bg-card: #1f1f1f;
-    --border: rgba(255, 255, 255, 0.08);
-    --text-primary: #ffffff;
-    --text-secondary: rgba(255, 255, 255, 0.6);
-    --accent: #2563eb;
-    --accent-hover: #3b82f6;
-    --accent-text: #93c5fd;
-    --color-correct: #22c55e;
-    --color-wrong: #ef4444;
-    --navbar-height: 72px;
+    /* legacy aliases — remove once all rules below migrate to Tailwind utilities */
+    --bg-primary: var(--color-bg);
+    --bg-secondary: var(--color-surface);
+    --bg-card: var(--color-card);
+    --border: var(--color-edge);
+    --text-primary: var(--color-fg);
+    --text-secondary: var(--color-fg-muted);
+    --accent: var(--color-accent);
+    --accent-hover: var(--color-accent-hover);
+    --accent-text: var(--color-accent-fg);
+    --color-correct: var(--color-success);
+    --color-wrong: var(--color-danger);
+    --navbar-height: 64px;
 }
 
-html {
-    background-color: #050505;
-    max-width: 100%;
-    overflow-x: hidden;
-}
+@layer base {
+    html {
+        background-color: var(--color-bg);
+        max-width: 100%;
+        overflow-x: hidden;
+    }
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
+    body {
+        background: radial-gradient(ellipse at top, #16161c 0%, var(--color-bg) 55%);
+        color: var(--color-fg);
+        font-family: var(--font-sans);
+        min-height: 100vh;
+    }
 
-body {
-    background: radial-gradient(circle at top, #1f1f1f 0%, #0f0f0f 60%, #050505 100%);
-    color: var(--text-primary);
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    min-height: 100vh;
+    :focus-visible {
+        outline: 2px solid var(--color-accent-fg);
+        outline-offset: 2px;
+    }
+
+    ::selection {
+        background: var(--color-accent);
+        color: #fff;
+    }
 }
 
 .installPrompt {
@@ -41,19 +91,19 @@ body {
     transform: translateX(-50%);
     width: calc(100% - 32px);
     max-width: 420px;
-    background: var(--bg-card);
-    border: 1px solid var(--bg-card);
-    border-radius: 12px;
+    background: var(--color-card);
+    border: 1px solid var(--color-edge);
+    border-radius: var(--radius-lg);
     padding: 16px 20px;
     z-index: 999;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--shadow-overlay);
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
 .installPromptText {
-    color: var(--text-primary);
+    color: var(--color-fg);
     font-size: 1rem;
     line-height: 1.5;
 }
@@ -66,7 +116,7 @@ body {
 .installPromptBtn {
     flex: 1;
     padding: 8px 16px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
@@ -79,13 +129,13 @@ body {
 }
 
 .installPromptBtnPrimary {
-    background: var(--accent);
+    background: var(--color-accent);
     color: #fff;
 }
 
 .installPromptBtnSecondary {
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--text-secondary);
+    background: var(--color-overlay);
+    color: var(--color-fg-muted);
 }
 
 .navbar {
@@ -93,9 +143,9 @@ body {
     top: 0;
     z-index: 100;
     height: var(--navbar-height);
-    background: rgba(15, 15, 15, 0.85);
+    background: rgb(10 10 11 / 0.85);
     backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--color-edge);
 }
 
 .navInner {
@@ -108,9 +158,9 @@ body {
 }
 
 .navLogo {
-    font-size: 2.5rem;
+    font-size: 1.5rem;
     font-weight: 800;
-    color: var(--text-primary);
+    color: var(--color-fg);
     text-decoration: none;
     letter-spacing: -0.5px;
     margin-right: 16px;
@@ -124,26 +174,26 @@ body {
 }
 
 .navLink {
-    color: var(--text-secondary);
+    color: var(--color-fg-muted);
     text-decoration: none;
-    font-size: 1.1rem;
+    font-size: 0.95rem;
     font-weight: 500;
     padding: 6px 12px;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     transition:
         color 0.2s,
         background 0.2s;
 }
 
 .navLink:hover {
-    color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.06);
+    color: var(--color-fg);
+    background: rgb(255 255 255 / 0.06);
 }
 
 .navLinkActive {
-    color: var(--text-primary);
+    color: var(--color-fg);
     font-weight: 600;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgb(255 255 255 / 0.08);
 }
 
 .navAuth {
@@ -153,16 +203,16 @@ body {
 }
 
 .navUsername {
-    color: var(--text-secondary);
-    font-size: 1.1rem;
+    color: var(--color-fg-muted);
+    font-size: 0.95rem;
     margin-right: 8px;
 }
 
 .navBtn {
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 600;
     padding: 8px 18px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     text-decoration: none;
     transition: all 0.2s;
@@ -170,24 +220,24 @@ body {
 }
 
 .navBtnOutline {
-    color: var(--text-secondary);
+    color: var(--color-fg-muted);
     background: transparent;
-    border: 1px solid var(--border);
+    border: 1px solid var(--color-edge);
 }
 
 .navBtnOutline:hover {
-    color: var(--text-primary);
-    border-color: rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.05);
+    color: var(--color-fg);
+    border-color: var(--color-edge-strong);
+    background: rgb(255 255 255 / 0.05);
 }
 
 .navBtnFilled {
     color: white;
-    background: var(--accent);
+    background: var(--color-accent);
 }
 
 .navBtnFilled:hover {
-    background: var(--accent-hover);
+    background: var(--color-accent-hover);
 }
 
 /* --- User Menu Dropdown -------------- */
@@ -201,19 +251,19 @@ body {
     align-items: center;
     gap: 6px;
     background: transparent;
-    border: 1px solid var(--border);
-    border-radius: 8px;
+    border: 1px solid var(--color-edge);
+    border-radius: var(--radius-md);
     padding: 7px 14px;
     cursor: pointer;
-    color: var(--text-secondary);
-    font-size: 1rem;
+    color: var(--color-fg-muted);
+    font-size: 0.95rem;
     transition: all 0.2s;
 }
 
 .userMenuTrigger:hover {
-    color: var(--text-primary);
-    border-color: rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.05);
+    color: var(--color-fg);
+    border-color: var(--color-edge-strong);
+    background: rgb(255 255 255 / 0.05);
 }
 
 .userMenuArrow {
@@ -231,14 +281,14 @@ body {
     top: calc(100% + 8px);
     right: 0;
     min-width: 160px;
-    background: #1a1a1a;
-    border: 1px solid var(--border);
-    border-radius: 10px;
+    background: var(--color-overlay);
+    border: 1px solid var(--color-edge);
+    border-radius: var(--radius-md);
     padding: 6px;
     display: flex;
     flex-direction: column;
     gap: 2px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--shadow-overlay);
     z-index: 200;
 }
 
@@ -248,28 +298,29 @@ body {
     width: 100%;
     text-align: left;
     padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 1rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
     cursor: pointer;
     transition: background 0.15s;
     text-decoration: none;
-    color: var(--text-secondary);
-    background-image: transparent;
+    color: var(--color-fg-muted);
+    background: transparent;
     border: none;
 }
 
 .userMenuLink:hover,
 .userMenuSignOut:hover {
-    background: rgba(255, 255, 255, 0.06);
-    color: var(--text-primary);
+    background: rgb(255 255 255 / 0.06);
+    color: var(--color-fg);
 }
 
 .userMenuSignOut {
-    color: #f87171;
+    color: var(--color-danger-fg);
 }
 
 .userMenuSignOut:hover {
-    background: rgba(248, 113, 113, 0.1);
+    background: rgb(248 113 113 / 0.1);
+    color: var(--color-danger-fg);
 }
 
 /* --- Page Content -------------------- */
@@ -283,6 +334,8 @@ body {
 .pageContent {
     flex: 1;
     width: 100%;
+    max-width: 72rem;
+    margin: 0 auto;
     padding: 32px 24px;
 }
 
@@ -294,26 +347,65 @@ body {
 }
 
 .gamePageHeader {
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--color-edge);
     padding-bottom: 20px;
 }
 
 .gamePageTitle {
-    font-size: 2rem;
-    font-weight: 800;
-    color: var(--text-primary);
+    font-size: 1.875rem;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    color: var(--color-fg);
 }
 
 .gamePageSubtitle {
-    color: var(--text-secondary);
+    color: var(--color-fg-muted);
     margin-top: 4px;
-    font-size: 1rem;
+    font-size: 0.95rem;
 }
 
 .tournamentLayout {
     display: grid;
     grid-template-columns: 2fr 1fr;
     gap: 2rem;
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .tournamentLayout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* --- Sections + grids (previously referenced but undefined) --- */
+
+.tournamentSection {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.tournamentSectionTitle {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-fg);
+}
+
+.tournamentGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.matchesColumn {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    min-width: 0;
+}
+
+.standingsColumn {
+    min-width: 0;
 }
 
 /* --- Tournament Section -------------------- */
@@ -321,9 +413,10 @@ body {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 20px;
+    padding: 20px;
+    background: var(--color-card);
+    border: 1px solid var(--color-edge);
+    border-radius: var(--radius-lg);
     text-decoration: none;
     color: inherit;
     transition:
@@ -333,9 +426,9 @@ body {
 }
 
 .tournamentCard:hover {
-    border-color: rgba(255, 255, 255, 0.15);
+    border-color: var(--color-edge-strong);
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.3);
 }
 
 .tournamentCardHeader {
@@ -353,19 +446,19 @@ body {
 }
 
 .statusLive {
-    background: rgba(239, 68, 68, 0.15);
-    color: #f87171;
+    background: var(--color-live-muted);
+    color: var(--color-live-fg);
     animation: pulse 2s infinite;
 }
 
 .statusUpcoming {
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
+    background: var(--color-accent-muted);
+    color: var(--color-accent-fg);
 }
 
 .statusFinished {
-    background: rgba(255, 255, 255, 0.06);
-    color: var(--text-secondary);
+    background: rgb(255 255 255 / 0.06);
+    color: var(--color-fg-muted);
 }
 
 @keyframes pulse {
@@ -388,7 +481,7 @@ body {
 .tournamentName {
     font-size: 1.1rem;
     font-weight: 700;
-    color: var(--text-primary);
+    color: var(--color-fg);
     line-height: 1.3;
 }
 
@@ -400,11 +493,11 @@ body {
 
 .tournamentMetaItem {
     font-size: 0.9rem;
-    color: var(--text-secondary);
+    color: var(--color-fg-muted);
 }
 
 .tournamentCardFooter {
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--color-edge);
     padding-top: 12px;
     margin-top: 4px;
 }
@@ -412,12 +505,12 @@ body {
 .tournamentViewMore {
     font-size: 0.9rem;
     font-weight: 600;
-    color: var(--accent-text);
+    color: var(--color-accent-fg);
     transition: color 0.2s;
 }
 
 .tournamentCard:hover .tournamentViewMore {
-    color: var(--text-primary);
+    color: var(--color-fg);
 }
 
 /* --- Match List ------------------ */
@@ -428,9 +521,9 @@ body {
 }
 
 .matchCard {
-    background-color: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
+    background-color: var(--color-card);
+    border: 1px solid var(--color-edge);
+    border-radius: var(--radius-lg);
     padding: 16px 20px;
     display: flex;
     flex-direction: column;
@@ -441,8 +534,8 @@ body {
 }
 
 .matchCard:hover {
-    border-color: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    border-color: var(--color-edge-strong);
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.3);
 }
 
 .matchTeams {
@@ -469,12 +562,12 @@ body {
 .matchTeamName {
     font-size: 1rem;
     font-weight: 700;
-    color: var(--text-primary);
+    color: var(--color-fg);
 }
 
 .matchTeamShort {
     font-size: 0.8rem;
-    color: var(--text-secondary);
+    color: var(--color-fg-muted);
 }
 
 .matchScore {
@@ -487,19 +580,23 @@ body {
 .matchScoreText {
     font-size: 1.3rem;
     font-weight: 800;
-    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-fg);
 }
 
 .matchScoreTime {
     font-size: 0.9rem;
-    color: var(--text-secondary);
+    color: var(--color-fg-muted);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
     font-weight: 500;
 }
 
 .matchScoreLive {
     font-size: 0.8rem;
     font-weight: 800;
-    color: #f87171;
+    color: var(--color-live-fg);
     animation: pulse 2s infinite;
 }
 
@@ -507,7 +604,7 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--color-edge);
     padding-top: 10px;
     flex-wrap: wrap;
 }
@@ -515,9 +612,10 @@ body {
 .matchRound,
 .matchStage {
     font-size: 0.8rem;
-    color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.05);
+    color: var(--color-fg-muted);
+    background: rgb(255 255 255 / 0.05);
     padding: 2px 8px;
+    border-radius: var(--radius-sm);
 }
 
 .matchStatusBadge {
@@ -529,18 +627,18 @@ body {
 }
 
 .matchStatusBadge.statusFinished {
-    background: rgba(255, 255, 255, 0.06);
-    color: var(--text-secondary);
+    background: rgb(255 255 255 / 0.06);
+    color: var(--color-fg-muted);
 }
 
 .matchStatusBadge.statusLive {
-    background: rgba(239, 68, 68, 0.15);
-    color: #f87171;
+    background: var(--color-live-muted);
+    color: var(--color-live-fg);
 }
 
 .matchStatusBadge.statusUpcoming {
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
+    background: var(--color-accent-muted);
+    color: var(--color-accent-fg);
 }
 
 /* --- Predictions ---------------------- */
@@ -549,7 +647,7 @@ body {
     background: transparent;
     cursor: default;
     padding: 8px 12px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     transition:
         background 0.2s,
         border-color 0.2s;
@@ -561,28 +659,28 @@ body {
 }
 
 .matchTeamClickable:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgb(255 255 255 / 0.05);
 }
 
 .matchTeamPredicted {
-    border-color: var(--accent);
-    background: rgba(59, 130, 246, 0.08);
+    border-color: var(--color-accent);
+    background: var(--color-accent-muted);
 }
 
 .matchPredictedBadge {
     display: block;
     font-size: 0.7rem;
-    color: var(--accent-text);
+    color: var(--color-accent-fg);
     font-weight: 600;
     margin-top: 4px;
 }
 
 .matchPredictedBadgeCorrect {
-    color: var(--color-correct);
+    color: var(--color-success-fg);
 }
 
 .matchPredictedBadgeWrong {
-    color: var(--color-wrong);
+    color: var(--color-danger-fg);
 }
 
 .predictionBar {
@@ -594,8 +692,7 @@ body {
 .predictionBarTrack {
     flex: 1;
     height: 6px;
-    background: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+    background: rgb(255 255 255 / 0.08);
     border-radius: 999px;
     overflow: hidden;
 }
@@ -604,14 +701,15 @@ body {
     height: 100%;
     border-radius: 999px;
     transition: width 0.8s ease;
-    background: linear-gradient(90deg, #3b82f6, #6366f1);
-    /* box-shadow: 0 0 14px rgba(59, 130, 246, 0.35); */
+    background: linear-gradient(90deg, var(--color-accent), var(--color-accent-hover));
 }
 
 .predictionPercentage {
     font-size: 0.75rem;
     font-weight: 600;
-    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-fg-muted);
     min-width: 32px;
 }
 
@@ -625,27 +723,27 @@ body {
 
 .matchLoginHint {
     font-size: 0.8rem;
-    color: var(--text-secondary);
+    color: var(--color-fg-muted);
     font-style: italic;
 }
 
 /* --- Standings Table ------------------- */
 .standingsTable {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
+    background: var(--color-card);
+    border: 1px solid var(--color-edge);
+    border-radius: var(--radius-lg);
     padding: 20px;
     position: sticky;
     top: calc(var(--navbar-height) + 16px);
 }
 
 .standingsTitle {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--text-primary);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-fg);
     margin-bottom: 16px;
     padding-bottom: 12px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--color-edge);
 }
 
 .standingsTable table {
@@ -656,7 +754,7 @@ body {
 .standingsTable th {
     font-size: 0.8rem;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--color-fg-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     padding: 0 8px 10px 8px;
@@ -670,19 +768,21 @@ body {
 .standingsTable td {
     padding: 10px 8px;
     font-size: 1rem;
-    color: var(--text-primary);
-    border-top: 1px solid var(--border);
+    color: var(--color-fg);
+    border-top: 1px solid var(--color-edge);
 }
 
 .standingsTable td:last-child {
     text-align: right;
     font-weight: 700;
-    color: var(--accent-text);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-accent-fg);
 }
 
 .standingsRank {
     font-size: 0.8rem;
-    color: var(--text-secondary);
+    color: var(--color-fg-muted);
     width: 24px;
 }
 
