@@ -12,7 +12,7 @@ export default function PredictionStandings({ standings }: { standings: Standing
 
     return (
         <div className="standingsTable">
-            <h2 className="standingstitle">Standings</h2>
+            <h2 className="standingsTitle">Standings</h2>
             <table>
                 <thead>
                     <tr>

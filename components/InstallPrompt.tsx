@@ -47,7 +47,7 @@ export default function InstallPrompt() {
                     </button>
                     <button
                         type="button"
-                        className="installPromptBtn installPromptBtnPrimary"
+                        className="installPromptBtn installPromptBtnSecondary"
                         onClick={() => setDismissed(true)}
                     >
                         Dismiss

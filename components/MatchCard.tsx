@@ -123,7 +123,7 @@ export default function MatchCard({ match, userPrediction, stats, isLoggedIn }: 
 
             {stats.total > 0 && match.status !== 'planned' && (
                 <div className="predictionBar">
-                    <span className="predictionPrecentage predictionPercentageLeft">
+                    <span className="predictionPercentage predictionPercentageLeft">
                         {team1PredictionPercentage}%
                     </span>
                     <div className="predictionBarTrack">
@@ -132,7 +132,7 @@ export default function MatchCard({ match, userPrediction, stats, isLoggedIn }: 
                             style={{ width: `${team1PredictionPercentage}%` }}
                         />
                     </div>
-                    <span className="predictionPrecentage predictionPercentageRight">
+                    <span className="predictionPercentage predictionPercentageRight">
                         {team2PredictionPercentage}%
                     </span>
                 </div>
