@@ -63,7 +63,7 @@
         "jsdom": "^29.1.1",
         "knip": "^6.17.1",
         "semantic-release": "^25.0.5",
-        "size-limit": "^11.2.0",
+        "size-limit": "^12.1.0",
         "supabase": "^2.107.0",
         "tailwindcss": "^4.3.1",
         "tsx": "^4.22.4",
