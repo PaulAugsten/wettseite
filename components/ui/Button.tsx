@@ -2,8 +2,8 @@ import Link from 'next/link';
 import type { ButtonHTMLAttributes, ComponentPropsWithoutRef } from 'react';
 import { cn } from '@/lib/cn';
 
-export type ButtonVariant = 'primary' | 'outline' | 'ghost' | 'danger';
-export type ButtonSize = 'sm' | 'md';
+type ButtonVariant = 'primary' | 'outline' | 'ghost' | 'danger';
+type ButtonSize = 'sm' | 'md';
 
 const baseClasses =
     'inline-flex items-center justify-center gap-2 rounded-md font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50';
@@ -45,6 +45,7 @@ export function Button(props: ButtonProps) {
         return <Link {...rest} className={classes} />;
     }
 
-    const { href: _href, type, ...buttonProps } = rest;
+    const { href, type, ...buttonProps } = rest;
+    void href;
     return <button type={type ?? 'button'} {...buttonProps} className={classes} />;
 }

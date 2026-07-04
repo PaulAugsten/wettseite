@@ -24,7 +24,7 @@ export function StatusBadge({
 }: {
     status: BadgeStatus;
     /** Overrides the default label, e.g. "Final" or a date. */
-    label?: string;
+    label?: string | undefined;
     className?: string;
 }) {
     return (

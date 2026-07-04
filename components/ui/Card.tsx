@@ -11,7 +11,7 @@ type CardProps = {
     href?: string;
 };
 
-const cardClasses = 'block rounded-lg border border-edge bg-card';
+const cardClasses = 'rounded-lg border border-edge bg-card';
 const interactiveClasses =
     'transition-[border-color,transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-edge-strong hover:shadow-[0_8px_24px_rgb(0_0_0/0.3)]';
 
@@ -20,7 +20,7 @@ export function Card({ children, className, interactive = false, href }: CardPro
 
     if (href !== undefined) {
         return (
-            <Link href={href} className={cn(classes, 'text-inherit no-underline')}>
+            <Link href={href} className={cn('block text-inherit no-underline', classes)}>
                 {children}
             </Link>
         );
