@@ -3,6 +3,8 @@ import PredictionStandings from '@/components/PredictionStandings';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Section } from '@/components/ui/Section';
+import { getMatchPredictions, getStandings } from '@/lib/data/predictions';
+import { getTournamentWithMatches } from '@/lib/data/tournaments';
 import { createClient } from '@/lib/supabase/server';
 import type { Match, PredictionStats } from '@/lib/types';
 
@@ -22,13 +24,13 @@ const dateFormat: Intl.DateTimeFormatOptions = {
 function MatchSection({
     title,
     matches,
-    userPredictionMap,
+    userPicks,
     predictionStats,
     isLoggedIn,
 }: {
     title: string;
     matches: Match[];
-    userPredictionMap: Map<number, number>;
+    userPicks: Map<number, number>;
     predictionStats: Map<number, PredictionStats>;
     isLoggedIn: boolean;
 }) {
@@ -40,7 +42,7 @@ function MatchSection({
                     <MatchCard
                         key={match.id}
                         match={match}
-                        userPrediction={userPredictionMap.get(match.id) ?? null}
+                        userPrediction={userPicks.get(match.id) ?? null}
                         stats={
                             predictionStats.get(match.id) ?? {
                                 team1: 0,
@@ -57,33 +59,22 @@ function MatchSection({
 }
 
 export default async function Tournament({ params }: TournamentPageParameters) {
-    const [{ game, tournament }, supabase] = await Promise.all([params, createClient()]);
+    const [{ game, tournament: tournamentSlug }, supabase] = await Promise.all([
+        params,
+        createClient(),
+    ]);
 
     const [
         {
             data: { user },
         },
-        { data, error },
+        tournament,
     ] = await Promise.all([
         supabase.auth.getUser(),
-        supabase
-            .from('tournaments')
-            .select(
-                `*,
-                matches!matches_tournament_id_fkey (
-                    *,
-                    team1:teams!matches_team1_id_fkey (id, name, short_name, slug),
-                    team2:teams!matches_team2_id_fkey (id, name, short_name, slug)
-                ),
-                games!inner(id, name, slug)`,
-            )
-            .eq('slug', tournament)
-            .eq('games.slug', game)
-            .order('date', { referencedTable: 'matches', ascending: true })
-            .single(),
+        getTournamentWithMatches(game, tournamentSlug),
     ]);
 
-    if (error || !data) {
+    if (!tournament) {
         return (
             <EmptyState
                 title="Tournament not found"
@@ -92,46 +83,12 @@ export default async function Tournament({ params }: TournamentPageParameters) {
         );
     }
 
-    const matches = data.matches as Match[];
-    const matchIds = matches.map((m) => m.id);
+    const { matches } = tournament;
 
-    const { data: allPredictions } = await supabase
-        .from('predictions')
-        .select('match_id, predicted_winner_id')
-        .in('match_id', matchIds);
-
-    const { data: userPredictions } = user
-        ? await supabase
-              .from('predictions')
-              .select('match_id, predicted_winner_id')
-              .eq('user_id', user.id)
-              .in('match_id', matchIds)
-        : { data: [] };
-
-    const { data: prediction_standings } = await supabase
-        .from('prediction_standings')
-        .select('*')
-        .eq('tournament_id', data.id);
-
-    const userPredictionMap = new Map(
-        (userPredictions ?? []).map((p) => [p.match_id, p.predicted_winner_id]),
-    );
-
-    const predictionStats = new Map<number, PredictionStats>();
-    for (const match of matches) {
-        const matchPredictions = (allPredictions ?? []).filter((p) => p.match_id === match.id);
-        const team1Count = matchPredictions.filter(
-            (p) => p.predicted_winner_id === match.team1?.id,
-        ).length;
-        const team2Count = matchPredictions.filter(
-            (p) => p.predicted_winner_id === match.team2?.id,
-        ).length;
-        predictionStats.set(match.id, {
-            team1: team1Count,
-            team2: team2Count,
-            total: matchPredictions.length,
-        });
-    }
+    const [{ stats: predictionStats, userPicks }, standings] = await Promise.all([
+        getMatchPredictions(matches, user?.id),
+        getStandings(tournament.id),
+    ]);
 
     const live = matches.filter((m) => m.status === 'live');
     const upcoming = matches.filter((m) => m.status === 'planned');
@@ -140,11 +97,11 @@ export default async function Tournament({ params }: TournamentPageParameters) {
     return (
         <div className="flex flex-col gap-10">
             <PageHeader
-                title={data.name}
+                title={tournament.name}
                 subtitle={
-                    data.start_date && data.end_date
-                        ? `${new Date(data.start_date).toLocaleDateString('en-GB', dateFormat)} – ${new Date(
-                              data.end_date,
+                    tournament.start_date && tournament.end_date
+                        ? `${new Date(tournament.start_date).toLocaleDateString('en-GB', dateFormat)} – ${new Date(
+                              tournament.end_date,
                           ).toLocaleDateString('en-GB', dateFormat)}`
                         : undefined
                 }
@@ -161,27 +118,27 @@ export default async function Tournament({ params }: TournamentPageParameters) {
                     <MatchSection
                         title="Live"
                         matches={live}
-                        userPredictionMap={userPredictionMap}
+                        userPicks={userPicks}
                         predictionStats={predictionStats}
                         isLoggedIn={!!user}
                     />
                     <MatchSection
                         title="Upcoming"
                         matches={upcoming}
-                        userPredictionMap={userPredictionMap}
+                        userPicks={userPicks}
                         predictionStats={predictionStats}
                         isLoggedIn={!!user}
                     />
                     <MatchSection
                         title="Finished"
                         matches={finished}
-                        userPredictionMap={userPredictionMap}
+                        userPicks={userPicks}
                         predictionStats={predictionStats}
                         isLoggedIn={!!user}
                     />
                 </div>
                 <div className="min-w-0">
-                    <PredictionStandings standings={prediction_standings ?? []} />
+                    <PredictionStandings standings={standings} />
                 </div>
             </div>
         </div>
