@@ -1,63 +1,42 @@
-import Link from 'next/link';
+import { Card } from '@/components/ui/Card';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import type { Tournament } from '@/lib/types';
 
-export type Tournament = {
-    id: number;
-    name: string;
-    location: string;
-    prize_pool: string;
-    status: 'scheduled' | 'live' | 'finished';
-    slug: string;
-    start_date: string;
-    end_date: string;
+const dateFormat: Intl.DateTimeFormatOptions = {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
 };
 
 export function TournamentCard({ tournament, game }: { tournament: Tournament; game: string }) {
     return (
-        <Link href={`/${game}/${tournament.slug}`} className="tournamentCard">
-            <div className="tournamentCardHeader">
-                <span
-                    className={`tournamentStatus ${tournament.status === 'live' ? 'statusLive' : tournament.status === 'scheduled' ? 'statusUpcoming' : 'statusFinished'}`}
-                >
-                    {tournament.status === 'live'
-                        ? 'Live'
-                        : tournament.status === 'scheduled'
-                          ? 'Upcoming'
-                          : 'Finished'}
-                </span>
+        <Card href={`/${game}/${tournament.slug}`} interactive className="flex flex-col gap-3 p-5">
+            <div className="flex items-center justify-between">
+                <StatusBadge status={tournament.status} />
             </div>
 
-            <div className="tournamentCardBody">
-                <h3 className="tournamentName">{tournament.name}</h3>
+            <div className="flex flex-1 flex-col gap-2.5">
+                <h3 className="font-bold text-[1.05rem] text-fg leading-snug">{tournament.name}</h3>
 
-                <div className="tournamentMeta">
-                    {tournament.location && (
-                        <span className="tournamentMetaItem">{tournament.location}</span>
-                    )}
-                    {tournament.prize_pool && (
-                        <span className="tournamentMetaItem">{tournament.prize_pool}</span>
-                    )}
+                <div className="flex flex-col gap-1 text-fg-muted text-sm">
+                    {tournament.location && <span>{tournament.location}</span>}
+                    {tournament.prize_pool && <span>{tournament.prize_pool}</span>}
                     {tournament.start_date && (
-                        <span className="tournamentMetaItem">
-                            {' '}
-                            {new Date(tournament.start_date).toLocaleDateString('en-GB', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric',
-                            })}
+                        <span>
+                            {new Date(tournament.start_date).toLocaleDateString(
+                                'en-GB',
+                                dateFormat,
+                            )}
                             {tournament.end_date &&
-                                ` - ${new Date(tournament.end_date).toLocaleDateString('en-GB', {
-                                    day: 'numeric',
-                                    month: 'short',
-                                    year: 'numeric',
-                                })}`}
+                                ` – ${new Date(tournament.end_date).toLocaleDateString('en-GB', dateFormat)}`}
                         </span>
                     )}
                 </div>
-
-                <div className="tournamentCardFooter">
-                    <span className="tournamentViewMore"> View matches →</span>
-                </div>
             </div>
-        </Link>
+
+            <div className="border-edge border-t pt-3">
+                <span className="font-semibold text-accent-fg text-sm">View matches →</span>
+            </div>
+        </Card>
     );
 }
