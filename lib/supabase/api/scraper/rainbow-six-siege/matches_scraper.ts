@@ -74,6 +74,7 @@ async function fetchTournamentWikitext(
     teamResolver: TeamResolver,
 ) {
     const subPagesArray: { tournament: Tournament; subPage: string }[] = [];
+    const seenSubPages = new Set<string>();
 
     const wikitext_api_url = `https://liquipedia.net/rainbowsix/api.php?action=query&prop=revisions&titles=${batch}&rvprop=content&format=json`;
 
@@ -127,13 +128,9 @@ async function fetchTournamentWikitext(
                     const subPageMatch = subPage[1];
                     if (!subPageMatch) continue;
                     const subPageString = subPageMatch.trim().replaceAll(' ', '_');
-                    if (
-                        subPageString &&
-                        !subPagesArray.includes({
-                            tournament,
-                            subPage: subPageString,
-                        })
-                    ) {
+                    const subPageKey = `${tournament.url}|${subPageString}`;
+                    if (subPageString && !seenSubPages.has(subPageKey)) {
+                        seenSubPages.add(subPageKey);
                         subPagesArray.push({
                             tournament,
                             subPage: subPageString,

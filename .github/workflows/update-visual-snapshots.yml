@@ -19,19 +19,31 @@ permissions:
 jobs:
     update-snapshots:
         runs-on: ubuntu-latest
+        container:
+            image: mcr.microsoft.com/playwright:v1.61.1-noble
+            options: --ipc=host
         steps:
+            - name: Refuse to run on the default branch
+              if: github.ref_name == github.event.repository.default_branch
+              run: |
+                  echo "::error::Dispatch this workflow from the PR branch (the 'Use workflow from' dropdown), not '${GITHUB_REF_NAME}' — pushes to it are blocked by branch protection."
+                  exit 1
             - uses: actions/checkout@v7
             - uses: pnpm/action-setup@v4
             - uses: actions/setup-node@v6
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
-            - run: pnpm exec playwright install --with-deps chromium firefox webkit
             - run: pnpm exec playwright test e2e/visual.spec.ts --update-snapshots
               env:
                   BASE_URL: ${{ inputs.preview_url }}
                   VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+                  HOME: /root
             - name: Commit updated snapshots
               run: |
+                  # The workspace bind mount is owned by the host runner user, not the
+                  # container's root, so git refuses it ("not in a git directory")
+                  # until it's marked safe.
+                  git config --global --add safe.directory "$GITHUB_WORKSPACE"
                   git config user.name "github-actions[bot]"
                   git config user.email "github-actions[bot]@users.noreply.github.com"
                   git add e2e/visual.spec.ts-snapshots

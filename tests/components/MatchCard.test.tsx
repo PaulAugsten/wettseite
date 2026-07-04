@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { predict } from '@/app/(root)/[game]/[tournament]/actions';
 import MatchCard from '@/components/MatchCard';
+import type { Match } from '@/lib/types';
 
 vi.mock('next/navigation', () => ({ usePathname: () => '/rainbow-six-siege/test-major' }));
 vi.mock('@/app/(root)/[game]/[tournament]/actions', () => ({ predict: vi.fn() }));
@@ -10,7 +11,7 @@ vi.mock('@/app/(root)/[game]/[tournament]/actions', () => ({ predict: vi.fn() })
 const team1 = { id: 1, name: 'Team Liquid', short_name: 'TL', slug: 'team-liquid' };
 const team2 = { id: 2, name: 'Team Vitality', short_name: 'VIT', slug: 'team-vitality' };
 
-function buildMatch(overrides: Partial<Parameters<typeof MatchCard>[0]['match']> = {}) {
+function buildMatch(overrides: Partial<Match> = {}): Match {
     return {
         id: 1,
         date: '2099-01-01T00:00:00.000Z',
@@ -108,7 +109,7 @@ describe('MatchCard', () => {
         );
 
         expect(screen.getByText('2 - 0')).toBeInTheDocument();
-        expect(screen.getByText('Your Pick ✓').className).toContain('Correct');
+        expect(screen.getByText('✓ Correct pick')).toBeInTheDocument();
     });
 
     it('shows a wrong-pick badge when the prediction did not match the winner', () => {
@@ -126,7 +127,7 @@ describe('MatchCard', () => {
             />,
         );
 
-        expect(screen.getByText('Your Pick ✓').className).toContain('Wrong');
+        expect(screen.getByText('✕ Wrong pick')).toBeInTheDocument();
     });
 
     it('renders the crowd-prediction percentages once the match is decided', () => {
