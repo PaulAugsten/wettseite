@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getMatchPredictions } from '@/lib/data/predictions';
+import { getMatchPredictions, getStandings } from '@/lib/data/predictions';
 import { createClient } from '@/lib/supabase/server';
 import type { Match } from '@/lib/types';
 
@@ -76,5 +76,56 @@ describe('getMatchPredictions', () => {
         const { stats } = await getMatchPredictions([match(1, 10, 20)], undefined);
 
         expect(stats.get(1)).toEqual({ team1: 0, team2: 0, total: 0 });
+    });
+});
+
+function mockStandingsQuery({
+    data,
+    error = null,
+}: {
+    data: unknown;
+    error?: { message: string } | null;
+}) {
+    vi.mocked(createClient).mockResolvedValue({
+        from: vi.fn(() => ({
+            select: vi.fn(() => ({
+                eq: vi.fn(async () => ({ data, error })),
+            })),
+        })),
+    } as unknown as Awaited<ReturnType<typeof createClient>>);
+}
+
+describe('getStandings', () => {
+    afterEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('returns the standings rows for a tournament', async () => {
+        mockStandingsQuery({
+            data: [{ user_id: 'u1', username: 'paul', points: 12, total_predictions: 20 }],
+        });
+
+        expect(await getStandings(5)).toEqual([
+            { user_id: 'u1', username: 'paul', points: 12, total_predictions: 20 },
+        ]);
+    });
+
+    it("replaces the view's nullable fields with safe defaults", async () => {
+        mockStandingsQuery({
+            data: [{ user_id: null, username: null, points: null, total_predictions: null }],
+        });
+
+        expect(await getStandings(5)).toEqual([
+            { user_id: '', username: '', points: 0, total_predictions: 0 },
+        ]);
+    });
+
+    it('returns an empty list and logs on query failure', async () => {
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        mockStandingsQuery({ data: null, error: { message: 'connection refused' } });
+
+        expect(await getStandings(5)).toEqual([]);
+        expect(errorSpy).toHaveBeenCalled();
+        errorSpy.mockRestore();
     });
 });
