@@ -1,4 +1,4 @@
-export type Game = {
+type Game = {
     id: number;
     name: string;
     slug: string;
