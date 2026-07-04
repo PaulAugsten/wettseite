@@ -1,6 +1,8 @@
-import type { Tournament } from '@/components/TournamentCard';
 import { TournamentSection } from '@/components/TournamentSection';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { createClient } from '@/lib/supabase/server';
+import type { Tournament } from '@/lib/types';
 
 type GamePageParameters = {
     params: {
@@ -26,23 +28,32 @@ export default async function Game({ params }: GamePageParameters) {
         .single();
 
     if (error || !data) {
-        return <div>Site is under construction</div>;
+        return (
+            <EmptyState
+                title="Nothing here yet"
+                description="This game is under construction — check back soon."
+            />
+        );
     }
 
-    // Group by status
-    const live = data.tournaments.filter((t: Tournament) => t.status === 'live');
-    const upcoming = data.tournaments.filter((t: Tournament) => t.status === 'scheduled');
-    const finished = data.tournaments.filter((t: Tournament) => t.status === 'finished');
+    const tournaments = data.tournaments as Tournament[];
+    const live = tournaments.filter((t) => t.status === 'live');
+    const upcoming = tournaments.filter((t) => t.status === 'scheduled');
+    const finished = tournaments.filter((t) => t.status === 'finished');
 
     return (
-        <div className="gamePage">
-            <div className="gamePageHeader">
-                <h1 className="gamePageTitle">{data.name}</h1>
-                <p className="gamePageSubtitle">
-                    {data.tournaments.length} tournament
-                    {data.tournaments.length !== 1 ? 's' : ''}
-                </p>
-            </div>
+        <div className="flex flex-col gap-10">
+            <PageHeader
+                title={data.name}
+                subtitle={`${tournaments.length} tournament${tournaments.length !== 1 ? 's' : ''}`}
+            />
+
+            {tournaments.length === 0 && (
+                <EmptyState
+                    title="No tournaments yet"
+                    description="Tournaments will show up here once they are announced."
+                />
+            )}
 
             <TournamentSection title="Live" tournaments={live} game={game} />
             <TournamentSection title="Upcoming" tournaments={upcoming} game={game} />

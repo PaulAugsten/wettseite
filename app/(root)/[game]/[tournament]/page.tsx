@@ -1,6 +1,10 @@
 import MatchCard from '@/components/MatchCard';
 import PredictionStandings from '@/components/PredictionStandings';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Section } from '@/components/ui/Section';
 import { createClient } from '@/lib/supabase/server';
+import type { Match, PredictionStats } from '@/lib/types';
 
 type TournamentPageParameters = {
     params: {
@@ -9,26 +13,10 @@ type TournamentPageParameters = {
     };
 };
 
-type Team = {
-    id: number;
-    name: string;
-    short_name: string;
-    slug: string;
-};
-
-type Match = {
-    id: number;
-    date: string;
-    team1: Team;
-    team2: Team;
-    team1_score: number;
-    team2_score: number;
-    winner_id: number;
-    status: string;
-    round: string;
-    stage: string;
-    group: string;
-    bracket: string;
+const dateFormat: Intl.DateTimeFormatOptions = {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
 };
 
 function MatchSection({
@@ -41,14 +29,13 @@ function MatchSection({
     title: string;
     matches: Match[];
     userPredictionMap: Map<number, number>;
-    predictionStats: Map<number, { team1: number; team2: number; total: number }>;
+    predictionStats: Map<number, PredictionStats>;
     isLoggedIn: boolean;
 }) {
     if (matches.length === 0) return null;
     return (
-        <div className="tournamentSection">
-            <h2 className="tournamentSectionTitle">{title}</h2>
-            <div className="matchList">
+        <Section title={title}>
+            <div className="flex flex-col gap-2">
                 {matches.map((match) => (
                     <MatchCard
                         key={match.id}
@@ -65,7 +52,7 @@ function MatchSection({
                     />
                 ))}
             </div>
-        </div>
+        </Section>
     );
 }
 
@@ -94,8 +81,12 @@ export default async function Tournament({ params }: TournamentPageParameters) {
         .single();
 
     if (error || !data) {
-        console.log(error);
-        return <div>No Events found</div>;
+        return (
+            <EmptyState
+                title="Tournament not found"
+                description="This tournament doesn't exist or isn't available yet."
+            />
+        );
     }
 
     const matches = data.matches as Match[];
@@ -123,7 +114,7 @@ export default async function Tournament({ params }: TournamentPageParameters) {
         (userPredictions ?? []).map((p) => [p.match_id, p.predicted_winner_id]),
     );
 
-    const predictionStats = new Map<number, { team1: number; team2: number; total: number }>();
+    const predictionStats = new Map<number, PredictionStats>();
     for (const match of matches) {
         const matchPredictions = (allPredictions ?? []).filter((p) => p.match_id === match.id);
         const team1Count = matchPredictions.filter(
@@ -144,28 +135,26 @@ export default async function Tournament({ params }: TournamentPageParameters) {
     const finished = matches.filter((m) => m.status === 'finished').toReversed();
 
     return (
-        <div className="gamePage">
-            <div className="gamePageHeader">
-                <h1 className="gamePageTitle">{data.name}</h1>
-                {data.start_date && data.end_date && (
-                    <p className="gamePageSubtitle">
-                        {new Date(data.start_date).toLocaleDateString('en-GB', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                        })}{' '}
-                        -{' '}
-                        {new Date(data.end_date).toLocaleDateString('en-GB', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                        })}
-                    </p>
-                )}
-            </div>
+        <div className="flex flex-col gap-10">
+            <PageHeader
+                title={data.name}
+                subtitle={
+                    data.start_date && data.end_date
+                        ? `${new Date(data.start_date).toLocaleDateString('en-GB', dateFormat)} – ${new Date(
+                              data.end_date,
+                          ).toLocaleDateString('en-GB', dateFormat)}`
+                        : undefined
+                }
+            />
 
-            <div className="tournamentLayout">
-                <div className="matchesColumn">
+            <div className="grid items-start gap-8 lg:grid-cols-[2fr_1fr]">
+                <div className="flex min-w-0 flex-col gap-8">
+                    {matches.length === 0 && (
+                        <EmptyState
+                            title="No matches yet"
+                            description="Matches will show up here once the schedule is published."
+                        />
+                    )}
                     <MatchSection
                         title="Live"
                         matches={live}
@@ -188,7 +177,7 @@ export default async function Tournament({ params }: TournamentPageParameters) {
                         isLoggedIn={!!user}
                     />
                 </div>
-                <div className="standingsColumn">
+                <div className="min-w-0">
                     <PredictionStandings standings={prediction_standings ?? []} />
                 </div>
             </div>
