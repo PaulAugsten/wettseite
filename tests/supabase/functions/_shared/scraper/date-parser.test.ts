@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { parseWikitextDate } from '@/lib/supabase/api/scraper/rainbow-six-siege/date_parser';
+import { parseWikitextDate } from '@/supabase/functions/_shared/scraper/date-parser.ts';
 
 describe('parseWikitextDate', () => {
     it('converts a date with an explicit timezone abbreviation to UTC ISO', () => {
