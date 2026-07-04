@@ -3,9 +3,9 @@ import {
     calculateMatchScore,
     parseMatch,
     parseMatchesFromStage,
-} from '@/lib/supabase/api/scraper/rainbow-six-siege/match_parser';
-import type TeamResolver from '@/lib/supabase/api/scraper/rainbow-six-siege/teamnames_resolver';
-import type { Tournament } from '@/lib/supabase/api/scraper/rainbow-six-siege/types';
+} from '@/supabase/functions/_shared/scraper/match-parser.ts';
+import type { TeamResolver } from '@/supabase/functions/_shared/scraper/team-resolver.ts';
+import type { Tournament } from '@/supabase/functions/_shared/scraper/types.ts';
 
 function fakeResolver(knownTeams: Record<string, number>) {
     return {

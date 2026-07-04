@@ -2,6 +2,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { login } from '@/app/(login)/login/actions';
+import { initialAuthState } from '@/app/(login)/types';
 import { createClient } from '@/lib/supabase/server';
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
@@ -45,38 +46,40 @@ describe('login', () => {
         vi.clearAllMocks();
     });
 
-    it('returns an error when username or password is missing', async () => {
-        const result = await login({ message: '' }, buildFormData({ username: '', password: '' }));
-        expect(result).toEqual({ message: 'Missing username or password', errors: '500' });
+    it('returns a validation error when username or password is missing', async () => {
+        const result = await login(initialAuthState, buildFormData({ username: '', password: '' }));
+        expect(result).toEqual({ error: 'Enter your username' });
     });
 
-    it('returns "User not found" when the username cannot be resolved to an email', async () => {
+    it('returns the generic credentials error when the username cannot be resolved', async () => {
         mockSupabase({ email: null });
 
         const result = await login(
-            { message: '' },
+            initialAuthState,
             buildFormData({ username: 'ghost', password: 'secret' }),
         );
 
-        expect(result).toEqual({ message: 'User not found', errors: '500' });
+        // Same message as a wrong password, so responses don't reveal
+        // whether a username exists.
+        expect(result).toEqual({ error: 'Invalid username or password' });
     });
 
-    it('returns "Invalid credentials" when sign-in fails', async () => {
+    it('returns the generic credentials error when sign-in fails', async () => {
         mockSupabase({ email: 'user@example.com', signInError: { message: 'bad password' } });
 
         const result = await login(
-            { message: '' },
+            initialAuthState,
             buildFormData({ username: 'someuser', password: 'wrong' }),
         );
 
-        expect(result).toEqual({ message: 'Invalid credentials', errors: '500' });
+        expect(result).toEqual({ error: 'Invalid username or password' });
     });
 
     it('revalidates and redirects home on success', async () => {
         const { signInWithPassword } = mockSupabase({ email: 'user@example.com' });
 
         await expect(
-            login({ message: '' }, buildFormData({ username: 'someuser', password: 'correct' })),
+            login(initialAuthState, buildFormData({ username: 'someuser', password: 'correct' })),
         ).rejects.toThrow('NEXT_REDIRECT');
 
         expect(signInWithPassword).toHaveBeenCalledWith({

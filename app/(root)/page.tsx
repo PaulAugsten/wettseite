@@ -2,21 +2,12 @@ import { TournamentSection } from '@/components/TournamentSection';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorPanel } from '@/components/ui/ErrorPanel';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { createClient } from '@/lib/supabase/server';
-import type { GameWithTournaments } from '@/lib/types';
+import { getGamesWithLiveTournaments } from '@/lib/data/games';
 
 const Home = async () => {
-    const supabase = await createClient();
+    const liveGames = await getGamesWithLiveTournaments();
 
-    const { data: games, error: gamesError } = await supabase
-        .from('games')
-        .select(
-            `*,
-            tournaments(*)`,
-        )
-        .eq('tournaments.status', 'live');
-
-    if (gamesError || !games) {
+    if (!liveGames) {
         return (
             <ErrorPanel
                 title="Couldn't load games"
@@ -24,10 +15,6 @@ const Home = async () => {
             />
         );
     }
-
-    const liveGames = (games as GameWithTournaments[]).filter(
-        (game) => game.tournaments.length > 0,
-    );
 
     return (
         <div className="flex flex-col gap-10">

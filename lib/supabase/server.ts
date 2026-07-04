@@ -1,14 +1,21 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { requireEnv } from '@/lib/env';
+import type { Database } from '@/lib/supabase/database.types';
 
+/**
+ * Supabase client for Server Components, Server Actions and Route Handlers.
+ * Bound to the current request's auth cookies.
+ */
 export async function createClient() {
     const cookieStore = await cookies();
 
-    // Create a server's supabase client with newly configured cookie,
-    // which could be used to maintain user's session
-    return createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    return createServerClient<Database>(
+        requireEnv('NEXT_PUBLIC_SUPABASE_URL', process.env.NEXT_PUBLIC_SUPABASE_URL),
+        requireEnv(
+            'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+            process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+        ),
         {
             cookies: {
                 getAll() {
@@ -20,9 +27,9 @@ export async function createClient() {
                             cookieStore.set(name, value, options);
                         });
                     } catch {
-                        // The 'setAll' method was called from a Server Component.
-                        // This can be ignord if you have proxy refreshing
-                        // user sessions.
+                        // Called from a Server Component, where cookies are
+                        // read-only. Safe to ignore: the proxy middleware
+                        // refreshes sessions.
                     }
                 },
             },

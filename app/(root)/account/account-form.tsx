@@ -14,43 +14,42 @@ type Status = { type: 'success' | 'error'; text: string } | null;
 
 export default function AccountForm({ user }: { user: User | null }) {
     const supabase = createClient();
-    const [loading, setLoading] = useState(true);
+    // There's nothing to load without a user, so start idle in that case.
+    const [loading, setLoading] = useState(user !== null);
     const [status, setStatus] = useState<Status>(null);
-    const [fullname, setFullname] = useState<string | null>(null);
     const [username, setUsername] = useState<string | null>(null);
-    const [website, setWebsite] = useState<string | null>(null);
-    const [avatar_url, setAvatarUrl] = useState<string | null>(null);
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
     useEffect(() => {
+        if (!user) {
+            return;
+        }
+
         let ignore = false;
 
         const getProfile = async () => {
             try {
-                const { data, error, status } = await createClient()
+                const { data, error } = await createClient()
                     .from('profiles')
-                    .select('full_name, username, website, avatar_url')
-                    .eq('id', user?.id)
-                    .single();
+                    .select('username, avatar_url')
+                    .eq('id', user.id)
+                    .maybeSingle();
 
-                if (ignore) {
-                    return;
-                }
-
-                if (error && status !== 406) {
-                    setStatus({ type: 'error', text: 'Error loading user data.' });
-                } else if (data) {
-                    setFullname(data.full_name);
-                    setUsername(data.username);
-                    setWebsite(data.website);
-                    setAvatarUrl(data.avatar_url);
+                if (!ignore) {
+                    if (error) {
+                        setStatus({ type: 'error', text: 'Error loading user data.' });
+                    } else if (data) {
+                        setUsername(data.username);
+                        setAvatarUrl(data.avatar_url);
+                    }
+                    setLoading(false);
                 }
             } catch {
-                if (ignore) {
-                    return;
+                if (!ignore) {
+                    setStatus({ type: 'error', text: 'Error loading user data.' });
+                    setLoading(false);
                 }
-                setStatus({ type: 'error', text: 'Error loading user data.' });
             }
-            setLoading(false);
         };
 
         void getProfile();
@@ -62,26 +61,23 @@ export default function AccountForm({ user }: { user: User | null }) {
 
     async function updateProfile({
         username,
-        website,
-        avatar_url,
+        avatarUrl,
     }: {
         username: string | null;
-        fullname: string | null;
-        website: string | null;
-        avatar_url: string | null;
+        avatarUrl: string | null;
     }) {
-        if (!user) return;
+        if (!user || !username) {
+            setStatus({ type: 'error', text: 'Username cannot be empty.' });
+            return;
+        }
 
         setLoading(true);
 
         try {
             const { error } = await supabase.from('profiles').upsert({
                 id: user.id,
-                full_name: fullname,
                 username,
-                website,
-                avatar_url,
-                updated_at: new Date().toISOString(),
+                avatar_url: avatarUrl,
             });
             setStatus(
                 error
@@ -101,29 +97,16 @@ export default function AccountForm({ user }: { user: User | null }) {
             <Card className="flex flex-col gap-5 p-6">
                 <Avatar
                     uid={user?.id ?? null}
-                    url={avatar_url}
+                    url={avatarUrl}
                     size={96}
                     onUpload={(url) => {
                         setAvatarUrl(url);
-                        updateProfile({
-                            fullname,
-                            username,
-                            website,
-                            avatar_url: url,
-                        });
+                        updateProfile({ username, avatarUrl: url });
                     }}
                 />
 
                 <FormField id="email" label="Email">
                     <Input id="email" type="text" value={user?.email ?? ''} disabled />
-                </FormField>
-                <FormField id="fullname" label="Full name">
-                    <Input
-                        id="fullname"
-                        type="text"
-                        value={fullname || ''}
-                        onChange={(e) => setFullname(e.target.value)}
-                    />
                 </FormField>
                 <FormField id="username" label="Username">
                     <Input
@@ -131,14 +114,6 @@ export default function AccountForm({ user }: { user: User | null }) {
                         type="text"
                         value={username || ''}
                         onChange={(e) => setUsername(e.target.value)}
-                    />
-                </FormField>
-                <FormField id="website" label="Website">
-                    <Input
-                        id="website"
-                        type="url"
-                        value={website || ''}
-                        onChange={(e) => setWebsite(e.target.value)}
                     />
                 </FormField>
 
@@ -155,14 +130,7 @@ export default function AccountForm({ user }: { user: User | null }) {
 
                 <div className="flex items-center gap-3">
                     <Button
-                        onClick={() =>
-                            updateProfile({
-                                fullname,
-                                username,
-                                website,
-                                avatar_url,
-                            })
-                        }
+                        onClick={() => updateProfile({ username, avatarUrl })}
                         disabled={loading}
                     >
                         {loading ? 'Loading…' : 'Update'}

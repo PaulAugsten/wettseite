@@ -14,6 +14,8 @@
         "lint:next": "eslint",
         "postinstall": "node scripts/postinstall-precommit.mjs",
         "release:dry-run": "semantic-release --dry-run --no-ci",
+        "scrape:matches": "tsx scripts/scrape-matches.ts",
+        "scrape:tournaments": "tsx scripts/scrape-tournaments.ts",
         "size": "size-limit",
         "start": "next start",
         "test": "vitest run --passWithNoTests",
@@ -29,13 +31,12 @@
         "@supabase/supabase-js": "^2.108.2",
         "@vercel/analytics": "^2.0.1",
         "@vercel/speed-insights": "^2.0.0",
-        "axios": "^1.18.0",
         "babel-plugin-react-compiler": "^1.0.0",
         "cheerio": "^1.2.0",
-        "dotenv": "^17.4.2",
         "next": "^16.2.9",
         "react": "^19.2.7",
-        "react-dom": "^19.2.7"
+        "react-dom": "^19.2.7",
+        "zod": "^4.4.3"
     },
     "devDependencies": {
         "@axe-core/playwright": "^4.10.2",
@@ -58,6 +59,7 @@
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^6.0.2",
         "@vitest/coverage-v8": "^4.1.9",
+        "dotenv": "^17.4.2",
         "eslint": "^9.39.4",
         "eslint-config-next": "^16.2.9",
         "jsdom": "^29.1.1",

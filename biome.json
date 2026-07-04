@@ -1,5 +1,5 @@
 {
-    "$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
+    "$schema": "https://biomejs.dev/schemas/2.5.1/schema.json",
     "vcs": {
         "enabled": true,
         "clientKind": "git",
@@ -27,7 +27,12 @@
             },
             "suspicious": {
                 "noExplicitAny": "error",
-                "noConsole": "warn"
+                "noConsole": {
+                    "level": "warn",
+                    "options": {
+                        "allow": ["error", "warn"]
+                    }
+                }
             }
         }
     },
@@ -53,7 +58,7 @@
     },
     "overrides": [
         {
-            "includes": ["lib/supabase/api/scraper/**", "supabase/functions/**", "scripts/**"],
+            "includes": ["lib/scraper/**", "supabase/functions/**", "scripts/**"],
             "linter": {
                 "rules": {
                     "suspicious": {

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useActionState } from 'react';
-import type { AuthActionState } from '@/app/(login)/types';
+import { type AuthActionState, initialAuthState } from '@/app/(login)/types';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { FormField } from '@/components/ui/FormField';
@@ -31,7 +31,7 @@ export function AuthForm({
     action: (state: AuthActionState, formData: FormData) => Promise<AuthActionState>;
     footer: { text: string; linkLabel: string; href: string };
 }) {
-    const [state, formAction, pending] = useActionState(action, { message: '' });
+    const [state, formAction, pending] = useActionState(action, initialAuthState);
 
     return (
         <main className="flex min-h-screen flex-col items-center justify-center gap-8 px-4 py-10">
@@ -45,12 +45,12 @@ export function AuthForm({
                     <p className="text-fg-muted text-sm">{subtitle}</p>
                 </div>
 
-                {state.errors && (
+                {state.error && (
                     <p
                         role="alert"
                         className="mb-4 rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-danger-fg text-sm"
                     >
-                        {state.message}
+                        {state.error}
                     </p>
                 )}
 

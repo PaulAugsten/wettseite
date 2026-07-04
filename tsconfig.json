@@ -18,6 +18,8 @@
         "noEmit": true,
         "incremental": true,
 
+        "allowImportingTsExtensions": true,
+
         // Stricter Typechecking Options
         "noUncheckedIndexedAccess": true,
         "exactOptionalPropertyTypes": true,

@@ -1,6 +1,6 @@
 import { revalidatePath } from 'next/cache';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { predict } from '@/app/(root)/[game]/[tournament]/actions';
+import { submitPrediction } from '@/app/(root)/[game]/[tournament]/actions';
 import { createClient } from '@/lib/supabase/server';
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
@@ -57,7 +57,11 @@ const FUTURE_MATCH: MatchRow = {
     team2_id: 20,
 };
 
-describe('predict', () => {
+function winnerPick(matchId: number, teamId: number) {
+    return { kind: 'winner', matchId, teamId } as const;
+}
+
+describe('submitPrediction', () => {
     beforeEach(() => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date('2024-01-01T00:00:00.000Z'));
@@ -68,42 +72,58 @@ describe('predict', () => {
         vi.clearAllMocks();
     });
 
+    it('rejects malformed input', async () => {
+        mockSupabase({ match: FUTURE_MATCH });
+
+        const result = await submitPrediction(winnerPick(-1, 10), '/some/path');
+
+        expect(result).toEqual({ success: false, error: 'Invalid prediction' });
+    });
+
+    it('rejects a revalidation path that is not app-relative', async () => {
+        mockSupabase({ match: FUTURE_MATCH });
+
+        const result = await submitPrediction(winnerPick(1, 10), 'https://evil.example');
+
+        expect(result).toEqual({ success: false, error: 'Invalid prediction' });
+    });
+
     it('rejects when the user is not logged in', async () => {
         mockSupabase({ userId: null, match: FUTURE_MATCH });
 
-        const result = await predict(1, 10, '/some/path');
+        const result = await submitPrediction(winnerPick(1, 10), '/some/path');
 
-        expect(result).toEqual({ error: 'You must be logged in to predict' });
+        expect(result).toEqual({ success: false, error: 'You must be logged in to predict' });
     });
 
     it('rejects predictions on a match that is not planned', async () => {
         mockSupabase({ match: { ...FUTURE_MATCH, status: 'live' } });
 
-        const result = await predict(1, 10, '/some/path');
+        const result = await submitPrediction(winnerPick(1, 10), '/some/path');
 
-        expect(result).toEqual({ error: 'Prediction deadline has passed' });
+        expect(result).toEqual({ success: false, error: 'Prediction deadline has passed' });
     });
 
     it('rejects predictions once the match start time has passed', async () => {
         mockSupabase({ match: { ...FUTURE_MATCH, date: '2023-01-01T00:00:00.000Z' } });
 
-        const result = await predict(1, 10, '/some/path');
+        const result = await submitPrediction(winnerPick(1, 10), '/some/path');
 
-        expect(result).toEqual({ error: 'Prediction deadline has passed' });
+        expect(result).toEqual({ success: false, error: 'Prediction deadline has passed' });
     });
 
     it('rejects a team id that does not belong to the match', async () => {
         mockSupabase({ match: FUTURE_MATCH });
 
-        const result = await predict(1, 999, '/some/path');
+        const result = await submitPrediction(winnerPick(1, 999), '/some/path');
 
-        expect(result).toEqual({ error: 'Invalid team for this match' });
+        expect(result).toEqual({ success: false, error: 'Invalid team for this match' });
     });
 
     it('upserts the prediction and revalidates the page on success', async () => {
         const { upsert } = mockSupabase({ match: FUTURE_MATCH });
 
-        const result = await predict(1, 10, '/some/path');
+        const result = await submitPrediction(winnerPick(1, 10), '/some/path');
 
         expect(result).toEqual({ success: true });
         expect(upsert).toHaveBeenCalledWith(
@@ -118,11 +138,16 @@ describe('predict', () => {
         expect(revalidatePath).toHaveBeenCalledWith('/some/path');
     });
 
-    it('surfaces a database error from the upsert', async () => {
+    it('returns a generic error when the upsert fails', async () => {
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         mockSupabase({ match: FUTURE_MATCH, upsertError: { message: 'db exploded' } });
 
-        const result = await predict(1, 10, '/some/path');
+        const result = await submitPrediction(winnerPick(1, 10), '/some/path');
 
-        expect(result).toEqual({ error: 'db exploded' });
+        expect(result).toEqual({
+            success: false,
+            error: 'Could not save your prediction. Please try again.',
+        });
+        errorSpy.mockRestore();
     });
 });

@@ -1,7 +1,7 @@
-import { parseWikitextDate } from './date_parser';
-import type TeamResolver from './teamnames_resolver';
-import type { Match, Tournament } from './types';
-import { extractCommentContent, getGroup, getParam, getRound } from './wikitext_parser';
+import { parseWikitextDate } from './date-parser.ts';
+import type { TeamResolver } from './team-resolver.ts';
+import type { Match, MatchStatus, Tournament } from './types.ts';
+import { extractCommentContent, getGroup, getParam, getRound } from './wikitext-parser.ts';
 
 export function calculateMatchScore(text: string): {
     team1Score: number;
@@ -14,19 +14,19 @@ export function calculateMatchScore(text: string): {
     const team2ScoreText = team2ScoreMatch?.[1];
 
     if (team1ScoreText && team2ScoreText) {
-        const team1Score = team1ScoreText;
-        const team2Score = team2ScoreText;
-
-        if (team1Score === 'W' || team2Score === 'FF') {
+        if (team1ScoreText === 'W' || team2ScoreText === 'FF') {
             return { team1Score: 1, team2Score: 0 };
-        } else if (team2Score === 'W' || team1Score === 'FF') {
+        } else if (team2ScoreText === 'W' || team1ScoreText === 'FF') {
             return { team1Score: 0, team2Score: 1 };
         }
 
-        if (!Number.isNaN(parseInt(team1Score, 10)) && !Number.isNaN(parseInt(team2Score, 10))) {
+        if (
+            !Number.isNaN(parseInt(team1ScoreText, 10)) &&
+            !Number.isNaN(parseInt(team2ScoreText, 10))
+        ) {
             return {
-                team1Score: parseInt(team1Score, 10),
-                team2Score: parseInt(team2Score, 10),
+                team1Score: parseInt(team1ScoreText, 10),
+                team2Score: parseInt(team2ScoreText, 10),
             };
         }
     }
@@ -56,10 +56,8 @@ export function calculateMatchScore(text: string): {
         let t1Total = 0;
         let t2Total = 0;
 
-        const score1Match = mapContent.match(/score1=(\d+)/);
-        const score2Match = mapContent.match(/score2=(\d+)/);
-        const score1Text = score1Match?.[1];
-        const score2Text = score2Match?.[1];
+        const score1Text = mapContent.match(/score1=(\d+)/)?.[1];
+        const score2Text = mapContent.match(/score2=(\d+)/)?.[1];
 
         // old format
         if (score1Text && score2Text) {
@@ -97,10 +95,8 @@ export function parseMatch(text: string, teamResolver: TeamResolver): Match | nu
     const team2_name = getParam(text, 'opponent2');
     const finished = getParam(text, 'finished');
     const dateText = getParam(text, 'date');
-    const scores = calculateMatchScore(text);
-    const team1_score = scores?.team1Score;
-    const team2_score = scores?.team2Score;
-    let winner_id = null;
+    const { team1Score: team1_score, team2Score: team2_score } = calculateMatchScore(text);
+    let winner_id: number | null = null;
 
     if (!(match_id && team1_name && team2_name)) {
         console.error(
@@ -132,13 +128,13 @@ export function parseMatch(text: string, teamResolver: TeamResolver): Match | nu
         return null;
     }
 
-    let status: 'planned' | 'live' | 'finished' = 'planned';
+    let status: MatchStatus = 'planned';
     if (finished === 'true') status = 'finished';
     else if (new Date() > new Date(date)) status = 'live';
 
-    if (team1_score > team2_score && status === 'finished') {
+    if (status === 'finished' && team1_score > team2_score) {
         winner_id = team1_id;
-    } else if (team1_score < team2_score && status === 'finished') {
+    } else if (status === 'finished' && team1_score < team2_score) {
         winner_id = team2_id;
     }
 
@@ -160,12 +156,41 @@ export function parseMatch(text: string, teamResolver: TeamResolver): Match | nu
     };
 }
 
+type StageContext = {
+    tournament: Tournament;
+    stage: string | null;
+    round: string | null;
+    group: string | null;
+};
+
+function applyStageContext(match: Match, { tournament, stage, round, group }: StageContext): Match {
+    match.tournament_id = tournament.id ?? 0;
+    match.stage = stage ?? '';
+    match.round = round ?? '';
+    match.group = '';
+    match.bracket = '';
+
+    if (stage?.includes('Group')) {
+        match.group = group ?? '';
+    } else if (stage === 'Playoffs') {
+        if (round?.includes('Upper')) {
+            match.bracket = 'Upper';
+        } else if (round?.includes('Lower')) {
+            match.bracket = 'Lower';
+        } else {
+            match.bracket = 'Single';
+        }
+    }
+
+    return match;
+}
+
 export function parseMatchesFromStage(
     text: string,
     tournament: Tournament,
     stage: string | null,
     teamResolver: TeamResolver,
-) {
+): Match[] {
     const matches: Match[] = [];
     const lines = text.split('\n');
 
@@ -174,6 +199,22 @@ export function parseMatchesFromStage(
     let currentRound: string | null = null;
     let currentGroup: string | null = null;
     let depth = 0;
+
+    const flushCurrentMatch = () => {
+        const parsedMatch = parseMatch(currentMatchText.join('\n'), teamResolver);
+        if (parsedMatch) {
+            matches.push(
+                applyStageContext(parsedMatch, {
+                    tournament,
+                    stage,
+                    round: currentRound,
+                    group: currentGroup,
+                }),
+            );
+        }
+        currentMatchText = [];
+        insideMatch = false;
+    };
 
     for (const line of lines) {
         if (!insideMatch && line.trim().startsWith('<!--') && line.includes('-->')) {
@@ -186,8 +227,7 @@ export function parseMatchesFromStage(
         ) {
             currentRound = getRound(line, 'header');
         } else if (!insideMatch) {
-            const hiddenSortMatch = line.trim().match(/^===={{HiddenSort\|(.+?)}}====$/);
-            const hiddenSortContent = hiddenSortMatch?.[1];
+            const hiddenSortContent = line.trim().match(/^===={{HiddenSort\|(.+?)}}====$/)?.[1];
             if (hiddenSortContent) {
                 currentRound = hiddenSortContent.trim();
             }
@@ -202,27 +242,7 @@ export function parseMatchesFromStage(
 
         if (/{{Match\b/.test(line.trim())) {
             if (insideMatch && currentMatchText.length > 0) {
-                const parsedMatch = parseMatch(currentMatchText.join('\n'), teamResolver);
-                if (parsedMatch) {
-                    parsedMatch.tournament_id = tournament.id ?? 0;
-                    parsedMatch.stage = stage ?? '';
-                    parsedMatch.round = currentRound ?? '';
-                    parsedMatch.group = '';
-                    parsedMatch.bracket = '';
-
-                    if (stage?.includes('Group')) {
-                        parsedMatch.group = currentGroup ?? '';
-                    } else if (stage === 'Playoffs') {
-                        if (currentRound?.includes('Upper')) {
-                            parsedMatch.bracket = 'Upper';
-                        } else if (currentRound?.includes('Lower')) {
-                            parsedMatch.bracket = 'Lower';
-                        } else {
-                            parsedMatch.bracket = 'Single';
-                        }
-                    }
-                    matches.push(parsedMatch);
-                }
+                flushCurrentMatch();
             }
 
             currentMatchText = [line];
@@ -230,29 +250,7 @@ export function parseMatchesFromStage(
             depth = (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
 
             if (depth === 0) {
-                const parsedMatch = parseMatch(currentMatchText.join('\n'), teamResolver);
-                if (parsedMatch) {
-                    parsedMatch.tournament_id = tournament.id ?? 0;
-                    parsedMatch.stage = stage ?? '';
-                    parsedMatch.round = currentRound ?? '';
-                    parsedMatch.group = '';
-                    parsedMatch.bracket = '';
-
-                    if (stage?.includes('Group')) {
-                        parsedMatch.group = currentGroup ?? '';
-                    } else if (stage === 'Playoffs') {
-                        if (currentRound?.includes('Upper')) {
-                            parsedMatch.bracket = 'Upper';
-                        } else if (currentRound?.includes('Lower')) {
-                            parsedMatch.bracket = 'Lower';
-                        } else {
-                            parsedMatch.bracket = 'Single';
-                        }
-                    }
-                    matches.push(parsedMatch);
-                }
-                currentMatchText = [];
-                insideMatch = false;
+                flushCurrentMatch();
             }
             continue;
         }
@@ -262,29 +260,7 @@ export function parseMatchesFromStage(
             depth += (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
 
             if (depth === 0) {
-                const parsedMatch = parseMatch(currentMatchText.join('\n'), teamResolver);
-                if (parsedMatch) {
-                    parsedMatch.tournament_id = tournament.id ?? 0;
-                    parsedMatch.stage = stage ?? '';
-                    parsedMatch.round = currentRound ?? '';
-                    parsedMatch.group = '';
-                    parsedMatch.bracket = '';
-
-                    if (stage?.includes('Group')) {
-                        parsedMatch.group = currentGroup ?? '';
-                    } else if (stage === 'Playoffs') {
-                        if (currentRound?.includes('Upper')) {
-                            parsedMatch.bracket = 'Upper';
-                        } else if (currentRound?.includes('Lower')) {
-                            parsedMatch.bracket = 'Lower';
-                        } else {
-                            parsedMatch.bracket = 'Single';
-                        }
-                    }
-                    matches.push(parsedMatch);
-                }
-                currentMatchText = [];
-                insideMatch = false;
+                flushCurrentMatch();
             }
         }
     }

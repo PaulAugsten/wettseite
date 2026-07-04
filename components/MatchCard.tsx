@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useOptimistic, useTransition } from 'react';
-import { predict } from '@/app/(root)/[game]/[tournament]/actions';
+import { submitPrediction } from '@/app/(root)/[game]/[tournament]/actions';
 import { Card } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { cn } from '@/lib/cn';
@@ -43,7 +43,7 @@ export default function MatchCard({ match, userPrediction, stats, isLoggedIn }: 
         if (!canPredict || loading) return;
         startTransition(async () => {
             setLocalPrediction(teamId);
-            await predict(match.id, teamId, pathname);
+            await submitPrediction({ kind: 'winner', matchId: match.id, teamId }, pathname);
         });
     }
 

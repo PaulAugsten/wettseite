@@ -5,7 +5,7 @@ import {
     getParam,
     getRound,
     getSubpageStage,
-} from '@/lib/supabase/api/scraper/rainbow-six-siege/wikitext_parser';
+} from '@/supabase/functions/_shared/scraper/wikitext-parser.ts';
 
 describe('getParam', () => {
     it('extracts an opponent name via the template= field', () => {

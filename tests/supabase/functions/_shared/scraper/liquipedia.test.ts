@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generateBatchRequests } from '@/lib/supabase/api/scraper/rainbow-six-siege/matches_scraper';
+import { generateBatchRequests } from '@/supabase/functions/_shared/scraper/liquipedia.ts';
 
 describe('generateBatchRequests', () => {
     it('batches pages into groups of 50 joined by |', () => {
