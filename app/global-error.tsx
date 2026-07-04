@@ -2,8 +2,11 @@
 
 import * as Sentry from '@sentry/nextjs';
 import { useEffect } from 'react';
+import { Button } from '@/components/ui/Button';
+import { ErrorPanel } from '@/components/ui/ErrorPanel';
+import './globals.css';
 
-export default function ErrorPage({
+export default function GlobalError({
     error,
     reset,
 }: {
@@ -15,17 +18,18 @@ export default function ErrorPage({
     }, [error]);
 
     return (
-        <div>
-            <h2>Something went wrong!</h2>
-            <button
-                type="button"
-                onClick={
-                    // Attempt to recover by trying to re-render the segment
-                    () => reset()
-                }
-            >
-                Try again
-            </button>
-        </div>
+        <html lang="en">
+            <body>
+                <main className="flex min-h-screen items-center justify-center px-4">
+                    <div className="w-full max-w-md">
+                        <ErrorPanel
+                            title="Something went wrong"
+                            description="An unexpected error occurred. Try again — if it keeps happening, check back later."
+                            action={<Button onClick={() => reset()}>Try again</Button>}
+                        />
+                    </div>
+                </main>
+            </body>
+        </html>
     );
 }
