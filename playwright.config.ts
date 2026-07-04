@@ -1,6 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const baseURL = process.env.BASE_URL ?? 'http://localhost:3000';
+const rawBaseURL = process.env.BASE_URL?.trim();
+const baseURL = rawBaseURL
+    ? /^https?:\/\//.test(rawBaseURL)
+        ? rawBaseURL
+        : `https://${rawBaseURL}`
+    : 'http://localhost:3000';
 
 export default defineConfig({
     testDir: './e2e',
@@ -10,7 +15,7 @@ export default defineConfig({
     reporter: process.env.CI ? [['github'], ['html']] : 'html',
     // Only spin up a local server when there's no BASE_URL to target
     // (i.e. not running against a deployed preview/production URL).
-    ...(process.env.BASE_URL
+    ...(rawBaseURL
         ? {}
         : {
               webServer: {

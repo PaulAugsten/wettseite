@@ -2,6 +2,7 @@ import Link from 'next/link';
 import InstallPrompt from '@/components/InstallPrompt';
 import NavLinks from '@/components/NavLinks';
 import UserMenu from '@/components/UserMenu';
+import { Button } from '@/components/ui/Button';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -23,35 +24,36 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     }
 
     return (
-        <div className="rootLayout">
-            <InstallPrompt></InstallPrompt>
+        <div className="flex min-h-screen flex-col">
+            <InstallPrompt />
 
-            <nav className="navbar">
-                <div className="navInner">
-                    <Link href="/" className="navLogo">
+            <nav className="sticky top-0 z-100 h-(--navbar-height) border-b border-edge bg-bg/85 backdrop-blur-md">
+                <div className="flex h-full w-full items-center gap-4 px-6">
+                    <Link
+                        href="/"
+                        className="mr-4 text-2xl font-extrabold tracking-tight text-fg no-underline"
+                    >
                         wettsite
                     </Link>
 
                     <NavLinks />
 
-                    <div className="navAuth">
+                    <div className="flex items-center gap-2">
                         {user ? (
                             <UserMenu username={username} />
                         ) : (
                             <>
-                                <Link href="/login" className="navBtn navBtnOutline">
+                                <Button href="/login" variant="outline">
                                     Log in
-                                </Link>
-                                <Link href="/signup" className="navBtn navBtnFilled">
-                                    Sign up
-                                </Link>
+                                </Button>
+                                <Button href="/signup">Sign up</Button>
                             </>
                         )}
                     </div>
                 </div>
             </nav>
 
-            <main className="pageContent">{children}</main>
+            <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">{children}</main>
         </div>
     );
 }

@@ -1,6 +1,9 @@
 'use client'; // Error boundaries must be Client Components
 
+import * as Sentry from '@sentry/nextjs';
 import { useEffect } from 'react';
+import { Button } from '@/components/ui/Button';
+import { ErrorPanel } from '@/components/ui/ErrorPanel';
 
 export default function ErrorPage({
     error,
@@ -10,22 +13,14 @@ export default function ErrorPage({
     reset: () => void;
 }) {
     useEffect(() => {
-        // Log the error to an error reporting service
-        console.error(error);
+        Sentry.captureException(error);
     }, [error]);
 
     return (
-        <div>
-            <h2>Something went wrong!</h2>
-            <button
-                type="button"
-                onClick={
-                    // Attempt to recover by trying to re-render the segment
-                    () => reset()
-                }
-            >
-                Try again
-            </button>
-        </div>
+        <ErrorPanel
+            title="Something went wrong"
+            description="An unexpected error occurred. Try again, if it keeps happening, check back later."
+            action={<Button onClick={() => reset()}>Try again</Button>}
+        />
     );
 }

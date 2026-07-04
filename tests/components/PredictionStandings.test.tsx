@@ -26,7 +26,7 @@ describe('PredictionStandings', () => {
         expect(usernames[2]).toContain('Alice');
     });
 
-    it('assigns top1/top2/top3 rank classes to the first three rows', () => {
+    it('numbers the ranks sequentially', () => {
         render(
             <PredictionStandings
                 standings={[
@@ -39,10 +39,8 @@ describe('PredictionStandings', () => {
         );
 
         const rows = screen.getAllByRole('row').slice(1);
-        expect(rows[0]?.querySelector('td')?.className).toContain('top1');
-        expect(rows[1]?.querySelector('td')?.className).toContain('top2');
-        expect(rows[2]?.querySelector('td')?.className).toContain('top3');
-        expect(rows[3]?.querySelector('td')?.className).not.toMatch(/top\d/);
+        const ranks = rows.map((row) => row.querySelector('td')?.textContent);
+        expect(ranks).toEqual(['1', '2', '3', '4']);
     });
 
     it('does not mutate the standings array passed in', () => {

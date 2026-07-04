@@ -1,4 +1,6 @@
-import { type Tournament, TournamentCard } from './TournamentCard';
+import { TournamentCard } from '@/components/TournamentCard';
+import { Section } from '@/components/ui/Section';
+import type { Tournament } from '@/lib/types';
 
 export function TournamentSection({
     title,
@@ -11,13 +13,12 @@ export function TournamentSection({
 }) {
     if (tournaments.length === 0) return null;
     return (
-        <div className="tournamentSection">
-            <h2 className="tournamentSectionTitle">{title}</h2>
-            <div className="tournamentGrid">
+        <Section title={title}>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
                 {tournaments.map((tournament) => (
                     <TournamentCard key={tournament.id} tournament={tournament} game={game} />
                 ))}
             </div>
-        </div>
+        </Section>
     );
 }
