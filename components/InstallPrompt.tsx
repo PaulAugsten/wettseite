@@ -30,10 +30,10 @@ export default function InstallPrompt() {
     if (dismissed || (!installPrompt && !showIOSHint)) return null;
 
     return (
-        <div
-            role="dialog"
+        <dialog
+            open
             aria-label="Install app"
-            className="fixed bottom-5 left-1/2 z-999 flex w-[calc(100%-32px)] max-w-105 -translate-x-1/2 flex-col gap-3 rounded-lg border border-edge bg-card px-5 py-4 shadow-overlay"
+            className="fixed bottom-5 left-1/2 z-999 m-0 flex w-[calc(100%-32px)] max-w-105 -translate-x-1/2 flex-col gap-3 rounded-lg border border-edge bg-card px-5 py-4 text-inherit shadow-overlay right-auto"
         >
             {installPrompt ? (
                 <>
@@ -72,6 +72,6 @@ export default function InstallPrompt() {
                     </div>
                 </>
             )}
-        </div>
+        </dialog>
     );
 }

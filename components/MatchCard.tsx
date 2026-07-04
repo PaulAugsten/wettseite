@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useOptimistic, useTransition } from 'react';
 import { predict } from '@/app/(root)/[game]/[tournament]/actions';
 import { Card } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -27,8 +27,8 @@ function PickBadge({ matchStatus, correct }: { matchStatus: Match['status']; cor
 }
 
 export default function MatchCard({ match, userPrediction, stats, isLoggedIn }: Props) {
-    const [localPrediction, setLocalPrediction] = useState<number | null>(userPrediction);
-    const [loading, setLoading] = useState(false);
+    const [localPrediction, setLocalPrediction] = useOptimistic(userPrediction);
+    const [loading, startTransition] = useTransition();
     const pathname = usePathname();
 
     const canPredict =
@@ -39,12 +39,12 @@ export default function MatchCard({ match, userPrediction, stats, isLoggedIn }: 
     const team2PredictionPercentage =
         stats.total > 0 ? Math.round((stats.team2 / stats.total) * 100) : 50;
 
-    async function handlePredict(teamId: number) {
+    function handlePredict(teamId: number) {
         if (!canPredict || loading) return;
-        setLoading(true);
-        setLocalPrediction(teamId);
-        await predict(match.id, teamId, pathname);
-        setLoading(false);
+        startTransition(async () => {
+            setLocalPrediction(teamId);
+            await predict(match.id, teamId, pathname);
+        });
     }
 
     function teamButton(team: Team | null, align: 'left' | 'right') {

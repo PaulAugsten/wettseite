@@ -1,6 +1,6 @@
 'use client';
 import type { User } from '@supabase/supabase-js';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { FormField } from '@/components/ui/FormField';
@@ -21,38 +21,44 @@ export default function AccountForm({ user }: { user: User | null }) {
     const [website, setWebsite] = useState<string | null>(null);
     const [avatar_url, setAvatarUrl] = useState<string | null>(null);
 
-    const getProfile = useCallback(async () => {
-        try {
-            setLoading(true);
-
-            const { data, error, status } = await supabase
-                .from('profiles')
-                .select('full_name, username, website, avatar_url')
-                .eq('id', user?.id)
-                .single();
-
-            if (error && status !== 406) {
-                setStatus({ type: 'error', text: 'Error loading user data.' });
-                return;
-            }
-
-            if (data) {
-                setFullname(data.full_name);
-                setUsername(data.username);
-                setWebsite(data.website);
-                setAvatarUrl(data.avatar_url);
-            }
-        } catch {
-            setStatus({ type: 'error', text: 'Error loading user data.' });
-        } finally {
-            setLoading(false);
-        }
-    }, [user, supabase]);
-
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- getProfile sets loading state for the initial fetch
-        getProfile();
-    }, [getProfile]);
+        let ignore = false;
+
+        const getProfile = async () => {
+            try {
+                const { data, error, status } = await createClient()
+                    .from('profiles')
+                    .select('full_name, username, website, avatar_url')
+                    .eq('id', user?.id)
+                    .single();
+
+                if (ignore) {
+                    return;
+                }
+
+                if (error && status !== 406) {
+                    setStatus({ type: 'error', text: 'Error loading user data.' });
+                } else if (data) {
+                    setFullname(data.full_name);
+                    setUsername(data.username);
+                    setWebsite(data.website);
+                    setAvatarUrl(data.avatar_url);
+                }
+            } catch {
+                if (ignore) {
+                    return;
+                }
+                setStatus({ type: 'error', text: 'Error loading user data.' });
+            }
+            setLoading(false);
+        };
+
+        void getProfile();
+
+        return () => {
+            ignore = true;
+        };
+    }, [user]);
 
     async function updateProfile({
         username,
@@ -66,9 +72,9 @@ export default function AccountForm({ user }: { user: User | null }) {
     }) {
         if (!user) return;
 
-        try {
-            setLoading(true);
+        setLoading(true);
 
+        try {
             const { error } = await supabase.from('profiles').upsert({
                 id: user.id,
                 full_name: fullname,
@@ -77,13 +83,15 @@ export default function AccountForm({ user }: { user: User | null }) {
                 avatar_url,
                 updated_at: new Date().toISOString(),
             });
-            if (error) throw error;
-            setStatus({ type: 'success', text: 'Profile updated!' });
+            setStatus(
+                error
+                    ? { type: 'error', text: 'Error updating the profile.' }
+                    : { type: 'success', text: 'Profile updated!' },
+            );
         } catch {
             setStatus({ type: 'error', text: 'Error updating the profile.' });
-        } finally {
-            setLoading(false);
         }
+        setLoading(false);
     }
 
     return (
