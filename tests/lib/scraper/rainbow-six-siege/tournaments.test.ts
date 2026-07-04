@@ -1,23 +1,8 @@
-import axios from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     getTournamentMetaData,
     shouldIncludeTournament,
-} from '@/lib/supabase/api/scraper/rainbow-six-siege/tournaments_scraper';
-
-vi.mock('axios');
-
-vi.mock('@supabase/supabase-js', () => ({
-    createClient: vi.fn(() => ({
-        from: vi.fn(() => ({
-            select: vi.fn(() => ({
-                eq: vi.fn(() => ({
-                    single: vi.fn(async () => ({ data: { id: 7 }, error: null })),
-                })),
-            })),
-        })),
-    })),
-}));
+} from '@/lib/scraper/rainbow-six-siege/tournaments';
 
 function tournamentHtml({
     name = 'R6 Test Major - Finals',
@@ -40,6 +25,13 @@ function tournamentHtml({
         <div>${endDate}</div>
         </body></html>
     `;
+}
+
+function mockFetchHtml(html: string) {
+    vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => new Response(html, { status: 200 })),
+    );
 }
 
 describe('shouldIncludeTournament', () => {
@@ -68,15 +60,17 @@ describe('getTournamentMetaData', () => {
 
     afterEach(() => {
         vi.useRealTimers();
+        vi.unstubAllGlobals();
         vi.clearAllMocks();
     });
 
     it('extracts name, location and prize pool from the infobox', async () => {
         vi.setSystemTime(new Date('2024-01-05T00:00:00Z'));
-        vi.mocked(axios.get).mockResolvedValue({ data: tournamentHtml() });
+        mockFetchHtml(tournamentHtml());
 
         const tournament = await getTournamentMetaData(
             'https://liquipedia.net/rainbowsix/Test_Major',
+            7,
         );
 
         expect(tournament.name).toBe('Test Major');
@@ -88,30 +82,33 @@ describe('getTournamentMetaData', () => {
 
     it('marks a tournament as scheduled when "now" is before the start date', async () => {
         vi.setSystemTime(new Date('2023-12-01T00:00:00Z'));
-        vi.mocked(axios.get).mockResolvedValue({ data: tournamentHtml() });
+        mockFetchHtml(tournamentHtml());
 
         const tournament = await getTournamentMetaData(
             'https://liquipedia.net/rainbowsix/Test_Major',
+            7,
         );
         expect(tournament.status).toBe('scheduled');
     });
 
     it('marks a tournament as live while within its date range', async () => {
         vi.setSystemTime(new Date('2024-01-05T00:00:00Z'));
-        vi.mocked(axios.get).mockResolvedValue({ data: tournamentHtml() });
+        mockFetchHtml(tournamentHtml());
 
         const tournament = await getTournamentMetaData(
             'https://liquipedia.net/rainbowsix/Test_Major',
+            7,
         );
         expect(tournament.status).toBe('live');
     });
 
     it('marks a tournament as finished once well past the end date', async () => {
         vi.setSystemTime(new Date('2024-02-20T00:00:00Z'));
-        vi.mocked(axios.get).mockResolvedValue({ data: tournamentHtml() });
+        mockFetchHtml(tournamentHtml());
 
         const tournament = await getTournamentMetaData(
             'https://liquipedia.net/rainbowsix/Test_Major',
+            7,
         );
         expect(tournament.status).toBe('finished');
     });
