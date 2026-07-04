@@ -35,23 +35,21 @@ export default function AccountForm({ user }: { user: User | null }) {
                     .eq('id', user.id)
                     .maybeSingle();
 
-                if (ignore) {
-                    return;
-                }
-
-                if (error) {
-                    setStatus({ type: 'error', text: 'Error loading user data.' });
-                } else if (data) {
-                    setUsername(data.username);
-                    setAvatarUrl(data.avatar_url);
+                if (!ignore) {
+                    if (error) {
+                        setStatus({ type: 'error', text: 'Error loading user data.' });
+                    } else if (data) {
+                        setUsername(data.username);
+                        setAvatarUrl(data.avatar_url);
+                    }
+                    setLoading(false);
                 }
             } catch {
-                if (ignore) {
-                    return;
+                if (!ignore) {
+                    setStatus({ type: 'error', text: 'Error loading user data.' });
+                    setLoading(false);
                 }
-                setStatus({ type: 'error', text: 'Error loading user data.' });
             }
-            setLoading(false);
         };
 
         void getProfile();
