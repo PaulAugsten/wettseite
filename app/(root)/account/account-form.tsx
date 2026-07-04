@@ -32,7 +32,8 @@ export default function AccountForm({ user }: { user: User | null }) {
                 .single();
 
             if (error && status !== 406) {
-                throw error;
+                setStatus({ type: 'error', text: 'Error loading user data.' });
+                return;
             }
 
             if (data) {

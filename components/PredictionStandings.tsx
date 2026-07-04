@@ -8,7 +8,7 @@ const cellClasses = 'border-edge border-t px-2 py-2.5 text-sm';
 const medalColors = ['text-amber-400', 'text-slate-400', 'text-amber-700'];
 
 export default function PredictionStandings({ standings }: { standings: StandingsRow[] }) {
-    const sorted = [...standings].sort((a, b) => b.points - a.points);
+    const sorted = standings.toSorted((a, b) => b.points - a.points);
 
     if (sorted.length === 0) return null;
 

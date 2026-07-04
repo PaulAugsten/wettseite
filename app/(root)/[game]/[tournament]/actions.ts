@@ -39,7 +39,6 @@ export async function predict(matchId: number, teamId: number, path: string) {
     );
 
     if (error) {
-        console.log('Error: ', error.message);
         return { error: error.message };
     }
 

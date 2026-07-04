@@ -5,14 +5,13 @@ import { createClient } from '@/lib/supabase/server';
 import type { Tournament } from '@/lib/types';
 
 type GamePageParameters = {
-    params: {
+    params: Promise<{
         game: string;
-    };
+    }>;
 };
 
 export default async function Game({ params }: GamePageParameters) {
-    const { game } = await params;
-    const supabase = await createClient();
+    const [{ game }, supabase] = await Promise.all([params, createClient()]);
 
     const { data, error } = await supabase
         .from('games')

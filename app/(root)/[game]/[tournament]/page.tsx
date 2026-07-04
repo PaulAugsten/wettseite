@@ -7,10 +7,10 @@ import { createClient } from '@/lib/supabase/server';
 import type { Match, PredictionStats } from '@/lib/types';
 
 type TournamentPageParameters = {
-    params: {
+    params: Promise<{
         game: string;
         tournament: string;
-    };
+    }>;
 };
 
 const dateFormat: Intl.DateTimeFormatOptions = {
@@ -57,28 +57,31 @@ function MatchSection({
 }
 
 export default async function Tournament({ params }: TournamentPageParameters) {
-    const { game, tournament } = await params;
-    const supabase = await createClient();
+    const [{ game, tournament }, supabase] = await Promise.all([params, createClient()]);
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
-
-    const { data, error } = await supabase
-        .from('tournaments')
-        .select(
-            `*,
-            matches!matches_tournament_id_fkey (
-                *,
-                team1:teams!matches_team1_id_fkey (id, name, short_name, slug),
-                team2:teams!matches_team2_id_fkey (id, name, short_name, slug)
-            ),
-            games!inner(id, name, slug)`,
-        )
-        .eq('slug', tournament)
-        .eq('games.slug', game)
-        .order('date', { referencedTable: 'matches', ascending: true })
-        .single();
+    const [
+        {
+            data: { user },
+        },
+        { data, error },
+    ] = await Promise.all([
+        supabase.auth.getUser(),
+        supabase
+            .from('tournaments')
+            .select(
+                `*,
+                matches!matches_tournament_id_fkey (
+                    *,
+                    team1:teams!matches_team1_id_fkey (id, name, short_name, slug),
+                    team2:teams!matches_team2_id_fkey (id, name, short_name, slug)
+                ),
+                games!inner(id, name, slug)`,
+            )
+            .eq('slug', tournament)
+            .eq('games.slug', game)
+            .order('date', { referencedTable: 'matches', ascending: true })
+            .single(),
+    ]);
 
     if (error || !data) {
         return (

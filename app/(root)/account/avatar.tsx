@@ -1,7 +1,7 @@
 'use client';
 import Image from 'next/image';
 import type React from 'react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 export default function Avatar({
@@ -16,21 +16,44 @@ export default function Avatar({
     onUpload: (url: string) => void;
 }) {
     const supabase = createClient();
-    const [avatarUrl, setAvatarUrl] = useState<string | null>(url);
+
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const downloadImage = useCallback(
+        async (path: string) => {
+            const { data, error } = await supabase.storage.from('avatars').download(path);
+
+            if (error || !data) return null;
+
+            return URL.createObjectURL(data);
+        },
+        [supabase],
+    );
+
     useEffect(() => {
-        async function downloadImage(path: string) {
-            const { data, error: downloadError } = await supabase.storage
-                .from('avatars')
-                .download(path);
-            if (downloadError || !data) return; // keep the placeholder
-            setAvatarUrl(URL.createObjectURL(data));
+        if (!url) {
+            return;
         }
 
-        if (url) downloadImage(url);
-    }, [url, supabase]);
+        let objectUrl: string | null = null;
+
+        const run = async () => {
+            objectUrl = await downloadImage(url);
+            if (objectUrl) {
+                setAvatarUrl(objectUrl);
+            }
+        };
+
+        void run();
+
+        return () => {
+            if (objectUrl) {
+                URL.revokeObjectURL(objectUrl);
+            }
+        };
+    }, [url, downloadImage]);
 
     const uploadAvatar: React.ChangeEventHandler<HTMLInputElement> = async (event) => {
         try {
