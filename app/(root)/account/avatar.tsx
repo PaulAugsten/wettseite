@@ -18,20 +18,15 @@ export default function Avatar({
     const supabase = createClient();
     const [avatarUrl, setAvatarUrl] = useState<string | null>(url);
     const [uploading, setUploading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         async function downloadImage(path: string) {
-            try {
-                const { data, error } = await supabase.storage.from('avatars').download(path);
-                if (error) {
-                    throw error;
-                }
-
-                const url = URL.createObjectURL(data);
-                setAvatarUrl(url);
-            } catch (error) {
-                console.log('Error downloading image: ', error);
-            }
+            const { data, error: downloadError } = await supabase.storage
+                .from('avatars')
+                .download(path);
+            if (downloadError || !data) return; // keep the placeholder
+            setAvatarUrl(URL.createObjectURL(data));
         }
 
         if (url) downloadImage(url);
@@ -40,6 +35,7 @@ export default function Avatar({
     const uploadAvatar: React.ChangeEventHandler<HTMLInputElement> = async (event) => {
         try {
             setUploading(true);
+            setError(null);
 
             const file = event.target.files?.[0];
             if (!file) {
@@ -59,41 +55,50 @@ export default function Avatar({
 
             onUpload(filePath);
         } catch {
-            alert('Error uploading avatar!');
+            setError('Error uploading avatar.');
         } finally {
             setUploading(false);
         }
     };
 
     return (
-        <div>
+        <div className="flex items-center gap-4">
             {avatarUrl ? (
                 <Image
                     width={size}
                     height={size}
                     src={avatarUrl}
                     alt="Avatar"
-                    className="avatar image"
+                    className="rounded-full border border-edge object-cover"
                     style={{ height: size, width: size }}
                 />
             ) : (
-                <div className="avatar no-image" style={{ height: size, width: size }} />
+                <div
+                    aria-hidden
+                    className="rounded-full border border-edge bg-surface"
+                    style={{ height: size, width: size }}
+                />
             )}
-            <div style={{ width: size }}>
-                <label className="button primary block" htmlFor="single">
-                    {uploading ? 'Uploading ...' : 'Upload'}
+            <div className="flex flex-col gap-1.5">
+                <label
+                    className="inline-flex cursor-pointer items-center justify-center rounded-md border border-edge px-3 py-1.5 font-semibold text-fg-muted text-sm transition-colors hover:border-edge-strong hover:bg-white/5 hover:text-fg"
+                    htmlFor="single"
+                >
+                    {uploading ? 'Uploading…' : 'Upload avatar'}
                 </label>
                 <input
-                    style={{
-                        visibility: 'hidden',
-                        position: 'absolute',
-                    }}
+                    className="sr-only"
                     type="file"
                     id="single"
                     accept="image/*"
                     onChange={uploadAvatar}
                     disabled={uploading}
                 />
+                {error && (
+                    <p role="alert" className="text-danger-fg text-xs">
+                        {error}
+                    </p>
+                )}
             </div>
         </div>
     );
