@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/Button';
 
 interface BeforeInstallPromptEvent extends Event {
     prompt: () => void;
@@ -29,44 +30,45 @@ export default function InstallPrompt() {
     if (dismissed || (!installPrompt && !showIOSHint)) return null;
 
     return (
-        <div className="installPrompt">
+        <div
+            role="dialog"
+            aria-label="Install app"
+            className="fixed bottom-5 left-1/2 z-999 flex w-[calc(100%-32px)] max-w-105 -translate-x-1/2 flex-col gap-3 rounded-lg border border-edge bg-card px-5 py-4 shadow-overlay"
+        >
             {installPrompt ? (
                 <>
-                    <p className="installPromptText">
+                    <p className="text-base leading-normal text-fg">
                         Add Wettsite to your homescreen for the best experience!
                     </p>
-                    <button
-                        type="button"
-                        className="installPromptBtn installPromptBtnPrimary"
-                        onClick={() => {
-                            installPrompt.prompt();
-                            setInstallPrompt(null);
-                        }}
-                    >
-                        Install
-                    </button>
-                    <button
-                        type="button"
-                        className="installPromptBtn installPromptBtnSecondary"
-                        onClick={() => setDismissed(true)}
-                    >
-                        Dismiss
-                    </button>
+                    <div className="flex gap-2">
+                        <Button
+                            className="flex-1"
+                            onClick={() => {
+                                installPrompt.prompt();
+                                setInstallPrompt(null);
+                            }}
+                        >
+                            Install
+                        </Button>
+                        <Button
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => setDismissed(true)}
+                        >
+                            Dismiss
+                        </Button>
+                    </div>
                 </>
             ) : (
                 <>
-                    <p className="installPromptText">
+                    <p className="text-base leading-normal text-fg">
                         Add Wettsite to your homescreen for the best experience by tapping the{' '}
                         <strong>Share</strong> button, then <strong>Add to Home Screen</strong>.
                     </p>
-                    <div className="installPromptActions">
-                        <button
-                            type="button"
-                            className="installPromptBtn installPromptBtnPrimary"
-                            onClick={() => setDismissed(true)}
-                        >
+                    <div className="flex gap-2">
+                        <Button className="flex-1" onClick={() => setDismissed(true)}>
                             Got it
-                        </button>
+                        </Button>
                     </div>
                 </>
             )}
