@@ -1,8 +1,7 @@
 import { TournamentSection } from '@/components/TournamentSection';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { createClient } from '@/lib/supabase/server';
-import type { Tournament } from '@/lib/types';
+import { getGameWithTournaments } from '@/lib/data/games';
 
 type GamePageParameters = {
     params: Promise<{
@@ -11,22 +10,11 @@ type GamePageParameters = {
 };
 
 export default async function Game({ params }: GamePageParameters) {
-    const [{ game }, supabase] = await Promise.all([params, createClient()]);
+    const { game: gameSlug } = await params;
 
-    const { data, error } = await supabase
-        .from('games')
-        .select(
-            `*,
-            tournaments (*)`,
-        )
-        .eq('slug', game)
-        .order('start_date', {
-            referencedTable: 'tournaments',
-            ascending: false,
-        })
-        .single();
+    const game = await getGameWithTournaments(gameSlug);
 
-    if (error || !data) {
+    if (!game) {
         return (
             <EmptyState
                 title="Nothing here yet"
@@ -35,7 +23,7 @@ export default async function Game({ params }: GamePageParameters) {
         );
     }
 
-    const tournaments = data.tournaments as Tournament[];
+    const { tournaments } = game;
     const live = tournaments.filter((t) => t.status === 'live');
     const upcoming = tournaments.filter((t) => t.status === 'scheduled');
     const finished = tournaments.filter((t) => t.status === 'finished');
@@ -43,7 +31,7 @@ export default async function Game({ params }: GamePageParameters) {
     return (
         <div className="flex flex-col gap-10">
             <PageHeader
-                title={data.name}
+                title={game.name}
                 subtitle={`${tournaments.length} tournament${tournaments.length !== 1 ? 's' : ''}`}
             />
 
@@ -54,9 +42,9 @@ export default async function Game({ params }: GamePageParameters) {
                 />
             )}
 
-            <TournamentSection title="Live" tournaments={live} game={game} />
-            <TournamentSection title="Upcoming" tournaments={upcoming} game={game} />
-            <TournamentSection title="Finished" tournaments={finished} game={game} />
+            <TournamentSection title="Live" tournaments={live} game={gameSlug} />
+            <TournamentSection title="Upcoming" tournaments={upcoming} game={gameSlug} />
+            <TournamentSection title="Finished" tournaments={finished} game={gameSlug} />
         </div>
     );
 }

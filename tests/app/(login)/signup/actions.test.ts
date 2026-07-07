@@ -2,6 +2,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { signup } from '@/app/(login)/signup/actions';
+import { initialAuthState } from '@/app/(login)/types';
 import { createClient } from '@/lib/supabase/server';
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
@@ -38,7 +39,7 @@ function mockSupabase({
         from: vi.fn(() => ({
             select: () => ({
                 eq: () => ({
-                    single: async () => ({ data: existingProfile }),
+                    maybeSingle: async () => ({ data: existingProfile }),
                 }),
             }),
         })),
@@ -48,54 +49,72 @@ function mockSupabase({
     return { signUp };
 }
 
+const VALID_FORM = {
+    email: 'a@b.com',
+    password: 'longenough123',
+    username: 'newname',
+};
+
 describe('signup', () => {
     afterEach(() => {
         vi.clearAllMocks();
     });
 
-    it('returns an error when a required field is missing', async () => {
+    it('returns a validation error for an invalid email', async () => {
         const result = await signup(
-            { message: '' },
-            buildFormData({ email: '', password: 'pw', username: 'name' }),
+            initialAuthState,
+            buildFormData({ ...VALID_FORM, email: 'not-an-email' }),
         );
-        expect(result).toEqual({ message: 'Missing fields', errors: '500' });
+        expect(result).toEqual({ error: 'Enter a valid email address' });
+    });
+
+    it('returns a validation error for a too-short password', async () => {
+        const result = await signup(
+            initialAuthState,
+            buildFormData({ ...VALID_FORM, password: 'short' }),
+        );
+        expect(result).toEqual({ error: 'Password must be at least 8 characters' });
+    });
+
+    it('returns a validation error for a username with invalid characters', async () => {
+        const result = await signup(
+            initialAuthState,
+            buildFormData({ ...VALID_FORM, username: 'bad name!' }),
+        );
+        expect(result).toEqual({
+            error: 'Username can only contain letters, numbers and underscores',
+        });
     });
 
     it('rejects a username that is already taken', async () => {
         mockSupabase({ existingProfile: { id: 'existing' } });
 
         const result = await signup(
-            { message: '' },
-            buildFormData({ email: 'a@b.com', password: 'pw', username: 'taken' }),
+            initialAuthState,
+            buildFormData({ ...VALID_FORM, username: 'taken' }),
         );
 
-        expect(result).toEqual({ message: 'Username already taken', errors: '500' });
+        expect(result).toEqual({ error: 'Username already taken' });
     });
 
     it('surfaces the Supabase error message when sign-up fails', async () => {
         mockSupabase({ signUpError: { message: 'email already registered' } });
 
-        const result = await signup(
-            { message: '' },
-            buildFormData({ email: 'a@b.com', password: 'pw', username: 'newname' }),
-        );
+        const result = await signup(initialAuthState, buildFormData(VALID_FORM));
 
-        expect(result).toEqual({ message: 'email already registered', errors: '500' });
+        expect(result).toEqual({ error: 'email already registered' });
     });
 
     it('creates the user, revalidates and redirects home on success', async () => {
         const { signUp } = mockSupabase({});
 
-        await expect(
-            signup(
-                { message: '' },
-                buildFormData({ email: 'a@b.com', password: 'pw', username: 'newname' }),
-            ),
-        ).rejects.toThrow('NEXT_REDIRECT');
+        await expect(signup(initialAuthState, buildFormData(VALID_FORM))).rejects.toThrow(
+            'NEXT_REDIRECT',
+        );
 
         expect(signUp).toHaveBeenCalledWith({
             email: 'a@b.com',
-            password: 'pw',
+            password: 'longenough123',
             options: { data: { username: 'newname' } },
         });
         expect(revalidatePath).toHaveBeenCalledWith('/', 'layout');
