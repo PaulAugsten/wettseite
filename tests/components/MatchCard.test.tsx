@@ -1,12 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { predict } from '@/app/(root)/[game]/[tournament]/actions';
+import { submitPrediction } from '@/app/(root)/[game]/[tournament]/actions';
 import MatchCard from '@/components/MatchCard';
 import type { Match } from '@/lib/types';
 
 vi.mock('next/navigation', () => ({ usePathname: () => '/rainbow-six-siege/test-major' }));
-vi.mock('@/app/(root)/[game]/[tournament]/actions', () => ({ predict: vi.fn() }));
+vi.mock('@/app/(root)/[game]/[tournament]/actions', () => ({ submitPrediction: vi.fn() }));
 
 const team1 = { id: 1, name: 'Team Liquid', short_name: 'TL', slug: 'team-liquid' };
 const team2 = { id: 2, name: 'Team Vitality', short_name: 'VIT', slug: 'team-vitality' };
@@ -75,8 +75,8 @@ describe('MatchCard', () => {
         expect(screen.getByText('LIVE')).toBeInTheDocument();
     });
 
-    it('calls predict with the match id, team id and current path on click', async () => {
-        vi.mocked(predict).mockResolvedValue({ success: true });
+    it('submits a winner prediction with the current path on click', async () => {
+        vi.mocked(submitPrediction).mockResolvedValue({ success: true });
         const user = userEvent.setup();
 
         render(
@@ -90,7 +90,10 @@ describe('MatchCard', () => {
 
         await user.click(screen.getByText('Team Liquid').closest('button')!);
 
-        expect(predict).toHaveBeenCalledWith(1, 1, '/rainbow-six-siege/test-major');
+        expect(submitPrediction).toHaveBeenCalledWith(
+            { kind: 'winner', matchId: 1, teamId: 1 },
+            '/rainbow-six-siege/test-major',
+        );
     });
 
     it('shows the final score and a correct-pick badge for a finished match', () => {
