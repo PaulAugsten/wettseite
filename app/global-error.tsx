@@ -24,7 +24,7 @@ export default function GlobalError({
                     <div className="w-full max-w-md">
                         <ErrorPanel
                             title="Something went wrong"
-                            description="An unexpected error occurred. Try again — if it keeps happening, check back later."
+                            description="An unexpected error occurred. Try again, and if it keeps happening, check back later."
                             action={<Button onClick={() => reset()}>Try again</Button>}
                         />
                     </div>

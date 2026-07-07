@@ -15,8 +15,8 @@ export type TournamentWithMatches = Tournament & {
 };
 
 /**
- * Status columns are plain strings in the database; narrow them here — the
- * single boundary between raw rows and domain types — with a safe fallback.
+ * Status columns are plain strings in the database; narrow them here (the
+ * single boundary between raw rows and domain types) with a safe fallback.
  */
 function toTournamentStatus(status: string): TournamentStatus {
     return status === 'live' || status === 'finished' ? status : 'scheduled';

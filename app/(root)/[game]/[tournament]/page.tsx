@@ -100,7 +100,7 @@ export default async function Tournament({ params }: TournamentPageParameters) {
                 title={tournament.name}
                 subtitle={
                     tournament.start_date && tournament.end_date
-                        ? `${new Date(tournament.start_date).toLocaleDateString('en-GB', dateFormat)} – ${new Date(
+                        ? `${new Date(tournament.start_date).toLocaleDateString('en-GB', dateFormat)} - ${new Date(
                               tournament.end_date,
                           ).toLocaleDateString('en-GB', dateFormat)}`
                         : undefined
