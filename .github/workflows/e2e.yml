@@ -46,7 +46,7 @@ jobs:
                   # owned by the image's pwuser; Firefox refuses to launch as root unless
                   # $HOME is also root-owned. This is Playwright's own documented workaround.
                   HOME: /root
-            - uses: actions/upload-artifact@v4
+            - uses: actions/upload-artifact@v7
               if: ${{ !cancelled() }}
               with:
                   name: playwright-report

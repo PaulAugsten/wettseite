@@ -29,7 +29,7 @@ jobs:
               run: pnpm exec playwright test e2e/smoke.spec.ts --project=chromium
               env:
                   BASE_URL: ${{ vars.PRODUCTION_URL }}
-            - uses: actions/upload-artifact@v4
+            - uses: actions/upload-artifact@v7
               if: ${{ !cancelled() }}
               with:
                   name: uptime-smoke-report
