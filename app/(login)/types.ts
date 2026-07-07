@@ -1,4 +1,5 @@
-export interface AuthActionState {
-    message: string;
-    errors?: string;
-}
+export type AuthActionState = {
+    error: string | null;
+};
+
+export const initialAuthState: AuthActionState = { error: null };

@@ -2,33 +2,46 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { z } from 'zod';
 import type { AuthActionState } from '@/app/(login)/types';
 import { createClient } from '@/lib/supabase/server';
+
+const signupSchema = z.object({
+    username: z
+        .string()
+        .trim()
+        .min(3, 'Username must be at least 3 characters')
+        .max(24, 'Username must be at most 24 characters')
+        .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers and underscores'),
+    email: z.email('Enter a valid email address'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+});
 
 export async function signup(
     _previousState: AuthActionState,
     formData: FormData,
 ): Promise<AuthActionState> {
-    const supabase = await createClient();
+    const parsed = signupSchema.safeParse({
+        username: formData.get('username'),
+        email: formData.get('email'),
+        password: formData.get('password'),
+    });
 
-    // TODO: implement validation
-
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    const username = formData.get('username') as string;
-
-    if (!email || !password || !username) {
-        return { message: 'Missing fields', errors: '500' };
+    if (!parsed.success) {
+        return { error: parsed.error.issues[0]?.message ?? 'Invalid input' };
     }
+
+    const { username, email, password } = parsed.data;
+    const supabase = await createClient();
 
     const { data: existingProfile } = await supabase
         .from('profiles')
         .select('id')
         .eq('username', username)
-        .single();
+        .maybeSingle();
 
     if (existingProfile) {
-        return { message: 'Username already taken', errors: '500' };
+        return { error: 'Username already taken' };
     }
 
     const { data, error } = await supabase.auth.signUp({
@@ -40,7 +53,7 @@ export async function signup(
     });
 
     if (error || !data.user) {
-        return { message: error?.message ?? 'Signup failed', errors: '500' };
+        return { error: error?.message ?? 'Signup failed' };
     }
 
     revalidatePath('/', 'layout');
