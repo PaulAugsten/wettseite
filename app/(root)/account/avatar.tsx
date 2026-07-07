@@ -16,84 +16,105 @@ export default function Avatar({
     onUpload: (url: string) => void;
 }) {
     const supabase = createClient();
-    const [avatarUrl, setAvatarUrl] = useState<string | null>(url);
+
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        async function downloadImage(path: string) {
-            try {
-                const { data, error } = await supabase.storage.from('avatars').download(path);
-                if (error) {
-                    throw error;
-                }
-
-                const url = URL.createObjectURL(data);
-                setAvatarUrl(url);
-            } catch (error) {
-                console.log('Error downloading image: ', error);
-            }
+        if (!url) {
+            return;
         }
 
-        if (url) downloadImage(url);
-    }, [url, supabase]);
+        let objectUrl: string | null = null;
 
-    const uploadAvatar: React.ChangeEventHandler<HTMLInputElement> = async (event) => {
-        try {
-            setUploading(true);
-
-            const file = event.target.files?.[0];
-            if (!file) {
-                throw new Error('You must select an image to upload.');
+        const run = async () => {
+            const { data, error } = await createClient().storage.from('avatars').download(url);
+            if (error || !data) {
+                return;
             }
 
-            const fileExt = file.name.split('.').pop();
-            const filePath = `${uid}-${Math.random()}.${fileExt}`;
+            objectUrl = URL.createObjectURL(data);
+            setAvatarUrl(objectUrl);
+        };
 
+        void run();
+
+        return () => {
+            if (objectUrl) {
+                URL.revokeObjectURL(objectUrl);
+            }
+        };
+    }, [url]);
+
+    const uploadAvatar: React.ChangeEventHandler<HTMLInputElement> = async (event) => {
+        setUploading(true);
+        setError(null);
+
+        const file = event.target.files?.[0];
+        if (!file) {
+            setError('You must select an image to upload.');
+            setUploading(false);
+            return;
+        }
+
+        const fileExt = file.name.split('.').pop();
+        const filePath = `${uid}-${crypto.randomUUID()}.${fileExt}`;
+
+        try {
             const { error: uploadError } = await supabase.storage
                 .from('avatars')
                 .upload(filePath, file);
 
             if (uploadError) {
-                throw uploadError;
+                setError('Error uploading avatar.');
+            } else {
+                onUpload(filePath);
             }
-
-            onUpload(filePath);
         } catch {
-            alert('Error uploading avatar!');
-        } finally {
-            setUploading(false);
+            setError('Error uploading avatar.');
         }
+        setUploading(false);
     };
 
     return (
-        <div>
+        <div className="flex items-center gap-4">
             {avatarUrl ? (
                 <Image
                     width={size}
                     height={size}
                     src={avatarUrl}
                     alt="Avatar"
-                    className="avatar image"
+                    className="rounded-full border border-edge object-cover"
                     style={{ height: size, width: size }}
                 />
             ) : (
-                <div className="avatar no-image" style={{ height: size, width: size }} />
+                <div
+                    aria-hidden
+                    className="rounded-full border border-edge bg-surface"
+                    style={{ height: size, width: size }}
+                />
             )}
-            <div style={{ width: size }}>
-                <label className="button primary block" htmlFor="single">
-                    {uploading ? 'Uploading ...' : 'Upload'}
+            <div className="flex flex-col gap-1.5">
+                <label
+                    className="inline-flex cursor-pointer items-center justify-center rounded-md border border-edge px-3 py-1.5 font-semibold text-fg-muted text-sm transition-colors hover:border-edge-strong hover:bg-white/5 hover:text-fg"
+                    htmlFor="single"
+                >
+                    {uploading ? 'Uploading…' : 'Upload avatar'}
                 </label>
                 <input
-                    style={{
-                        visibility: 'hidden',
-                        position: 'absolute',
-                    }}
+                    className="sr-only"
                     type="file"
                     id="single"
                     accept="image/*"
                     onChange={uploadAvatar}
                     disabled={uploading}
                 />
+                {error && (
+                    <p role="alert" className="text-danger-fg text-xs">
+                        {error}
+                    </p>
+                )}
             </div>
         </div>
     );

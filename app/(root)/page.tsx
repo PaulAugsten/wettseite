@@ -1,45 +1,44 @@
-import type { Tournament } from '@/components/TournamentCard';
 import { TournamentSection } from '@/components/TournamentSection';
-import { createClient } from '@/lib/supabase/server';
-
-type Games = {
-    id: number;
-    name: string;
-    slug: string;
-    tournaments: Tournament[];
-};
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorPanel } from '@/components/ui/ErrorPanel';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { getGamesWithLiveTournaments } from '@/lib/data/games';
 
 const Home = async () => {
-    const supabase = await createClient();
+    const liveGames = await getGamesWithLiveTournaments();
 
-    const { data: games, error: gamesError } = await supabase
-        .from('games')
-        .select(
-            `*,
-            tournaments(*)`,
-        )
-        .eq('tournaments.status', 'live');
-
-    if (gamesError || !games) {
-        console.log('Error fetching games: ', gamesError);
-        return <div>Error fetching games. Check your internet connection and try again.</div>;
+    if (!liveGames) {
+        return (
+            <ErrorPanel
+                title="Couldn't load games"
+                description="Check your internet connection and try again."
+            />
+        );
     }
 
-    const liveGames = games as Games[];
-
     return (
-        <main>
-            <div className="text-6xl">Welcome!</div>
+        <div className="flex flex-col gap-10">
+            <PageHeader
+                title="Welcome!"
+                subtitle="Predict match winners and compete with your friends."
+            />
 
-            {liveGames.map((game) => (
-                <TournamentSection
-                    key={game.id}
-                    title="Ongoing Tournament"
-                    tournaments={game.tournaments}
-                    game={game.slug}
+            {liveGames.length === 0 ? (
+                <EmptyState
+                    title="No live tournaments right now"
+                    description="Check back when the next event kicks off."
                 />
-            ))}
-        </main>
+            ) : (
+                liveGames.map((game) => (
+                    <TournamentSection
+                        key={game.id}
+                        title={`Live now — ${game.name}`}
+                        tournaments={game.tournaments}
+                        game={game.slug}
+                    />
+                ))
+            )}
+        </div>
     );
 };
 

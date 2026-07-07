@@ -1,59 +1,48 @@
 import MatchCard from '@/components/MatchCard';
 import PredictionStandings from '@/components/PredictionStandings';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Section } from '@/components/ui/Section';
+import { getMatchPredictions, getStandings } from '@/lib/data/predictions';
+import { getTournamentWithMatches } from '@/lib/data/tournaments';
 import { createClient } from '@/lib/supabase/server';
+import type { Match, PredictionStats } from '@/lib/types';
 
 type TournamentPageParameters = {
-    params: {
+    params: Promise<{
         game: string;
         tournament: string;
-    };
+    }>;
 };
 
-type Team = {
-    id: number;
-    name: string;
-    short_name: string;
-    slug: string;
-};
-
-type Match = {
-    id: number;
-    date: string;
-    team1: Team;
-    team2: Team;
-    team1_score: number;
-    team2_score: number;
-    winner_id: number;
-    status: string;
-    round: string;
-    stage: string;
-    group: string;
-    bracket: string;
+const dateFormat: Intl.DateTimeFormatOptions = {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
 };
 
 function MatchSection({
     title,
     matches,
-    userPredictionMap,
+    userPicks,
     predictionStats,
     isLoggedIn,
 }: {
     title: string;
     matches: Match[];
-    userPredictionMap: Map<number, number>;
-    predictionStats: Map<number, { team1: number; team2: number; total: number }>;
+    userPicks: Map<number, number>;
+    predictionStats: Map<number, PredictionStats>;
     isLoggedIn: boolean;
 }) {
     if (matches.length === 0) return null;
     return (
-        <div className="tournamentSection">
-            <h2 className="tournamentSectionTitle">{title}</h2>
-            <div className="matchList">
+        <Section title={title}>
+            <div className="flex flex-col gap-2">
                 {matches.map((match) => (
                     <MatchCard
                         key={match.id}
                         match={match}
-                        userPrediction={userPredictionMap.get(match.id) ?? null}
+                        userPrediction={userPicks.get(match.id) ?? null}
                         stats={
                             predictionStats.get(match.id) ?? {
                                 team1: 0,
@@ -65,159 +54,93 @@ function MatchSection({
                     />
                 ))}
             </div>
-        </div>
+        </Section>
     );
 }
 
 export default async function Tournament({ params }: TournamentPageParameters) {
-    const { game, tournament } = await params;
-    const supabase = await createClient();
+    const [{ game, tournament: tournamentSlug }, supabase] = await Promise.all([
+        params,
+        createClient(),
+    ]);
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
+    const [
+        {
+            data: { user },
+        },
+        tournament,
+    ] = await Promise.all([
+        supabase.auth.getUser(),
+        getTournamentWithMatches(game, tournamentSlug),
+    ]);
 
-    const { data, error } = await supabase
-        .from('tournaments')
-        .select(
-            `*,
-            matches!matches_tournament_id_fkey (
-                *,
-                team1:teams!matches_team1_id_fkey (id, name, short_name, slug),
-                team2:teams!matches_team2_id_fkey (id, name, short_name, slug)
-            ),
-            games!inner(id, name, slug)`,
-        )
-        .eq('slug', tournament)
-        .eq('games.slug', game)
-        .order('date', { referencedTable: 'matches', ascending: true })
-        .single();
-
-    if (error || !data) {
-        console.log(error);
-        return <div>No Events found</div>;
+    if (!tournament) {
+        return (
+            <EmptyState
+                title="Tournament not found"
+                description="This tournament doesn't exist or isn't available yet."
+            />
+        );
     }
 
-    const matches = data.matches as Match[];
-    const matchIds = matches.map((m) => m.id);
+    const { matches } = tournament;
 
-    const { data: allPredictions } = await supabase
-        .from('predictions')
-        .select('match_id, predicted_winner_id')
-        .in('match_id', matchIds);
-
-    const { data: userPredictions } = user
-        ? await supabase
-              .from('predictions')
-              .select('match_id, predicted_winner_id')
-              .eq('user_id', user.id)
-              .in('match_id', matchIds)
-        : { data: [] };
-
-    const { data: prediction_standings } = await supabase
-        .from('prediction_standings')
-        .select('*')
-        .eq('tournament_id', data.id);
-
-    const userPredictionMap = new Map(
-        (userPredictions ?? []).map((p) => [p.match_id, p.predicted_winner_id]),
-    );
-
-    const predictionStats = new Map<number, { team1: number; team2: number; total: number }>();
-    for (const match of matches) {
-        const matchPredictions = (allPredictions ?? []).filter((p) => p.match_id === match.id);
-        const team1Count = matchPredictions.filter(
-            (p) => p.predicted_winner_id === match.team1?.id,
-        ).length;
-        const team2Count = matchPredictions.filter(
-            (p) => p.predicted_winner_id === match.team2?.id,
-        ).length;
-        predictionStats.set(match.id, {
-            team1: team1Count,
-            team2: team2Count,
-            total: matchPredictions.length,
-        });
-    }
+    const [{ stats: predictionStats, userPicks }, standings] = await Promise.all([
+        getMatchPredictions(matches, user?.id),
+        getStandings(tournament.id),
+    ]);
 
     const live = matches.filter((m) => m.status === 'live');
     const upcoming = matches.filter((m) => m.status === 'planned');
     const finished = matches.filter((m) => m.status === 'finished').toReversed();
 
     return (
-        <div className="gamePage">
-            <div className="gamePageHeader">
-                <h1 className="gamePageTitle">{data.name}</h1>
-                {data.start_date && data.end_date && (
-                    <p className="gamePageSubtitle">
-                        {new Date(data.start_date).toLocaleDateString('en-GB', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                        })}{' '}
-                        -{' '}
-                        {new Date(data.end_date).toLocaleDateString('en-GB', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                        })}
-                    </p>
-                )}
-            </div>
+        <div className="flex flex-col gap-10">
+            <PageHeader
+                title={tournament.name}
+                subtitle={
+                    tournament.start_date && tournament.end_date
+                        ? `${new Date(tournament.start_date).toLocaleDateString('en-GB', dateFormat)} – ${new Date(
+                              tournament.end_date,
+                          ).toLocaleDateString('en-GB', dateFormat)}`
+                        : undefined
+                }
+            />
 
-            <div className="tournamentLayout">
-                <div className="matchesColumn">
+            <div className="grid items-start gap-8 lg:grid-cols-[2fr_1fr]">
+                <div className="flex min-w-0 flex-col gap-8">
+                    {matches.length === 0 && (
+                        <EmptyState
+                            title="No matches yet"
+                            description="Matches will show up here once the schedule is published."
+                        />
+                    )}
                     <MatchSection
                         title="Live"
                         matches={live}
-                        userPredictionMap={userPredictionMap}
+                        userPicks={userPicks}
                         predictionStats={predictionStats}
                         isLoggedIn={!!user}
                     />
                     <MatchSection
                         title="Upcoming"
                         matches={upcoming}
-                        userPredictionMap={userPredictionMap}
+                        userPicks={userPicks}
                         predictionStats={predictionStats}
                         isLoggedIn={!!user}
                     />
                     <MatchSection
                         title="Finished"
                         matches={finished}
-                        userPredictionMap={userPredictionMap}
+                        userPicks={userPicks}
                         predictionStats={predictionStats}
                         isLoggedIn={!!user}
                     />
                 </div>
-                <div className="standingsColumn">
-                    <PredictionStandings standings={prediction_standings ?? []} />
+                <div className="min-w-0">
+                    <PredictionStandings standings={standings} />
                 </div>
             </div>
         </div>
     );
-
-    /*
-    return (
-        <div>
-            <h1 className="text-6xl font-bold">{data.name}</h1>
-            <h2 className="text-4xl font-semibold">Upcoming Matches:</h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols">
-                {(data?.matches as Match[]).map((match) => (
-                    <div
-                        key={match.id}
-                        className="bg-white shadow-md rounded-lg p-4 transition t..."
-                    >
-                        <h3 className="text-lg font-bold mb-2">{match.team1?.name}</h3>
-                        <h3 className="text-lg font-bold mb-2">{match.team2?.name}</h3>
-                        <p className="text-gray-600">Match ID: {match.id}</p>
-                        <p className="text-gray-500 text-sm">Date: {match.date}</p>
-                        <p className="text-gray-500 text-sm">Status: {match.status}</p>
-                        <Link target="_blank" href={`https://siege.gg/matches/${match.id}`}>
-                            Link
-                        </Link>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );*/
 }
