@@ -19,7 +19,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v7
-            - uses: pnpm/action-setup@v4
+            - uses: pnpm/action-setup@v6
             - uses: actions/setup-node@v6
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
@@ -30,7 +30,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v7
-            - uses: pnpm/action-setup@v4
+            - uses: pnpm/action-setup@v6
             - uses: actions/setup-node@v6
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
@@ -40,7 +40,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v7
-            - uses: pnpm/action-setup@v4
+            - uses: pnpm/action-setup@v6
             - uses: actions/setup-node@v6
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
@@ -50,7 +50,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v7
-            - uses: pnpm/action-setup@v4
+            - uses: pnpm/action-setup@v6
             - uses: actions/setup-node@v6
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
@@ -65,7 +65,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v7
-            - uses: pnpm/action-setup@v4
+            - uses: pnpm/action-setup@v6
             - uses: actions/setup-node@v6
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
@@ -90,7 +90,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v7
-            - uses: pnpm/action-setup@v4
+            - uses: pnpm/action-setup@v6
             - uses: actions/setup-node@v6
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
@@ -153,7 +153,7 @@ jobs:
                   # release commit can push straight to main despite the "require PR" rule.
                   # Scoped to just this key, unlike an admin-account bypass.
                   ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
-            - uses: pnpm/action-setup@v4
+            - uses: pnpm/action-setup@v6
             - uses: actions/setup-node@v6
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
