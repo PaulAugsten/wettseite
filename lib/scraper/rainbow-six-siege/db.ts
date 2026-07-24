@@ -4,7 +4,7 @@ import type { TeamRecord } from '@/supabase/functions/_shared/scraper/team-resol
 import type { Match, Tournament } from '@/supabase/functions/_shared/scraper/types.ts';
 
 /**
- * Database access for the scraper. Uses the service-role client — this code
+ * Database access for the scraper. Uses the service-role client; this code
  * only runs in trusted contexts (cron route, local CLI), never in the app.
  */
 

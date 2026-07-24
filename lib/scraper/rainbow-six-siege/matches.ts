@@ -19,7 +19,7 @@ export type ScrapeMatchesResult = {
 /**
  * Scrapes matches for a game's tournaments from Liquipedia. Writes a debug
  * overview to `scraper-output/`, interactively reviews unknown team names,
- * and — with `persist` — inserts the matches. Throws on failure.
+ * and, with `persist`, inserts the matches. Throws on failure.
  */
 export async function scrapeMatches(
     gameSlug: string,

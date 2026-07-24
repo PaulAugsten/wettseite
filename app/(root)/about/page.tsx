@@ -5,7 +5,7 @@ const About = () => {
         <div className="flex flex-col gap-8">
             <PageHeader
                 title="About"
-                subtitle="Small betting pools with friends — no money involved."
+                subtitle="Small betting pools with friends. No money involved."
             />
 
             <div className="flex max-w-2xl flex-col gap-4 text-fg-muted text-sm leading-relaxed">
@@ -16,7 +16,7 @@ const About = () => {
                 </p>
                 <p>
                     Standings are tracked per tournament, so every event is a fresh race. No stakes,
-                    no payouts — just bragging rights.
+                    no payouts, just bragging rights.
                 </p>
             </div>
         </div>

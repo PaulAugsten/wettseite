@@ -28,7 +28,7 @@ export function TournamentCard({ tournament, game }: { tournament: Tournament; g
                                 dateFormat,
                             )}
                             {tournament.end_date &&
-                                ` – ${new Date(tournament.end_date).toLocaleDateString('en-GB', dateFormat)}`}
+                                ` - ${new Date(tournament.end_date).toLocaleDateString('en-GB', dateFormat)}`}
                         </span>
                     )}
                 </div>

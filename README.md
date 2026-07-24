@@ -19,7 +19,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 > `pnpm install` also tries to install the [pre-commit](https://pre-commit.com/) git hooks (see
 > [.pre-commit-config.yaml](.pre-commit-config.yaml)). If `pre-commit` isn't on your `PATH`
-> (e.g. `pipx install pre-commit`), the install step prints a warning instead of failing — run
+> (e.g. `pipx install pre-commit`), the install step prints a warning instead of failing - run
 > `pre-commit install -t pre-commit -t commit-msg -t pre-push` yourself afterwards.
 
 Useful next steps:
@@ -35,17 +35,17 @@ pnpm typecheck       # tsc --noEmit
 
 - **Framework**: Next.js (App Router) on React 19, deployed on Vercel.
 - **Route groups** under [app/](app/):
-  - `(root)` — public pages: home, `[game]` match/tournament listings, `about`, `account`.
-  - `(login)` — `login`, `signup`, `auth` (Supabase auth flows).
-  - `(dashboard)` — authenticated dashboard.
-  - `api/cron` — scheduled route handlers invoked by [Vercel Cron](vercel.json).
+  - `(root)` - public pages: home, `[game]` match/tournament listings, `about`, `account`.
+  - `(login)` - `login`, `signup`, `auth` (Supabase auth flows).
+  - `(dashboard)` - authenticated dashboard.
+  - `api/cron` - scheduled route handlers invoked by [Vercel Cron](vercel.json).
 - **Auth/session**: [lib/supabase/proxy.ts](lib/supabase/proxy.ts) refreshes the Supabase session
   on every request via the root [proxy.ts](proxy.ts) middleware.
-- **Scrapers**: [lib/supabase/api/scraper/](lib/supabase/api/scraper/) — per-game scrapers
+- **Scrapers**: [lib/supabase/api/scraper/](lib/supabase/api/scraper/) - per-game scrapers
   (currently `rainbow-six-siege`, `football`) that fetch and parse match/tournament data and
   write it into Supabase. These run on the cron schedule above.
 - **Supabase Edge Function**: [supabase/functions/get-matches](supabase/functions/get-matches)
-  (Deno runtime — type-checked separately in CI since it's outside the Next.js TS project).
+  (Deno runtime - type-checked separately in CI since it's outside the Next.js TS project).
 - **Observability**: Sentry ([instrumentation.ts](instrumentation.ts),
   [instrumentation-client.ts](instrumentation-client.ts)) for error/performance monitoring,
   Vercel Analytics + Speed Insights for traffic and Core Web Vitals.
@@ -59,7 +59,7 @@ Copy [.env.example](.env.example) to `.env.local` and fill these in. Never commi
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | app | Supabase project URL. |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | app | Supabase publishable (anon) key, safe for the client. |
-| `SUPABASE_SERVICE_ROLE_KEY` | server/scrapers | Supabase service-role key. Server-only — bypasses RLS, never expose to the client. |
+| `SUPABASE_SERVICE_ROLE_KEY` | server/scrapers | Supabase service-role key. Server-only - bypasses RLS, never expose to the client. |
 | `NEXT_PUBLIC_SENTRY_DSN` | client errors | Sentry DSN used by the browser SDK. |
 | `SENTRY_DSN` | server errors | Sentry DSN used by the server/edge SDK. |
 | `SENTRY_ORG` | build (CI/CD) | Sentry org slug, used to upload source maps and tag releases. |
@@ -91,7 +91,7 @@ Copy [.env.example](.env.example) to `.env.local` and fill these in. Never commi
 
 Versioning and `CHANGELOG.md` are automated by
 [semantic-release](release.config.mjs) from [Conventional Commits](https://www.conventionalcommits.org/)
-on every merge to `main` — see the `release` job in [.github/workflows/ci.yml](.github/workflows/ci.yml).
+on every merge to `main` - see the `release` job in [.github/workflows/ci.yml](.github/workflows/ci.yml).
 `CHANGELOG.md` is generated on the first release and committed by the release workflow, so it
 won't exist until then.
 

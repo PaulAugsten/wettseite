@@ -23,10 +23,10 @@ run close to the database on Deno rather than inside the Next.js server.
 ## Consequences
 
 - One vendor for data, auth, and edge compute instead of three; fewer moving pieces to operate.
-- The Edge Function runs on Deno, a different runtime/toolchain than the rest of the app — it's
+- The Edge Function runs on Deno, a different runtime/toolchain than the rest of the app - it's
   excluded from the main `tsconfig.json` and type-checked separately via `deno check` in CI
   (see the `deno-check` job in [.github/workflows/ci.yml](../../.github/workflows/ci.yml)).
-- `SUPABASE_SERVICE_ROLE_KEY` bypasses RLS and must stay server-only — see the env var table in
+- `SUPABASE_SERVICE_ROLE_KEY` bypasses RLS and must stay server-only - see the env var table in
   the [README](../../README.md#environment-variables).
 - Auth/data correctness depends on RLS policies being right; there's no separate authorization
   layer to fall back on if a policy is missing or wrong.

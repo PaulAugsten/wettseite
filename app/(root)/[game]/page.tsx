@@ -18,7 +18,7 @@ export default async function Game({ params }: GamePageParameters) {
         return (
             <EmptyState
                 title="Nothing here yet"
-                description="This game is under construction — check back soon."
+                description="This game is under construction. Check back soon."
             />
         );
     }

@@ -8,7 +8,7 @@ Accepted
 
 Non-obvious technical choices (why pnpm over npm, why a daily cron instead of hourly, why
 Supabase instead of a hand-rolled backend) tend to live only in the head of whoever made them,
-or get buried in a single commit message. New contributors — including future-us — end up
+or get buried in a single commit message. New contributors - including future-us - end up
 re-deriving or re-litigating decisions that were already made for a reason.
 
 ## Decision
@@ -17,7 +17,7 @@ We use Architecture Decision Records (ADRs), one markdown file per decision, num
 sequentially in `docs/adr/`. Format follows Michael Nygard's lightweight template: Status,
 Context, Decision, Consequences.
 
-Only decisions that are non-obvious from reading the code go here — not a changelog of every
+Only decisions that are non-obvious from reading the code go here - not a changelog of every
 change.
 
 ## Consequences

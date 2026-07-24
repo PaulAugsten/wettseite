@@ -4,7 +4,7 @@ import type { Database } from '@/lib/supabase/database.types';
 
 /**
  * Service-role client that bypasses RLS. Server-only (cron routes, scraper
- * scripts) — must never be imported from client code.
+ * scripts); must never be imported from client code.
  */
 export function createAdminClient() {
     return createClient<Database>(
