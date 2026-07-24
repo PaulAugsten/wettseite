@@ -13,15 +13,13 @@ export default function PredictionStandings({ standings }: { standings: Standing
     if (sorted.length === 0) return null;
 
     return (
-        <Card className="sticky top-[calc(var(--navbar-height)+16px)] p-5">
-            <h2 className="mb-4 border-edge border-b pb-3 font-semibold text-fg text-lg">
-                Standings
-            </h2>
+        <Card className="p-4 sm:p-5">
             <table className="w-full border-collapse">
                 <thead>
                     <tr>
                         <th className={headerCellClasses}>#</th>
                         <th className={headerCellClasses}>User</th>
+                        <th className={cn(headerCellClasses, 'text-right')}>Picks</th>
                         <th className={cn(headerCellClasses, 'text-right')}>Points</th>
                     </tr>
                 </thead>
@@ -38,6 +36,14 @@ export default function PredictionStandings({ standings }: { standings: Standing
                                 {i + 1}
                             </td>
                             <td className={cn(cellClasses, 'text-fg')}>{s.username}</td>
+                            <td
+                                className={cn(
+                                    cellClasses,
+                                    'text-right font-mono text-fg-muted tabular-nums',
+                                )}
+                            >
+                                {s.total_predictions}
+                            </td>
                             <td
                                 className={cn(
                                     cellClasses,
