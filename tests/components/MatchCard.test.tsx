@@ -29,7 +29,7 @@ function buildMatch(overrides: Partial<Match> = {}): Match {
     };
 }
 
-const noStats = { team1: 0, team2: 0, total: 0 };
+const noStats = { team1: 0, team2: 0, total: 0, team1Voters: [], team2Voters: [] };
 
 describe('MatchCard', () => {
     it('shows a login hint and disables prediction buttons when logged out', () => {
@@ -106,13 +106,14 @@ describe('MatchCard', () => {
                     winner_id: 1,
                 })}
                 userPrediction={1}
-                stats={{ team1: 8, team2: 2, total: 10 }}
+                stats={{ team1: 8, team2: 2, total: 10, team1Voters: [], team2Voters: [] }}
                 isLoggedIn={true}
             />,
         );
 
         expect(screen.getByText('2 - 0')).toBeInTheDocument();
         expect(screen.getByText('✓ Correct pick')).toBeInTheDocument();
+        expect(screen.getByText('Team Liquid').closest('button')).toHaveClass('border-success');
     });
 
     it('shows a wrong-pick badge when the prediction did not match the winner', () => {
@@ -125,25 +126,113 @@ describe('MatchCard', () => {
                     winner_id: 2,
                 })}
                 userPrediction={1}
-                stats={{ team1: 2, team2: 8, total: 10 }}
+                stats={{ team1: 2, team2: 8, total: 10, team1Voters: [], team2Voters: [] }}
                 isLoggedIn={true}
             />,
         );
 
         expect(screen.getByText('✕ Wrong pick')).toBeInTheDocument();
+        expect(screen.getByText('Team Liquid').closest('button')).toHaveClass('border-danger');
     });
 
-    it('renders the crowd-prediction percentages once the match is decided', () => {
+    it('highlights the picked team with the accent box before the match is decided', () => {
+        render(
+            <MatchCard match={buildMatch()} userPrediction={1} stats={noStats} isLoggedIn={true} />,
+        );
+
+        const button = screen.getByText('Team Liquid').closest('button');
+        expect(button).toHaveClass('border-accent');
+        expect(button).not.toHaveClass('border-transparent');
+    });
+
+    it('reveals who picked which team once the match has started', async () => {
+        const user = userEvent.setup();
         render(
             <MatchCard
                 match={buildMatch({ status: 'live' })}
                 userPrediction={null}
-                stats={{ team1: 3, team2: 1, total: 4 }}
+                stats={{
+                    team1: 2,
+                    team2: 1,
+                    total: 3,
+                    team1Voters: ['alice', 'bob'],
+                    team2Voters: ['carol'],
+                }}
                 isLoggedIn={true}
             />,
         );
 
-        expect(screen.getByText('75%')).toBeInTheDocument();
-        expect(screen.getByText('25%')).toBeInTheDocument();
+        await user.click(screen.getByRole('button', { name: /3 picks/ }));
+
+        expect(screen.getByText('alice')).toBeInTheDocument();
+        expect(screen.getByText('bob')).toBeInTheDocument();
+        expect(screen.getByText('carol')).toBeInTheDocument();
+    });
+
+    it('marks winning and losing voters on a finished match', async () => {
+        const user = userEvent.setup();
+        render(
+            <MatchCard
+                match={buildMatch({
+                    status: 'finished',
+                    team1_score: 3,
+                    team2_score: 1,
+                    winner_id: 1,
+                })}
+                userPrediction={null}
+                stats={{
+                    team1: 1,
+                    team2: 2,
+                    total: 3,
+                    team1Voters: ['alice'],
+                    team2Voters: ['bob', 'carol'],
+                }}
+                isLoggedIn={true}
+            />,
+        );
+
+        await user.click(screen.getByRole('button', { name: /3 picks/ }));
+
+        expect(screen.getByText('alice').closest('li')).toHaveTextContent(/✓/);
+        expect(screen.getByText('bob').closest('li')).toHaveTextContent(/✕/);
+        expect(screen.getByText('carol').closest('li')).toHaveTextContent(/✕/);
+    });
+
+    it('hides individual picks while the match is still open', async () => {
+        const user = userEvent.setup();
+        render(
+            <MatchCard
+                match={buildMatch()}
+                userPrediction={null}
+                stats={{
+                    team1: 2,
+                    team2: 0,
+                    total: 2,
+                    team1Voters: ['alice', 'bob'],
+                    team2Voters: [],
+                }}
+                isLoggedIn={true}
+            />,
+        );
+
+        await user.click(screen.getByRole('button', { name: /2 picks/ }));
+
+        expect(screen.queryByText('alice')).not.toBeInTheDocument();
+        expect(
+            screen.getByText('Who picked what is revealed once the match starts.'),
+        ).toBeInTheDocument();
+    });
+
+    it('shows no picks toggle when nobody has predicted', () => {
+        render(
+            <MatchCard
+                match={buildMatch()}
+                userPrediction={null}
+                stats={noStats}
+                isLoggedIn={true}
+            />,
+        );
+
+        expect(screen.queryByRole('button', { name: /picks?$/ })).not.toBeInTheDocument();
     });
 });
