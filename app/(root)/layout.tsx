@@ -27,33 +27,35 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <div className="flex min-h-screen flex-col">
             <InstallPrompt />
 
-            <nav className="sticky top-0 z-100 h-(--navbar-height) border-b border-edge bg-bg/85 backdrop-blur-md">
-                <div className="flex h-full w-full items-center gap-4 px-6">
+            <nav className="sticky top-0 z-100 border-b border-edge bg-bg/85 backdrop-blur-md">
+                <div className="flex min-h-(--navbar-height) w-full flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2 sm:px-6 sm:py-0">
                     <Link
                         href="/"
-                        className="mr-4 text-2xl font-extrabold tracking-tight text-fg no-underline"
+                        className="mr-2 text-xl font-extrabold tracking-tight text-fg no-underline sm:mr-4 sm:text-2xl"
                     >
                         wettsite
                     </Link>
 
                     <NavLinks />
 
-                    <div className="flex items-center gap-2">
+                    <div className="ml-auto flex items-center gap-2">
                         {user ? (
                             <UserMenu username={username} />
                         ) : (
                             <>
-                                <Button href="/login" variant="outline">
+                                <Button href="/login" variant="outline" size="sm">
                                     Log in
                                 </Button>
-                                <Button href="/signup">Sign up</Button>
+                                <Button href="/signup" size="sm">
+                                    Sign up
+                                </Button>
                             </>
                         )}
                     </div>
                 </div>
             </nav>
 
-            <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">{children}</main>
+            <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">{children}</main>
         </div>
     );
 }

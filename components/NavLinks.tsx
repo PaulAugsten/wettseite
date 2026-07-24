@@ -13,7 +13,7 @@ export default function NavLinks() {
     ];
 
     return (
-        <div className="flex flex-1 items-center gap-2">
+        <div className="order-last flex w-full items-center gap-1 sm:order-0 sm:w-auto sm:flex-1 sm:gap-2">
             {links.map((link) => {
                 const active = pathname.startsWith(link.href);
                 return (

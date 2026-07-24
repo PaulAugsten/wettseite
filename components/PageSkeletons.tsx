@@ -32,19 +32,22 @@ export function TournamentListSkeleton() {
     );
 }
 
-/** Mirrors the [tournament] page: header + match list and standings columns. */
 export function TournamentDetailSkeleton() {
     return (
-        <div className="flex flex-col gap-10">
+        <div className="flex flex-col gap-8">
             <HeaderSkeleton />
-            <div className="grid items-start gap-8 lg:grid-cols-[2fr_1fr]">
-                <div className="flex flex-col gap-4">
-                    <Skeleton className="h-6 w-32" />
+            <div className="flex flex-col gap-6">
+                <Skeleton className="h-11 w-full sm:w-72" />
+                <div className="flex gap-2 overflow-hidden">
+                    <Skeleton className="h-8 w-28 shrink-0 rounded-full" />
+                    <Skeleton className="h-8 w-28 shrink-0 rounded-full" />
+                    <Skeleton className="h-8 w-28 shrink-0 rounded-full" />
+                </div>
+                <div className="flex flex-col gap-2">
                     <Skeleton className="h-32" />
                     <Skeleton className="h-32" />
                     <Skeleton className="h-32" />
                 </div>
-                <Skeleton className="h-64" />
             </div>
         </div>
     );

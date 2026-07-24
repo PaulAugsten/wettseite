@@ -5,7 +5,11 @@ import type { Match } from '@/lib/types';
 
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }));
 
-type PredictionRow = { match_id: number; predicted_winner_id: number | null };
+type PredictionRow = {
+    match_id: number;
+    predicted_winner_id: number | null;
+    profiles?: { username: string } | null;
+};
 
 function mockPredictionsQuery({ all, mine }: { all: PredictionRow[]; mine: PredictionRow[] }) {
     // The community query ends in `.in(...)`; the user query adds `.eq(user_id)` first.
@@ -51,10 +55,10 @@ describe('getMatchPredictions', () => {
     it('counts community picks per team and collects the user picks', async () => {
         mockPredictionsQuery({
             all: [
-                { match_id: 1, predicted_winner_id: 10 },
-                { match_id: 1, predicted_winner_id: 10 },
-                { match_id: 1, predicted_winner_id: 20 },
-                { match_id: 2, predicted_winner_id: 30 },
+                { match_id: 1, predicted_winner_id: 10, profiles: { username: 'alice' } },
+                { match_id: 1, predicted_winner_id: 10, profiles: { username: 'bob' } },
+                { match_id: 1, predicted_winner_id: 20, profiles: { username: 'carol' } },
+                { match_id: 2, predicted_winner_id: 30, profiles: { username: 'alice' } },
             ],
             mine: [{ match_id: 1, predicted_winner_id: 10 }],
         });
@@ -64,10 +68,39 @@ describe('getMatchPredictions', () => {
             'user-1',
         );
 
-        expect(stats.get(1)).toEqual({ team1: 2, team2: 1, total: 3 });
-        expect(stats.get(2)).toEqual({ team1: 1, team2: 0, total: 1 });
+        expect(stats.get(1)).toEqual({
+            team1: 2,
+            team2: 1,
+            total: 3,
+            team1Voters: ['alice', 'bob'],
+            team2Voters: ['carol'],
+        });
+        expect(stats.get(2)).toEqual({
+            team1: 1,
+            team2: 0,
+            total: 1,
+            team1Voters: ['alice'],
+            team2Voters: [],
+        });
         expect(userPicks.get(1)).toBe(10);
         expect(userPicks.has(2)).toBe(false);
+    });
+
+    it('still counts picks whose profile is not readable', async () => {
+        mockPredictionsQuery({
+            all: [{ match_id: 1, predicted_winner_id: 10, profiles: null }],
+            mine: [],
+        });
+
+        const { stats } = await getMatchPredictions([match(1, 10, 20)], undefined);
+
+        expect(stats.get(1)).toEqual({
+            team1: 1,
+            team2: 0,
+            total: 1,
+            team1Voters: [],
+            team2Voters: [],
+        });
     });
 
     it('returns zeroed stats for matches without predictions', async () => {
@@ -75,7 +108,13 @@ describe('getMatchPredictions', () => {
 
         const { stats } = await getMatchPredictions([match(1, 10, 20)], undefined);
 
-        expect(stats.get(1)).toEqual({ team1: 0, team2: 0, total: 0 });
+        expect(stats.get(1)).toEqual({
+            team1: 0,
+            team2: 0,
+            total: 0,
+            team1Voters: [],
+            team2Voters: [],
+        });
     });
 });
 

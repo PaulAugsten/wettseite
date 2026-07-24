@@ -59,6 +59,16 @@ export type PredictionStats = {
     team1: number;
     team2: number;
     total: number;
+    team1Voters: string[];
+    team2Voters: string[];
+};
+
+export const emptyPredictionStats: PredictionStats = {
+    team1: 0,
+    team2: 0,
+    total: 0,
+    team1Voters: [],
+    team2Voters: [],
 };
 
 export type StandingsRow = {
