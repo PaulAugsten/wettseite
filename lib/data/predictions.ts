@@ -10,8 +10,7 @@ export type MatchPredictions = {
 
 /**
  * Community prediction stats for a set of matches, plus the given user's own
- * picks. Query failures degrade to empty results rather than erroring the
- * page — predictions are auxiliary to the match list.
+ * picks
  */
 export async function getMatchPredictions(
     matches: Pick<Match, 'id' | 'team1' | 'team2'>[],
@@ -30,7 +29,7 @@ export async function getMatchPredictions(
     const [allResult, userResult] = await Promise.all([
         supabase
             .from('predictions')
-            .select('match_id, predicted_winner_id')
+            .select('match_id, predicted_winner_id, profiles(username)')
             .in('match_id', matchIds),
         userId
             ? supabase
@@ -53,7 +52,13 @@ export async function getMatchPredictions(
     );
 
     for (const match of matches) {
-        stats.set(match.id, { team1: 0, team2: 0, total: 0 });
+        stats.set(match.id, {
+            team1: 0,
+            team2: 0,
+            total: 0,
+            team1Voters: [],
+            team2Voters: [],
+        });
     }
 
     for (const prediction of allResult.data ?? []) {
@@ -61,11 +66,14 @@ export async function getMatchPredictions(
         const teams = teamsByMatch.get(prediction.match_id);
         if (!entry || !teams) continue;
 
+        const username = prediction.profiles?.username;
         entry.total += 1;
         if (prediction.predicted_winner_id === teams.team1) {
             entry.team1 += 1;
+            if (username) entry.team1Voters.push(username);
         } else if (prediction.predicted_winner_id === teams.team2) {
             entry.team2 += 1;
+            if (username) entry.team2Voters.push(username);
         }
     }
 
