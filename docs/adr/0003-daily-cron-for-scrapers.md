@@ -22,4 +22,4 @@ Scrapers run on a single daily [Vercel Cron](../../vercel.json) job that hits an
   results), not for anything needing real-time updates.
 - Only one scheduled invocation to reason about/monitor, rather than a fleet of polling jobs.
 - If a more real-time source becomes available (e.g. a webhook or proper API), this should be
-  revisited — a new ADR should supersede this one rather than quietly changing the schedule.
+  revisited - a new ADR should supersede this one rather than quietly changing the schedule.

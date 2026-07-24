@@ -32,7 +32,7 @@ const Home = async () => {
                 liveGames.map((game) => (
                     <TournamentSection
                         key={game.id}
-                        title={`Live now — ${game.name}`}
+                        title={`Live now: ${game.name}`}
                         tournaments={game.tournaments}
                         game={game.slug}
                     />
