@@ -1,10 +1,4 @@
 {
-    "crons": [
-        {
-            "path": "/api/cron/tournaments",
-            "schedule": "0 0 * * *"
-        }
-    ],
     "git": {
         "deploymentEnabled": {
             "main": false
