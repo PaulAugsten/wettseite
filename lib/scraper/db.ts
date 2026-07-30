@@ -128,7 +128,7 @@ export async function upsertTournaments(tournaments: Tournament[]): Promise<numb
     const rows: Omit<TablesInsert<'tournaments'>, 'slug'>[] = tournaments;
     const { error } = await supabase
         .from('tournaments')
-        .upsert(rows as TablesInsert<'tournaments'>[], { onConflict: 'name' });
+        .upsert(rows as TablesInsert<'tournaments'>[], { onConflict: 'url' });
 
     if (error) {
         throw new Error(`Error upserting tournaments: ${error.message}`);
