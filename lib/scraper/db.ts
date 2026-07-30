@@ -1,7 +1,7 @@
+import type { TeamRecord } from '@/lib/scraper/_shared/team-resolver.ts';
+import type { Match, Tournament } from '@/lib/scraper/_shared/types.ts';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { TablesInsert } from '@/lib/supabase/database.types';
-import type { TeamRecord } from '@/supabase/functions/_shared/scraper/team-resolver.ts';
-import type { Match, Tournament } from '@/supabase/functions/_shared/scraper/types.ts';
 
 /**
  * Database access for the scraper. Uses the service-role client; this code
@@ -19,6 +19,54 @@ export async function getGameIdBySlug(slug: string): Promise<number | null> {
     }
 
     return data.id;
+}
+
+export async function getUniqueGameSlugsFromTournamentIds(
+    tournamentIds: number[],
+): Promise<string[]> {
+    if (tournamentIds.length === 0) return [];
+
+    const supabase = createAdminClient();
+
+    const { data, error } = await supabase
+        .from('tournaments')
+        .select('games(slug)')
+        .in('id', tournamentIds);
+
+    if (error) {
+        throw new Error(
+            `Error resolving game ids for tournaments [${tournamentIds}]: ${error.message}`,
+        );
+    }
+
+    return [...new Set(data.map((row) => row.games.slug))];
+}
+
+export async function getActiveTournamentIds(): Promise<number[]> {
+    const supabase = createAdminClient();
+
+    const { data, error } = await supabase
+        .from('tournaments')
+        .select('id')
+        .neq('status', 'finished'); // get live and planned tournaments
+
+    if (error) {
+        throw new Error(`Error getting ids for active tournaments: ${error.message}`);
+    }
+
+    return data.map((row) => row.id);
+}
+
+export async function refreshTournamentStatus(): Promise<number> {
+    const supabase = createAdminClient();
+
+    const { data, error } = await supabase.rpc('refresh_tournament_status');
+
+    if (error) {
+        throw new Error(`Error refreshing tournament status: ${error.message}`);
+    }
+
+    return data ?? 0;
 }
 
 export async function getTournaments(
