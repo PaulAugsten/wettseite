@@ -40,14 +40,12 @@ function mockFetchHtml(html: string) {
 }
 
 describe('shouldIncludeTournament', () => {
-    it.each([
-        'Six Invitational 2024',
-        'Six Major Spring',
-        'World Cup 2024',
-        'RE:L0:AD 2024',
-    ])('includes recognized top-tier tournament names: %s', (name) => {
-        expect(filterByTournamentName(name)).toBe(true);
-    });
+    it.each(['Six Invitational 2024', 'Six Major Spring', 'World Cup 2024', 'RE:L0:AD 2024'])(
+        'includes recognized top-tier tournament names: %s',
+        (name) => {
+            expect(filterByTournamentName(name)).toBe(true);
+        },
+    );
 
     it('excludes tournaments that do not match a known tier keyword', () => {
         expect(filterByTournamentName('Random Weekly Cup')).toBe(false);
