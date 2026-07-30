@@ -102,39 +102,10 @@ jobs:
                   SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
             - run: pnpm size
 
-    # The Deno edge function is excluded from tsconfig.json (different runtime, different
-    # ambient globals) so tsc never sees it. Type-check it with Deno's own checker instead,
-    # and only when it actually changed.
-    deno-check:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v7
-            - uses: dorny/paths-filter@v3
-              id: filter
-              with:
-                  filters: |
-                      deno:
-                          - 'supabase/functions/**'
-            - if: steps.filter.outputs.deno == 'true'
-              uses: denoland/setup-deno@v2
-              with:
-                  deno-version: v2.x
-            - if: steps.filter.outputs.deno == 'true'
-              working-directory: supabase/functions/get-matches
-              run: deno install
-            - if: steps.filter.outputs.deno == 'true'
-              working-directory: supabase/functions/get-matches
-              run: deno check index.ts
-
-    # Runs semantic-release after CI passes on an actual push to main. Folded into this
-    # workflow (rather than a separate workflow_run-triggered one) to close a "pwn
-    # request" hole: workflow_run's branches filter only matches on the head_branch
-    # *name*, so a fork could name a PR branch "main" and get a separate workflow_run-
-    # triggered workflow to check out + run their code with this job's write secrets.
-    # A push event to main can't be spoofed that way.
+    # Runs semantic-release after CI passes on an actual push to main.
     release:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        needs: [lint, typecheck, knip, unit, build, bundle-size, deno-check]
+        needs: [lint, typecheck, knip, unit, build, bundle-size]
         runs-on: ubuntu-latest
         permissions:
             contents: write
@@ -174,7 +145,7 @@ jobs:
     # prebuilt flow would bake in empty strings for those vars every time.
     deploy:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        needs: [lint, typecheck, knip, unit, build, bundle-size, deno-check]
+        needs: [lint, typecheck, knip, unit, build, bundle-size]
         runs-on: ubuntu-latest
         environment: production
         concurrency:

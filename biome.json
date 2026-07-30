@@ -58,7 +58,7 @@
     },
     "overrides": [
         {
-            "includes": ["lib/scraper/**", "supabase/functions/**", "scripts/**"],
+            "includes": ["lib/scraper/**", "scripts/**"],
             "linter": {
                 "rules": {
                     "suspicious": {
