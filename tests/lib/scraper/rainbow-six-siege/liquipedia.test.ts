@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generateBatchRequests } from '@/supabase/functions/_shared/scraper/liquipedia.ts';
+import { generateBatchRequests } from '@/lib/scraper/_shared/liquipedia/liquipedia';
 
 describe('generateBatchRequests', () => {
     it('batches pages into groups of 50 joined by |', () => {

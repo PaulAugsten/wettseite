@@ -1,8 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    filterByTournamentName,
     getTournamentMetaData,
-    shouldIncludeTournament,
 } from '@/lib/scraper/rainbow-six-siege/tournaments';
+
+const { fetchParsedHtml } = vi.hoisted(() => ({ fetchParsedHtml: vi.fn() }));
+
+// Page HTML comes from the Liquipedia API; stub it so no rate limiting applies.
+vi.mock('@/lib/scraper/_shared/liquipedia/liquipedia.ts', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/scraper/_shared/liquipedia/liquipedia.ts')>()),
+    fetchParsedHtml,
+}));
 
 function tournamentHtml({
     name = 'R6 Test Major - Finals',
@@ -28,10 +36,7 @@ function tournamentHtml({
 }
 
 function mockFetchHtml(html: string) {
-    vi.stubGlobal(
-        'fetch',
-        vi.fn(async () => new Response(html, { status: 200 })),
-    );
+    fetchParsedHtml.mockResolvedValue(html);
 }
 
 describe('shouldIncludeTournament', () => {
@@ -41,15 +46,15 @@ describe('shouldIncludeTournament', () => {
         'World Cup 2024',
         'RE:L0:AD 2024',
     ])('includes recognized top-tier tournament names: %s', (name) => {
-        expect(shouldIncludeTournament(name)).toBe(true);
+        expect(filterByTournamentName(name)).toBe(true);
     });
 
     it('excludes tournaments that do not match a known tier keyword', () => {
-        expect(shouldIncludeTournament('Random Weekly Cup')).toBe(false);
+        expect(filterByTournamentName('Random Weekly Cup')).toBe(false);
     });
 
     it('excludes "One" branded events even if otherwise matching', () => {
-        expect(shouldIncludeTournament('Six Major One')).toBe(false);
+        expect(filterByTournamentName('Six Major One')).toBe(false);
     });
 });
 
@@ -73,11 +78,24 @@ describe('getTournamentMetaData', () => {
             7,
         );
 
-        expect(tournament.name).toBe('Test Major');
-        expect(tournament.location).toContain('France');
-        expect(tournament.prize_pool).toBe('$100,000');
-        expect(tournament.game_id).toBe(7);
-        expect(tournament.url).toBe('https://liquipedia.net/rainbowsix/Test_Major');
+        expect(tournament?.name).toBe('Test Major');
+        expect(tournament?.location).toContain('France');
+        expect(tournament?.prize_pool).toBe('$100,000');
+        expect(tournament?.game_id).toBe(7);
+        expect(tournament?.url).toBe('https://liquipedia.net/rainbowsix/Test_Major');
+    });
+
+    it.each([
+        ['both dates missing', { startDate: '', endDate: '' }],
+        ['a TBA start date', { startDate: 'TBA', endDate: 'January 10, 2024' }],
+        ['a TBA end date', { startDate: 'January 1, 2024', endDate: 'TBA' }],
+    ])('returns null instead of throwing for %s', async (_label, dates) => {
+        vi.setSystemTime(new Date('2024-01-05T00:00:00Z'));
+        mockFetchHtml(tournamentHtml(dates));
+
+        await expect(
+            getTournamentMetaData('https://liquipedia.net/rainbowsix/Test_Major', 7),
+        ).resolves.toBeNull();
     });
 
     it('marks a tournament as scheduled when "now" is before the start date', async () => {
@@ -88,7 +106,7 @@ describe('getTournamentMetaData', () => {
             'https://liquipedia.net/rainbowsix/Test_Major',
             7,
         );
-        expect(tournament.status).toBe('scheduled');
+        expect(tournament?.status).toBe('scheduled');
     });
 
     it('marks a tournament as live while within its date range', async () => {
@@ -99,7 +117,7 @@ describe('getTournamentMetaData', () => {
             'https://liquipedia.net/rainbowsix/Test_Major',
             7,
         );
-        expect(tournament.status).toBe('live');
+        expect(tournament?.status).toBe('live');
     });
 
     it('marks a tournament as finished once well past the end date', async () => {
@@ -110,6 +128,6 @@ describe('getTournamentMetaData', () => {
             'https://liquipedia.net/rainbowsix/Test_Major',
             7,
         );
-        expect(tournament.status).toBe('finished');
+        expect(tournament?.status).toBe('finished');
     });
 });
