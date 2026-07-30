@@ -1,0 +1,20 @@
+#   docker build -f Dockerfile.scraper -t wettsite-scraper .
+#   docker run --rm --env-file .env \
+#       -v /volume1/docker/wettsite/output:/app/scraper-output \
+#       wettsite-scraper pnpm scrape:matches --persist --active
+FROM node:24-alpine
+
+RUN corepack enable
+
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+COPY tsconfig.json ./
+COPY lib ./lib
+COPY scripts ./scripts
+
+VOLUME /app/scraper-output
+
+CMD ["pnpm", "scrape:matches", "--persist", "--active"]
