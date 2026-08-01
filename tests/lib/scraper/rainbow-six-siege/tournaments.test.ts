@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as db from '@/lib/scraper/db';
 import {
     filterByTournamentName,
     getTournamentMetaData,
+    scrapeRainbowSixSiegeTournaments,
 } from '@/lib/scraper/rainbow-six-siege/tournaments';
 
 const { fetchParsedHtml } = vi.hoisted(() => ({ fetchParsedHtml: vi.fn() }));
@@ -10,6 +12,12 @@ const { fetchParsedHtml } = vi.hoisted(() => ({ fetchParsedHtml: vi.fn() }));
 vi.mock('@/lib/scraper/_shared/liquipedia/liquipedia.ts', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@/lib/scraper/_shared/liquipedia/liquipedia.ts')>()),
     fetchParsedHtml,
+}));
+
+vi.mock('@/lib/scraper/db', () => ({
+    getGameIdBySlug: vi.fn(),
+    getTeamRecords: vi.fn(),
+    getTournaments: vi.fn(),
 }));
 
 function tournamentHtml({
@@ -127,5 +135,112 @@ describe('getTournamentMetaData', () => {
             7,
         );
         expect(tournament?.status).toBe('finished');
+    });
+});
+
+describe('scrapeRainbowSixSiegeTournaments', () => {
+    /** One row of the S-Tier tournament table. */
+    function listRow(name: string, { cancelled = false } = {}) {
+        const style = cancelled ? ' style="text-decoration:line-through"' : '';
+        const href = `/rainbowsix/${name.replaceAll(' ', '_')}`;
+        return `<tr class="table2__row--body"><td${style}><a href="${href}">${name}</a></td></tr>`;
+    }
+
+    /**
+     * Serves the S-Tier index page, then a generated detail page per tournament
+     * so the scraper walks the same two-step path it does against Liquipedia.
+     */
+    function mockTournamentTable(rows: string[], detailPages: Record<string, string> = {}) {
+        const listHtml = `<table><tbody>${rows.join('')}</tbody></table>`;
+        fetchParsedHtml.mockImplementation(async (_wiki: string, pageTitle: string) => {
+            if (pageTitle === 'S-Tier_Tournaments') return listHtml;
+            return (
+                detailPages[pageTitle] ??
+                tournamentHtml({ name: `R6 ${pageTitle.replaceAll('_', ' ')}` })
+            );
+        });
+    }
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2024-01-05T00:00:00Z'));
+        vi.spyOn(console, 'log').mockImplementation(() => {});
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+        vi.mocked(db.getGameIdBySlug).mockResolvedValue(7);
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+        vi.clearAllMocks();
+    });
+
+    it('throws when the game is not registered in the database', async () => {
+        vi.mocked(db.getGameIdBySlug).mockResolvedValue(null);
+
+        await expect(scrapeRainbowSixSiegeTournaments(true)).rejects.toThrow(
+            'Game not found for slug: rainbow-six-siege',
+        );
+    });
+
+    it('skips cancelled rows and names that miss the tier filter', async () => {
+        mockTournamentTable([
+            listRow('Six Major Alpha', { cancelled: true }),
+            listRow('Random Weekly Cup'),
+            listRow('Six Major Bravo'),
+        ]);
+
+        const tournaments = await scrapeRainbowSixSiegeTournaments(true);
+
+        expect(tournaments.map((t) => t.name)).toEqual(['Six Major Bravo']);
+        // Detail pages cost a rate-limited request each, so the filtering has to
+        // happen before the fetch, not after.
+        expect(fetchParsedHtml).toHaveBeenCalledTimes(2);
+    });
+
+    it('stops after five tournaments when only recent ones are wanted', async () => {
+        mockTournamentTable(Array.from({ length: 7 }, (_, i) => listRow(`Six Major ${i}`)));
+
+        const tournaments = await scrapeRainbowSixSiegeTournaments(true);
+
+        expect(tournaments).toHaveLength(5);
+        expect(tournaments[0]?.name).toBe('Six Major 0');
+    });
+
+    it('walks the table oldest-first and takes everything on a full scrape', async () => {
+        // Liquipedia lists newest first; a backfill has to insert in
+        // chronological order so later rows win on conflict.
+        mockTournamentTable(Array.from({ length: 6 }, (_, i) => listRow(`Six Major ${i}`)));
+
+        const tournaments = await scrapeRainbowSixSiegeTournaments(false);
+
+        expect(tournaments).toHaveLength(6);
+        expect(tournaments.map((t) => t.name)).toEqual([
+            'Six Major 5',
+            'Six Major 4',
+            'Six Major 3',
+            'Six Major 2',
+            'Six Major 1',
+            'Six Major 0',
+        ]);
+    });
+
+    it('skips rows whose detail page has no usable dates', async () => {
+        mockTournamentTable([listRow('Six Major Alpha'), listRow('Six Major Bravo')], {
+            Six_Major_Alpha: tournamentHtml({ name: 'R6 Six Major Alpha', startDate: 'TBA' }),
+        });
+
+        const tournaments = await scrapeRainbowSixSiegeTournaments(true);
+
+        expect(tournaments.map((t) => t.name)).toEqual(['Six Major Bravo']);
+    });
+
+    it('builds the detail URL from the row href', async () => {
+        mockTournamentTable([listRow('Six Major Alpha')]);
+
+        const tournaments = await scrapeRainbowSixSiegeTournaments(true);
+
+        expect(tournaments[0]?.url).toBe('https://liquipedia.net/rainbowsix/Six_Major_Alpha');
+        expect(tournaments[0]?.game_id).toBe(7);
     });
 });

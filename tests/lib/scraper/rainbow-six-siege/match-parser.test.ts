@@ -143,8 +143,13 @@ ${extra}
         expect(parseMatch(text, resolver)).toBeNull();
     });
 
-    it('returns null when a team cannot be resolved', () => {
+    it('returns null when the second team cannot be resolved', () => {
         const text = matchText('|finished=true').replace('TeamB', 'TeamC');
+        expect(parseMatch(text, resolver)).toBeNull();
+    });
+
+    it('returns null when the first team cannot be resolved', () => {
+        const text = matchText('|finished=true').replace('TeamA', 'TeamC');
         expect(parseMatch(text, resolver)).toBeNull();
     });
 
