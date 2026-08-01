@@ -13,7 +13,7 @@ export function TournamentSection({
 }) {
     if (tournaments.length === 0) return null;
     return (
-        <Section title={title}>
+        <Section title={title} className="tournamentSection">
             <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
                 {tournaments.map((tournament) => (
                     <TournamentCard key={tournament.id} tournament={tournament} game={game} />

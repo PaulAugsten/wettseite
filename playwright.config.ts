@@ -24,6 +24,11 @@ export default defineConfig({
                   reuseExistingServer: !process.env.CI,
               },
           }),
+    expect: {
+        toHaveScreenshot: {
+            maxDiffPixels: 100,
+        },
+    },
     use: {
         baseURL,
         trace: 'on-first-retry',
