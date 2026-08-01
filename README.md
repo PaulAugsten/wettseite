@@ -38,14 +38,12 @@ pnpm typecheck       # tsc --noEmit
   - `(root)` - public pages: home, `[game]` match/tournament listings, `about`, `account`.
   - `(login)` - `login`, `signup`, `auth` (Supabase auth flows).
   - `(dashboard)` - authenticated dashboard.
-  - `api/cron` - scheduled route handlers invoked by [Vercel Cron](vercel.json).
 - **Auth/session**: [lib/supabase/proxy.ts](lib/supabase/proxy.ts) refreshes the Supabase session
   on every request via the root [proxy.ts](proxy.ts) middleware.
-- **Scrapers**: [lib/supabase/api/scraper/](lib/supabase/api/scraper/) - per-game scrapers
-  (currently `rainbow-six-siege`, `football`) that fetch and parse match/tournament data and
-  write it into Supabase. These run on the cron schedule above.
-- **Supabase Edge Function**: [supabase/functions/get-matches](supabase/functions/get-matches)
-  (Deno runtime - type-checked separately in CI since it's outside the Next.js TS project).
+- **Scrapers**: [lib/scraper/](lib/scraper/) - per-game scrapers (currently
+  `rainbow-six-siege`, `football`) that fetch and parse match/tournament data and write it into
+  Supabase. Run via `pnpm scrape:matches` / `pnpm scrape:tournaments`, packaged for scheduled
+  runs by [Dockerfile.scraper](Dockerfile.scraper).
 - **Observability**: Sentry ([instrumentation.ts](instrumentation.ts),
   [instrumentation-client.ts](instrumentation-client.ts)) for error/performance monitoring,
   Vercel Analytics + Speed Insights for traffic and Core Web Vitals.

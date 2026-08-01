@@ -6,6 +6,31 @@ export type Database = {
     __InternalSupabase: {
         PostgrestVersion: '14.1';
     };
+    graphql_public: {
+        Tables: {
+            [_ in never]: never;
+        };
+        Views: {
+            [_ in never]: never;
+        };
+        Functions: {
+            graphql: {
+                Args: {
+                    extensions?: Json;
+                    operationName?: string;
+                    query?: string;
+                    variables?: Json;
+                };
+                Returns: Json;
+            };
+        };
+        Enums: {
+            [_ in never]: never;
+        };
+        CompositeTypes: {
+            [_ in never]: never;
+        };
+    };
     public: {
         Tables: {
             games: {
@@ -404,7 +429,11 @@ export type Database = {
             };
         };
         Functions: {
-            get_email_by_username: { Args: { p_username: string }; Returns: string };
+            get_email_by_username: {
+                Args: { p_username: string };
+                Returns: string;
+            };
+            refresh_tournament_status: { Args: never; Returns: number };
             unaccent: { Args: { '': string }; Returns: string };
         };
         Enums: {
@@ -534,6 +563,9 @@ export type CompositeTypes<
       : never;
 
 export const Constants = {
+    graphql_public: {
+        Enums: {},
+    },
     public: {
         Enums: {},
     },

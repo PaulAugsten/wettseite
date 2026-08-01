@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { parseWikitextDate } from '@/supabase/functions/_shared/scraper/date-parser.ts';
+import { parseWikitextDate } from '@/lib/scraper/_shared/date-parser';
 
 describe('parseWikitextDate', () => {
     it('converts a date with an explicit timezone abbreviation to UTC ISO', () => {

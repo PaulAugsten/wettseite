@@ -3,9 +3,9 @@ import {
     calculateMatchScore,
     parseMatch,
     parseMatchesFromStage,
-} from '@/supabase/functions/_shared/scraper/match-parser.ts';
-import type { TeamResolver } from '@/supabase/functions/_shared/scraper/team-resolver.ts';
-import type { Tournament } from '@/supabase/functions/_shared/scraper/types.ts';
+} from '@/lib/scraper/_shared/liquipedia/match-parser';
+import type { TeamResolver } from '@/lib/scraper/_shared/team-resolver';
+import type { Tournament } from '@/lib/scraper/_shared/types';
 
 function fakeResolver(knownTeams: Record<string, number>) {
     return {
@@ -32,7 +32,10 @@ describe('calculateMatchScore', () => {
             |opponent1={{TeamOpponent|template=teamA|score=2}}
             |opponent2={{TeamOpponent|template=teamB|score=1}}
         `;
-        expect(calculateMatchScore(text)).toEqual({ team1Score: 2, team2Score: 1 });
+        expect(calculateMatchScore(text)).toEqual({
+            team1Score: 2,
+            team2Score: 1,
+        });
     });
 
     it('treats a "W" opponent score as a 1-0 win', () => {
@@ -40,7 +43,10 @@ describe('calculateMatchScore', () => {
             |opponent1={{TeamOpponent|template=teamA|score=W}}
             |opponent2={{TeamOpponent|template=teamB|score=FF}}
         `;
-        expect(calculateMatchScore(text)).toEqual({ team1Score: 1, team2Score: 0 });
+        expect(calculateMatchScore(text)).toEqual({
+            team1Score: 1,
+            team2Score: 0,
+        });
     });
 
     it('treats a forfeit ("FF") against team1 as a win for team2', () => {
@@ -48,7 +54,10 @@ describe('calculateMatchScore', () => {
             |opponent1={{TeamOpponent|template=teamA|score=FF}}
             |opponent2={{TeamOpponent|template=teamB|score=W}}
         `;
-        expect(calculateMatchScore(text)).toEqual({ team1Score: 0, team2Score: 1 });
+        expect(calculateMatchScore(text)).toEqual({
+            team1Score: 0,
+            team2Score: 1,
+        });
     });
 
     it('counts map wins using old-format score1/score2 fields', () => {
@@ -57,14 +66,20 @@ describe('calculateMatchScore', () => {
             |map2={{Map|map=Border|score1=3|score2=6|finished=true}}
             |map3={{Map|map=Skyscraper|score1=7|score2=2|finished=true}}
         `;
-        expect(calculateMatchScore(text)).toEqual({ team1Score: 2, team2Score: 1 });
+        expect(calculateMatchScore(text)).toEqual({
+            team1Score: 2,
+            team2Score: 1,
+        });
     });
 
     it('counts map wins using atk/def round totals when score1/score2 are absent', () => {
         const text = `
             |map1={{Map|map=Coastline|t1atk=3|t1def=4|t2atk=2|t2def=1|finished=true}}
         `;
-        expect(calculateMatchScore(text)).toEqual({ team1Score: 1, team2Score: 0 });
+        expect(calculateMatchScore(text)).toEqual({
+            team1Score: 1,
+            team2Score: 0,
+        });
     });
 
     it('skips maps marked finished=skip', () => {
@@ -72,12 +87,18 @@ describe('calculateMatchScore', () => {
             |map1={{Map|map=Coastline|score1=1|score2=0|finished=skip}}
             |map2={{Map|map=Border|score1=0|score2=1|finished=true}}
         `;
-        expect(calculateMatchScore(text)).toEqual({ team1Score: 0, team2Score: 1 });
+        expect(calculateMatchScore(text)).toEqual({
+            team1Score: 0,
+            team2Score: 1,
+        });
     });
 
     it('returns 0-0 when there are no scores or maps', () => {
         const text = `|opponent1={{TeamOpponent|template=teamA}}|opponent2={{TeamOpponent|template=teamB}}`;
-        expect(calculateMatchScore(text)).toEqual({ team1Score: 0, team2Score: 0 });
+        expect(calculateMatchScore(text)).toEqual({
+            team1Score: 0,
+            team2Score: 0,
+        });
     });
 });
 
@@ -122,8 +143,13 @@ ${extra}
         expect(parseMatch(text, resolver)).toBeNull();
     });
 
-    it('returns null when a team cannot be resolved', () => {
+    it('returns null when the second team cannot be resolved', () => {
         const text = matchText('|finished=true').replace('TeamB', 'TeamC');
+        expect(parseMatch(text, resolver)).toBeNull();
+    });
+
+    it('returns null when the first team cannot be resolved', () => {
+        const text = matchText('|finished=true').replace('TeamA', 'TeamC');
         expect(parseMatch(text, resolver)).toBeNull();
     });
 
@@ -174,7 +200,11 @@ describe('parseMatchesFromStage', () => {
 }}`;
         const matches = parseMatchesFromStage(text, baseTournament, 'Group Stage', resolver);
         expect(matches).toHaveLength(1);
-        expect(matches[0]).toMatchObject({ group: 'A', stage: 'Group Stage', tournament_id: 99 });
+        expect(matches[0]).toMatchObject({
+            group: 'A',
+            stage: 'Group Stage',
+            tournament_id: 99,
+        });
     });
 
     it('assigns the Upper bracket for playoff matches under an Upper Bracket header', () => {
@@ -188,7 +218,10 @@ describe('parseMatchesFromStage', () => {
 }}`;
         const matches = parseMatchesFromStage(text, baseTournament, 'Playoffs', resolver);
         expect(matches).toHaveLength(1);
-        expect(matches[0]).toMatchObject({ bracket: 'Upper', round: 'Upper Bracket Match 1' });
+        expect(matches[0]).toMatchObject({
+            bracket: 'Upper',
+            round: 'Upper Bracket Match 1',
+        });
     });
 
     it('defaults playoff matches without an upper/lower header to a Single bracket', () => {
