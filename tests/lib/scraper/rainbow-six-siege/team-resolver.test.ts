@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { TeamResolver } from '@/supabase/functions/_shared/scraper/team-resolver.ts';
+import { TeamResolver } from '@/lib/scraper/_shared/team-resolver';
 
-// The similarity/Levenshtein implementations are private. We access them via
-// this structural type rather than only exercising them indirectly through
-// resolveTeamId, so failures point at the exact algorithm that broke.
 type AnyResolver = {
     levenshteinDistance(a: string, b: string): number;
     calculateSimilarity(a: string, b: string): number;
@@ -58,7 +55,10 @@ describe('TeamResolver.resolveTeamId', () => {
         expect(resolver.resolveTeamId('Totally Unknown Team', 1)).toBeNull();
 
         const [unknown] = resolver.getUnknownTeams();
-        expect(unknown).toMatchObject({ name: 'Totally Unknown Team', occurrences: 1 });
+        expect(unknown).toMatchObject({
+            name: 'Totally Unknown Team',
+            occurrences: 1,
+        });
     });
 
     it('accumulates occurrences and match ids across repeated lookups', () => {
@@ -76,7 +76,10 @@ describe('TeamResolver.resolveTeamId', () => {
         resolver.resolveTeamId('Teem Empire', 1);
 
         const [unknown] = resolver.getUnknownTeams();
-        expect(unknown?.similarTo[0]).toMatchObject({ teamId: 42, teamName: 'Team Empire' });
+        expect(unknown?.similarTo[0]).toMatchObject({
+            teamId: 42,
+            teamName: 'Team Empire',
+        });
     });
 
     it('does not suggest unrelated teams below the similarity threshold', () => {

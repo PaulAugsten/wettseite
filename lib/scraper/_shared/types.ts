@@ -1,8 +1,5 @@
 /**
- * Types shared between the Next.js scraper code (`lib/scraper/`) and the
- * Supabase edge functions. Files in this directory are imported by both the
- * Node and Deno runtimes: keep them dependency-free and use explicit `.ts`
- * extensions in relative imports.
+ * Types shared across the scraper code
  */
 
 export type TournamentStatus = 'scheduled' | 'live' | 'finished';

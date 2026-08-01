@@ -16,8 +16,9 @@ decide *what* to run on them.
 Switched the package manager to pnpm (content-addressable store, strict dependency resolution,
 faster installs) and replaced Husky with [pre-commit](https://pre-commit.com/) for git hooks -
 see [.pre-commit-config.yaml](../../.pre-commit-config.yaml). pre-commit's hook definitions are
-declarative and language-agnostic, which matters here since the repo also has a Deno-based
-Supabase Edge Function alongside the Node/Next.js app.
+declarative and language-agnostic, which mattered here since the repo also had a Deno-based
+Supabase Edge Function alongside the Node/Next.js app at the time (since removed - see
+[ADR 0004](0004-supabase-as-backend.md)).
 
 `pnpm install` runs [scripts/postinstall-precommit.mjs](../../scripts/postinstall-precommit.mjs),
 which installs the git hooks automatically if `pre-commit` is on `PATH`, or otherwise warns with

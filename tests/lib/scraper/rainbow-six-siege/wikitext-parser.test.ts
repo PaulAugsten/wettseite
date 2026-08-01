@@ -5,7 +5,7 @@ import {
     getParam,
     getRound,
     getSubpageStage,
-} from '@/supabase/functions/_shared/scraper/wikitext-parser.ts';
+} from '@/lib/scraper/_shared/liquipedia/wikitext-parser';
 
 describe('getParam', () => {
     it('extracts an opponent name via the template= field', () => {

@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted
+Accepted; the edge-function part is superseded - the Deno-based `get-matches` Edge Function was
+removed and its work now runs in the Node scraper ([lib/scraper/](../../lib/scraper/)). Supabase
+remains the database and auth provider. Deno is no longer part of the toolchain or CI.
 
 ## Context
 
@@ -16,16 +18,15 @@ small team.
 
 Use Supabase as the single backend: Postgres + Row Level Security for data access, Supabase
 Auth for signup/login (with [lib/supabase/proxy.ts](../../lib/supabase/proxy.ts) refreshing the
-session on every request), and a Supabase Edge Function
-([supabase/functions/get-matches](../../supabase/functions/get-matches)) for logic that should
-run close to the database on Deno rather than inside the Next.js server.
+session on every request), and originally a Supabase Edge Function (`get-matches`) for logic
+that should run close to the database on Deno rather than inside the Next.js server.
 
 ## Consequences
 
 - One vendor for data, auth, and edge compute instead of three; fewer moving pieces to operate.
-- The Edge Function runs on Deno, a different runtime/toolchain than the rest of the app - it's
-  excluded from the main `tsconfig.json` and type-checked separately via `deno check` in CI
-  (see the `deno-check` job in [.github/workflows/ci.yml](../../.github/workflows/ci.yml)).
+- The Edge Function ran on Deno, a different runtime/toolchain than the rest of the app, which
+  meant a second type-check path in CI. That split is what motivated dropping it: the whole
+  codebase is now a single Node/TypeScript toolchain.
 - `SUPABASE_SERVICE_ROLE_KEY` bypasses RLS and must stay server-only - see the env var table in
   the [README](../../README.md#environment-variables).
 - Auth/data correctness depends on RLS policies being right; there's no separate authorization

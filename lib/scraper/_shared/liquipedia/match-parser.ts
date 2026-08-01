@@ -1,6 +1,6 @@
-import { parseWikitextDate } from './date-parser.ts';
-import type { TeamResolver } from './team-resolver.ts';
-import type { Match, MatchStatus, Tournament } from './types.ts';
+import { parseWikitextDate } from '../date-parser.ts';
+import type { TeamResolver } from '../team-resolver.ts';
+import type { Match, MatchStatus, Tournament } from '../types.ts';
 import { extractCommentContent, getGroup, getParam, getRound } from './wikitext-parser.ts';
 
 export function calculateMatchScore(text: string): {
@@ -100,7 +100,7 @@ export function parseMatch(text: string, teamResolver: TeamResolver): Match | nu
 
     if (!(match_id && team1_name && team2_name)) {
         console.error(
-            `missing Matchid: ${match_id}, team1 name: ${team1_name} or team2 name: ${team2_name}`,
+            `missing Matchid: ${match_id}, team1 name: ${team1_name} or team2 name: ${team2_name}, date: ${dateText}`,
         );
         return null;
     }
@@ -109,11 +109,11 @@ export function parseMatch(text: string, teamResolver: TeamResolver): Match | nu
     const team2_id = teamResolver.resolveTeamId(team2_name, parseInt(match_id, 10));
 
     if (!team1_id) {
-        console.warn(`Unknown team: ${team1_name}`);
+        console.warn(`Unknown team: ${team1_name} on ${dateText}`);
         return null;
     }
     if (!team2_id) {
-        console.warn(`Unknown team: ${team2_name}`);
+        console.warn(`Unknown team: ${team2_name} on ${dateText}`);
         return null;
     }
 

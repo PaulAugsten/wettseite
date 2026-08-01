@@ -2,7 +2,7 @@
     "$schema": "https://unpkg.com/knip@6/schema.json",
     "next": true,
     "entry": ["scripts/scrape-*.ts"],
-    "ignore": ["supabase/functions/**", "lib/supabase/database.types.ts"],
+    "ignore": ["lib/supabase/database.types.ts"],
     "ignoreDependencies": [
         "@commitlint/cli",
         "supabase",

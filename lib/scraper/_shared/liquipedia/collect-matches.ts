@@ -1,7 +1,7 @@
+import type { TeamResolver } from '../team-resolver.ts';
+import type { Match, Tournament } from '../types.ts';
 import { fetchWikitextPages, generateBatchRequests, pageTitleFromUrl } from './liquipedia.ts';
 import { parseMatchesFromStage } from './match-parser.ts';
-import type { TeamResolver } from './team-resolver.ts';
-import type { Match, Tournament } from './types.ts';
 import { getParam, getSubpageStage, wikitextSplitStages } from './wikitext-parser.ts';
 
 /** Wikitext templates that pull match data from a tournament subpage. */
@@ -10,13 +10,13 @@ const SUBPAGE_PATTERNS = [
     /{{ShowStandings\|page=([^|}]+)/g,
 ];
 
-export type StageOverview = {
+type StageOverview = {
     stage: string;
     matchCount: number;
     matches: Match[];
 };
 
-export type PageOverview = {
+type PageOverview = {
     pageId: string;
     title: string;
     totalMatches: number;
@@ -119,7 +119,11 @@ export async function collectMatches(options: {
                     }
                 }
 
-                pageOverview.stages.push({ stage, matchCount: matches.length, matches });
+                pageOverview.stages.push({
+                    stage,
+                    matchCount: matches.length,
+                    matches,
+                });
                 pageOverview.totalMatches += matches.length;
             }
 

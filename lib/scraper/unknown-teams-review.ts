@@ -1,11 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createInterface } from 'node:readline';
+import type { UnknownTeam } from '@/lib/scraper/_shared/team-resolver';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { TablesInsert } from '@/lib/supabase/database.types';
-import type { UnknownTeam } from '@/supabase/functions/_shared/scraper/team-resolver.ts';
 
-const REVIEW_FILE = path.join('scraper-output', 'unknown_teams_review.json');
+const reviewFileFor = (gameId: number) =>
+    path.join('scraper-output', `unknown_teams_review_${gameId}.json`);
 
 type ReviewedTeam = {
     name: string;
@@ -26,14 +27,13 @@ function normalize(name: string): string {
 }
 
 /**
- * Interactive CLI flow: writes the unknown team names to a review file, waits
- * for the user to fill in actions, then applies them (create team / add
- * alias / ignore). Resolved names take effect on the next scraper run.
+ * Writes the unknown team names to a review file
  */
-export async function reviewUnknownTeams(unknownTeams: UnknownTeam[], gameId: number) {
-    if (unknownTeams.length === 0) return;
-
-    console.log(`Found ${unknownTeams.length} unknown teams`);
+export function writeUnknownTeamsReview(
+    unknownTeams: UnknownTeam[],
+    gameId: number,
+): string | null {
+    if (unknownTeams.length === 0) return null;
 
     const reviewData = {
         summary: {
@@ -55,10 +55,18 @@ export async function reviewUnknownTeams(unknownTeams: UnknownTeam[], gameId: nu
             ),
     };
 
-    fs.mkdirSync(path.dirname(REVIEW_FILE), { recursive: true });
-    fs.writeFileSync(REVIEW_FILE, JSON.stringify(reviewData, null, 2), 'utf-8');
+    const reviewFile = reviewFileFor(gameId);
+    fs.mkdirSync(path.dirname(reviewFile), { recursive: true });
+    fs.writeFileSync(reviewFile, JSON.stringify(reviewData, null, 2), 'utf-8');
 
-    console.log(`\n📄 Unknown teams saved to: ${REVIEW_FILE}`);
+    console.log(`\n${unknownTeams.length} unknown teams saved to: ${reviewFile}`);
+
+    return reviewFile;
+}
+
+export async function reviewUnknownTeams(unknownTeams: UnknownTeam[], gameId: number) {
+    if (writeUnknownTeamsReview(unknownTeams, gameId) === null) return;
+
     console.log('\nActions:');
     console.log('  - CREATE: Create new team');
     console.log('  - ALIAS: Add as alias to existing team (set assignToTeamId)');
@@ -80,20 +88,21 @@ export async function reviewUnknownTeams(unknownTeams: UnknownTeam[], gameId: nu
 }
 
 async function processReviewedTeams(gameId: number) {
-    if (!fs.existsSync(REVIEW_FILE)) {
+    const reviewFile = reviewFileFor(gameId);
+    if (!fs.existsSync(reviewFile)) {
         console.log('Review file not found');
         return;
     }
 
-    const reviewData = JSON.parse(fs.readFileSync(REVIEW_FILE, 'utf-8')) as {
+    const supabase = createAdminClient();
+    const reviewData = JSON.parse(fs.readFileSync(reviewFile, 'utf-8')) as {
         unknownTeams: ReviewedTeam[];
     };
-    const supabase = createAdminClient();
+    const unresolved: ReviewedTeam[] = [];
 
     for (const team of reviewData.unknownTeams) {
         if (team.action === 'CREATE') {
-            // The database fills `teams.slug` via trigger, so the payload
-            // legitimately omits it even though the Insert type requires it.
+            // The database fills teams.slug via trigger
             const row: Omit<TablesInsert<'teams'>, 'slug'> = {
                 name: team.name,
                 game_id: gameId,
@@ -106,6 +115,7 @@ async function processReviewedTeams(gameId: number) {
 
             if (error) {
                 console.error(`Error creating team ${team.name}:`, error);
+                unresolved.push(team);
             } else {
                 console.log(`Created team: ${team.name} (ID: ${data.id})`);
             }
@@ -118,11 +128,37 @@ async function processReviewedTeams(gameId: number) {
 
             if (error) {
                 console.error(`Error adding alias ${team.name}:`, error);
+                unresolved.push(team);
             } else {
                 console.log(`Added alias: ${team.name} to Team ID ${team.assignToTeamId}`);
             }
         } else if (team.action === 'IGNORE') {
             console.log(`Ignored: ${team.name}`);
+        } else {
+            unresolved.push(team);
         }
     }
+
+    if (unresolved.length === 0) {
+        fs.rmSync(reviewFile, { force: true });
+        console.log(`All unknown teams resolved`);
+        return;
+    }
+
+    fs.writeFileSync(
+        reviewFile,
+        JSON.stringify(
+            {
+                summary: {
+                    totalUnknown: unresolved.length,
+                    totalOccurrences: unresolved.reduce((s, t) => s + t.occurrences, 0),
+                },
+                unknownTeams: unresolved,
+            },
+            null,
+            2,
+        ),
+        'utf-8',
+    );
+    console.log(`${unresolved.length} team(s) still need review in ${reviewFile}`);
 }

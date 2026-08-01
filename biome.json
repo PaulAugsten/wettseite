@@ -1,5 +1,5 @@
 {
-    "$schema": "https://biomejs.dev/schemas/2.5.1/schema.json",
+    "$schema": "https://biomejs.dev/schemas/2.5.5/schema.json",
     "vcs": {
         "enabled": true,
         "clientKind": "git",
@@ -58,7 +58,7 @@
     },
     "overrides": [
         {
-            "includes": ["lib/scraper/**", "supabase/functions/**", "scripts/**"],
+            "includes": ["lib/scraper/**", "scripts/**"],
             "linter": {
                 "rules": {
                     "suspicious": {
