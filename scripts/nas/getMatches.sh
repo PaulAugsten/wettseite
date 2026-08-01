@@ -11,19 +11,18 @@ export PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 
 PROJECT=/volume2/docker/wettsite
 REPO=/volume2/docker/wettsite/repo
-BRANCH=feat/update-scraper-automation
 IMAGE=wettsite-scraper
 CONTAINER=wettsite-matches
 INTERVAL=300
 
 echo "=== $(date -Is) daily scrape ==="
 
-# --- rebuild the image if the branch moved ------------------------------
+# --- rebuild the image if there are new commits -------------------------
 cd "$REPO"
-git fetch --quiet origin "$BRANCH"
-if [ "$(git rev-parse HEAD)" != "$(git rev-parse "origin/$BRANCH")" ]; then
+before=$(git rev-parse HEAD)
+git pull --quiet --ff-only
+if [ "$(git rev-parse HEAD)" != "$before" ]; then
     echo "new commits - rebuilding image"
-    git checkout --quiet -B "$BRANCH" "origin/$BRANCH"
     docker build -f Dockerfile.scraper -t "$IMAGE" .
 fi
 
