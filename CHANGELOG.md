@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/PaulAugsten/wettseite/compare/v1.0.1...v1.1.0) (2026-08-01)
+
+
+### Features
+
+* update scraper automation ([#39](https://github.com/PaulAugsten/wettseite/issues/39)) ([3849137](https://github.com/PaulAugsten/wettseite/commit/3849137dbd3c54b26012b8b9ae8502126921cc6a))
+
 ## [1.0.1](https://github.com/PaulAugsten/wettseite/compare/v1.0.0...v1.0.1) (2026-06-28)
 
 
