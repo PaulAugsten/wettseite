@@ -54,3 +54,6 @@ tournament_overview.json
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Log files
+*.log
