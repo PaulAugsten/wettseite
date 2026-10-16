@@ -153,7 +153,7 @@ jobs:
             cancel-in-progress: false
         steps:
             - uses: actions/checkout@v7
-            - run: npx vercel@54.17.1 deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
+            - run: npx vercel@64.3.1 deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
               env:
                   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
                   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
