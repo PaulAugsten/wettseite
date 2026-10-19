@@ -6,7 +6,7 @@ on:
     push:
         branches: [main]
 
-# Cancel superseded runs on the same branch/PR to save minutes.
+# Cancel superseded runs on the same branch/PR to save minutes
 concurrency:
     group: ci-${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
@@ -69,23 +69,17 @@ jobs:
             - uses: actions/setup-node@v6
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
-            # Sanity build to catch what Vercel would catch, plus enables bundle analysis (§6).
             - run: pnpm build
               env:
                   NEXT_TELEMETRY_DISABLED: '1'
                   NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
                   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
                   SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-                  # Source map upload + release creation no-ops until these secrets exist.
-                  # The build that actually ships runs on Vercel, so set the same vars
-                  # there too once a Sentry project exists.
                   SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
                   SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
                   SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
-    # Flat budget check against this build's own output (see .size-limit.json).
-    # Not a diff against main's build: that required rebuilding main on every
-    # PR, which broke whenever main's toolchain drifted from the PR branch's.
+    # Flat budget check against this build's own output (see .size-limit.json)
     bundle-size:
         runs-on: ubuntu-latest
         steps:
@@ -102,7 +96,7 @@ jobs:
                   SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
             - run: pnpm size
 
-    # Runs semantic-release after CI passes on an actual push to main.
+    # Runs semantic-release after CI passes on an actual push to main
     release:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         needs: [lint, typecheck, knip, unit, build, bundle-size]
@@ -111,8 +105,7 @@ jobs:
             contents: write
             issues: write
             pull-requests: write
-        # Separate from the workflow-level concurrency group above: a release in
-        # progress must never be cancelled mid-push by a newer commit landing on main.
+        # A release in progress must never be cancelled mid-push by a newer commit landing on main
         concurrency:
             group: release-main
             cancel-in-progress: false
@@ -120,9 +113,7 @@ jobs:
             - uses: actions/checkout@v7
               with:
                   fetch-depth: 0
-                  # Deploy key with write access, added to the ruleset's bypass list, so the
-                  # release commit can push straight to main despite the "require PR" rule.
-                  # Scoped to just this key, unlike an admin-account bypass.
+                  # Deploy key with write access, added to the ruleset's bypass list, so the release commit can push straight to main
                   ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
             - uses: pnpm/action-setup@v4
             - uses: actions/setup-node@v6
@@ -130,19 +121,13 @@ jobs:
             - run: pnpm install --frozen-lockfile
             - run: pnpm exec semantic-release
               env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+                  GIT_AUTHOR_NAME: PaulAugsten
+                  GIT_AUTHOR_EMAIL: 58978786+PaulAugsten@users.noreply.github.com
+                  GIT_COMMITTER_NAME: PaulAugsten
+                  GIT_COMMITTER_EMAIL: 58978786+PaulAugsten@users.noreply.github.com
 
-    # The `production` GitHub Environment (required reviewers, wait timer, scoped
-    # secrets) gates this job — see docs/adr or repo Settings > Environments. Vercel's
-    # own auto-deploy for main is disabled via vercel.json (git.deploymentEnabled.main:
-    # false) so this is the only path a production deploy can take; preview deploys for
-    # other branches/PRs still happen automatically through Vercel's Git integration.
-    #
-    # Deploys via a *remote* build (no --prebuilt, no local `vercel build`), deliberately:
-    # several production env vars (e.g. the Supabase service-role key) are marked
-    # "Sensitive" in Vercel, which means their values can never be read back by `vercel
-    # pull`/`env pull` — only by a build running inside Vercel's own container. A local
-    # prebuilt flow would bake in empty strings for those vars every time.
+    # The `production` GitHub Environment (required reviewers, wait timer, scoped secrets) gates this job. Vercel's own auto-deploy for main is disabled via vercel.json so this is the only path a production deploy can take. Preview deploys for other branches/PRs still happen automatically through Vercel's Git integration.
     deploy:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         needs: [lint, typecheck, knip, unit, build, bundle-size]
