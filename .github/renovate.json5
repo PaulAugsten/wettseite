@@ -1,0 +1,40 @@
+{
+    $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+    extends: ['config:recommended'],
+    enabledManagers: ['npm', 'github-actions'],
+    labels: ['dependencies'],
+    prConcurrentLimit: 10,
+    prHourlyLimit: 0,
+    minimumReleaseAge: '3 days',
+    rangeStrategy: 'bump',
+    semanticCommits: 'enabled',
+    automergeStrategy: 'squash',
+    // Exempts the dashboard issue from stale.yml.
+    dependencyDashboardLabels: ['pinned'],
+    packageRules: [
+        { matchPackageNames: ['*'], semanticCommitType: 'chore' },
+        { matchDepTypes: ['devDependencies'], semanticCommitScope: 'deps-dev' },
+
+        { matchManagers: ['npm'], matchUpdateTypes: ['minor', 'patch'], groupName: 'minor-and-patch' },
+
+        // Package families that must stay on matching versions
+        { matchPackageNames: ['vitest', '@vitest/*'], groupName: 'vitest' },
+        { matchPackageNames: ['next', '@next/*', 'eslint-config-next'], groupName: 'next' },
+        { matchPackageNames: ['react', 'react-dom', '@types/react', '@types/react-dom'], groupName: 'react' },
+        { matchPackageNames: ['tailwindcss', '@tailwindcss/*'], groupName: 'tailwind' },
+        { matchPackageNames: ['size-limit', '@size-limit/*'], groupName: 'size-limit' },
+        { matchPackageNames: ['@commitlint/*'], groupName: 'commitlint' },
+        { matchPackageNames: ['semantic-release', '@semantic-release/*'], groupName: 'semantic-release' },
+        // e2e.yml pins the Playwright container to the exact @playwright/test version
+        { matchPackageNames: ['@playwright/test', 'mcr.microsoft.com/playwright'], groupName: 'playwright' },
+
+        { matchUpdateTypes: ['minor', 'patch'], automerge: true },
+
+        // Don't auto-bump the framework major
+        {
+            matchPackageNames: ['next', '@next/*', 'eslint-config-next'],
+            matchUpdateTypes: ['major'],
+            dependencyDashboardApproval: true,
+        },
+    ],
+}
