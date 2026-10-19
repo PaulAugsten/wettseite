@@ -1,4 +1,4 @@
-minimumReleaseAge: 4320 # 3 days in minutes, matches dependabot cooldown
+minimumReleaseAge: 4320 # 3 days in minutes
 
 allowBuilds:
   '@sentry/cli': true
