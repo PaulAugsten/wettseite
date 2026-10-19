@@ -9,7 +9,7 @@ on:
                 required: true
                 type: string
 
-# The push authenticates with RENOVATE_TOKEN
+# The push authenticates with CI_AUTOMATION_TOKEN
 permissions:
     contents: read
 
@@ -40,7 +40,7 @@ jobs:
                   HOME: /root
             - name: Commit updated snapshots
               env:
-                  PUSH_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+                  PUSH_TOKEN: ${{ secrets.CI_AUTOMATION_TOKEN }}
               run: |
                   # The workspace bind mount is owned by the host runner user, not the container's root, so git refuses it until it's marked safe.
                   git config --global --add safe.directory "$GITHUB_WORKSPACE"
