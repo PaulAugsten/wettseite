@@ -17,6 +17,11 @@ IMAGE=wettsite-scraper
 CONTAINER=wettsite-matches
 INTERVAL=300
 
+# Task Scheduler runs as root without sudo, so git sees a repo owned by another user and refuses it
+export GIT_CONFIG_COUNT=1
+export GIT_CONFIG_KEY_0=safe.directory
+export GIT_CONFIG_VALUE_0="$REPO"
+
 echo "=== $(date -Is) daily scrape ==="
 
 # --- rebuild the image if there are new commits -------------------------
