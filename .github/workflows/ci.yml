@@ -20,7 +20,7 @@ jobs:
         steps:
             - uses: actions/checkout@v7
             - uses: pnpm/action-setup@v4
-            - uses: actions/setup-node@v6
+            - uses: actions/setup-node@v7
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
             - run: pnpm lint
@@ -31,7 +31,7 @@ jobs:
         steps:
             - uses: actions/checkout@v7
             - uses: pnpm/action-setup@v4
-            - uses: actions/setup-node@v6
+            - uses: actions/setup-node@v7
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
             - run: pnpm typecheck
@@ -41,7 +41,7 @@ jobs:
         steps:
             - uses: actions/checkout@v7
             - uses: pnpm/action-setup@v4
-            - uses: actions/setup-node@v6
+            - uses: actions/setup-node@v7
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
             - run: pnpm knip
@@ -51,7 +51,7 @@ jobs:
         steps:
             - uses: actions/checkout@v7
             - uses: pnpm/action-setup@v4
-            - uses: actions/setup-node@v6
+            - uses: actions/setup-node@v7
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
             - run: pnpm test:coverage
@@ -66,7 +66,7 @@ jobs:
         steps:
             - uses: actions/checkout@v7
             - uses: pnpm/action-setup@v4
-            - uses: actions/setup-node@v6
+            - uses: actions/setup-node@v7
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
             - run: pnpm build
@@ -85,7 +85,7 @@ jobs:
         steps:
             - uses: actions/checkout@v7
             - uses: pnpm/action-setup@v4
-            - uses: actions/setup-node@v6
+            - uses: actions/setup-node@v7
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
             - run: pnpm build
@@ -116,7 +116,7 @@ jobs:
                   # Deploy key with write access, added to the ruleset's bypass list, so the release commit can push straight to main
                   ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
             - uses: pnpm/action-setup@v4
-            - uses: actions/setup-node@v6
+            - uses: actions/setup-node@v7
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
             - run: pnpm exec semantic-release
