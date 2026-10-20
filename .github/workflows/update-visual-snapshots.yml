@@ -30,7 +30,7 @@ jobs:
                   # Keep credentials off disk while dependencies install and tests run
                   persist-credentials: false
             - uses: pnpm/action-setup@v4
-            - uses: actions/setup-node@v6
+            - uses: actions/setup-node@v7
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
             - run: pnpm exec playwright test e2e/visual.spec.ts --update-snapshots
