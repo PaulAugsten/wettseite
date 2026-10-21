@@ -1,0 +1,3 @@
+# Supabase CLI's public local-dev demo key (iss: supabase-demo, role: anon) in the scaffolded curl example of an edge function that has since been deleted. Not a secret.
+e3e7a0cda2d0402050f2358aeb4c785eb004afe7:supabase/functions/get-matches/index.ts:jwt:28
+e3e7a0cda2d0402050f2358aeb4c785eb004afe7:supabase/functions/get-matches/index.ts:curl-auth-header:27
