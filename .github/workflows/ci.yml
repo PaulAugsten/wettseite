@@ -18,9 +18,9 @@ jobs:
     lint:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v7
-            - uses: pnpm/action-setup@v6
-            - uses: actions/setup-node@v7
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+            - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
             - run: pnpm lint
@@ -29,9 +29,9 @@ jobs:
     typecheck:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v7
-            - uses: pnpm/action-setup@v6
-            - uses: actions/setup-node@v7
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+            - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
             - run: pnpm typecheck
@@ -39,9 +39,9 @@ jobs:
     knip:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v7
-            - uses: pnpm/action-setup@v6
-            - uses: actions/setup-node@v7
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+            - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
             - run: pnpm knip
@@ -49,14 +49,14 @@ jobs:
     unit:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v7
-            - uses: pnpm/action-setup@v6
-            - uses: actions/setup-node@v7
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+            - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
             - run: pnpm test:coverage
             - name: Upload coverage
-              uses: codecov/codecov-action@v7
+              uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
               with:
                   token: ${{ secrets.CODECOV_TOKEN }}
                   fail_ci_if_error: true
@@ -64,9 +64,9 @@ jobs:
     build:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v7
-            - uses: pnpm/action-setup@v6
-            - uses: actions/setup-node@v7
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+            - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
             - run: pnpm build
@@ -83,9 +83,9 @@ jobs:
     bundle-size:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v7
-            - uses: pnpm/action-setup@v6
-            - uses: actions/setup-node@v7
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+            - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
             - run: pnpm build
@@ -110,13 +110,13 @@ jobs:
             group: release-main
             cancel-in-progress: false
         steps:
-            - uses: actions/checkout@v7
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   fetch-depth: 0
                   # Deploy key with write access, added to the ruleset's bypass list, so the release commit can push straight to main
                   ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
-            - uses: pnpm/action-setup@v6
-            - uses: actions/setup-node@v7
+            - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+            - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
             - run: pnpm exec semantic-release
@@ -137,7 +137,7 @@ jobs:
             group: deploy-production
             cancel-in-progress: false
         steps:
-            - uses: actions/checkout@v7
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
             - run: npx vercel@64.3.1 deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
               env:
                   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}

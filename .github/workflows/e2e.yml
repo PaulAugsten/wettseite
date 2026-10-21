@@ -30,9 +30,9 @@ jobs:
             options: --ipc=host
         timeout-minutes: 15
         steps:
-            - uses: actions/checkout@v7
-            - uses: pnpm/action-setup@v6
-            - uses: actions/setup-node@v7
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+            - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
               with: { node-version-file: .nvmrc, cache: pnpm }
             - run: pnpm install --frozen-lockfile
             - name: Run Playwright against the preview URL
@@ -46,7 +46,7 @@ jobs:
                   # owned by the image's pwuser; Firefox refuses to launch as root unless
                   # $HOME is also root-owned. This is Playwright's own documented workaround.
                   HOME: /root
-            - uses: actions/upload-artifact@v7
+            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
               if: ${{ !cancelled() }}
               with:
                   name: playwright-report
@@ -70,7 +70,7 @@ jobs:
         runs-on: ubuntu-latest
         timeout-minutes: 10
         steps:
-            - uses: actions/checkout@v7
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
             - name: Lighthouse CI
               uses: treosh/lighthouse-ci-action@3e7e23fb74242897f95c0ba9cabad3d0227b9b18 # v12
               with:
