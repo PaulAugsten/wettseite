@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # Applies this repo's GitHub settings: merge options, security features, Actions
-# permissions, and the `main-protection` ruleset whose required checks match the job
-# ids in .github/workflows/*.yml. Re-running with nothing changed is a no-op. Requires the
-# GitHub CLI (gh) authenticated with repo admin access. Run by
-# hand, not in CI:
+# permissions, and the `main-protection` ruleset. Re-running with nothing changed is a no-op. 
+# Requires the GitHub CLI (gh) authenticated with repo admin access.
+# Run by hand:
 #
 #   ./scripts/setup-github.sh
 #
@@ -17,7 +16,7 @@ gh api --method PATCH "repos/${REPO}" \
     -F allow_squash_merge=true \
     -F allow_merge_commit=false \
     -F allow_rebase_merge=false \
-    -f squash_merge_commit_title=COMMIT_OR_PR_TITLE \
+    -f squash_merge_commit_title=PR_TITLE \
     -f squash_merge_commit_message=COMMIT_MESSAGES \
     -F allow_auto_merge=true \
     -F delete_branch_on_merge=true \
@@ -90,6 +89,7 @@ ruleset="$(
                     { "context": "analyze" },
                     { "context": "review" },
                     { "context": "scan" },
+                    { "context": "conventional" },
                     { "context": "e2e" },
                     { "context": "lighthouse" }
                 ]
