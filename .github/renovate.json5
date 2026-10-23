@@ -1,7 +1,8 @@
 {
     $schema: 'https://docs.renovatebot.com/renovate-schema.json',
     extends: ['config:recommended', 'helpers:pinGitHubActionDigests'],
-    enabledManagers: ['npm', 'github-actions'],
+    enabledManagers: ['npm', 'github-actions', 'pre-commit'],
+    'pre-commit': { enabled: true },
     labels: ['dependencies'],
     prConcurrentLimit: 10,
     prHourlyLimit: 0,
@@ -29,6 +30,10 @@
         { matchPackageNames: ['@playwright/test', 'mcr.microsoft.com/playwright'], groupName: 'playwright' },
 
         { matchUpdateTypes: ['minor', 'patch'], automerge: true },
+
+        // eslint-config-next bundles eslint-plugin-react/import/jsx-a11y, which don't support ESLint 10 yet
+        // (context.getFilename removed). Lift once eslint-config-next works with v10.
+        { matchPackageNames: ['eslint'], allowedVersions: '<10' },
 
         // Don't auto-bump the framework major
         {
