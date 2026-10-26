@@ -8,7 +8,7 @@ allowBuilds:
 
 overrides:
   postcss: ^8.5.31
-  serialize-javascript: ^7.1.2
+  serialize-javascript: ^7.1.4
 minimumReleaseAgeExclude:
   # Renovate security update: postcss@8.5.31
   - postcss@8.5.31
