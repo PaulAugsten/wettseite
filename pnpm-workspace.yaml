@@ -7,7 +7,7 @@ allowBuilds:
   unrs-resolver: true
 
 overrides:
-  postcss: ^8.5.31
+  postcss: ^8.5.32
   serialize-javascript: ^7.1.2
 minimumReleaseAgeExclude:
   # Renovate security update: postcss@8.5.31
